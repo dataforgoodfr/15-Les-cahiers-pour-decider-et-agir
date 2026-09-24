@@ -23,7 +23,7 @@ def iter_pdfs(path: Path, recursive: bool = False) -> Path:
         if f.is_file() and f.suffix.lower() == ".pdf":
             yield f
         if recursive and f.is_dir():
-            yield from iter_pdfs(f)
+            yield from iter_pdfs(f, recursive=recursive)
 
 
 def list_pdfs(path: str | Path, recursive: bool = False) -> list[Path]:
@@ -43,9 +43,9 @@ def list_pdfs(path: str | Path, recursive: bool = False) -> list[Path]:
     """
     p = Path(path)
     if not p.exists():
-        raise FileNotFoundError(f"PATH_TO_DATA directory not found: {p}")
+        raise FileNotFoundError(f"Cheminin existant: {p}")
     if not p.is_dir():
-        raise NotADirectoryError(f"PATH_TO_DATA is not a directory: {p}")
+        raise NotADirectoryError(f"{p} n'est pas un répertoire")
 
     pdfs = sorted(iter_pdfs(p, recursive), key=_natural_sort_key)
     return pdfs
