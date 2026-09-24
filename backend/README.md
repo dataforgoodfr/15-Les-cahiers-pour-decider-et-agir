@@ -28,6 +28,7 @@ $ export CPDA_PG_DSN=postgresql+asyncpg://cpda:cpda@localhost/cpda
 Lancer le script suivant pour charger la nomenclature des région/départements/communes
 
 ```
+alembic upgrade head
 python chargement_admin.py
 ```
 
