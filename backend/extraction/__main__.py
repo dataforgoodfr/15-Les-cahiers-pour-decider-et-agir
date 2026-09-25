@@ -15,24 +15,21 @@ container.logging()
 logger = logging.getLogger(__name__)
 
 
-async def main(path: str | Path, recursive: bool) -> int:
+async def main(recursive: bool) -> int:
+    racine = container.settings().pdf_data_dir
     async with container.database().get_session() as db_session:
-        pdf_paths = list_pdfs(args.path, recursive)
+        pdf_paths = list_pdfs(racine, recursive)
         for f in tqdm(pdf_paths, "Extraction des données depuis les fichiers PDF"):
             await db_session.begin()
             document = await extract_document(db_session, f)
             await extract_pdf_pages(db_session, document)
+            document.chemin = str(Path(document.chemin).relative_to(racine))
             await db_session.commit()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Extraction des données depuis les documents PDF"
-    )
-    parser.add_argument(
-        "path",
-        type=str,
-        help="Chemin vers le répertoire contenant les fichiers PDF",
     )
     parser.add_argument(
         "-r",
@@ -42,4 +39,4 @@ if __name__ == "__main__":
         default=False,
     )
     args = parser.parse_args()
-    asyncio.run(main(args.path, args.recursive))
+    asyncio.run(main(args.recursive))
