@@ -8,7 +8,9 @@ class Settings(BaseSettings):
     pg_dsn: PostgresDsn
     engine_echo: bool = False
     logging_configuration_file: pathlib.Path
-    model_config = SettingsConfigDict(env_prefix="CPDA_")
 
+    pdf_data_dir: pathlib.Path
     min_chars_for_page: int = 10
     seuil_qualite_texte_pdf: float = 0.3
+
+    model_config = SettingsConfigDict(env_prefix="CPDA_")

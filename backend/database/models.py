@@ -77,7 +77,7 @@ class Document(Base):
     mode_document: Mapped[ModeDocument] = mapped_column(nullable=False)
     code_postal: Mapped[str] = mapped_column(nullable=True)
     taille_fichier: Mapped[int] = mapped_column(nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
+    horodatage_creation: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     commune_id: Mapped[UUID_Type] = mapped_column(ForeignKey("commune.id"))
@@ -104,7 +104,7 @@ class MethodeReconnaissance(enum.Enum):
 
 
 class TraitementReconnaissance(Base):
-    __tablename__ = "reconnaissance"
+    __tablename__ = "traitement_reconnaissance"
     id: Mapped[UUID_Type] = mapped_column(primary_key=True, insert_default=uuid7)
     methode: Mapped[MethodeReconnaissance] = mapped_column(nullable=False)
     score: Mapped[float] = mapped_column(nullable=False)

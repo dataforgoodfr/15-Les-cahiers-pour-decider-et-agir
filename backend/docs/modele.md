@@ -28,7 +28,7 @@ classDiagram
       mode_document: Enum #"M", "D", "MD"
       code_postal: str
       taille_fichier: int
-      created_at: datetime
+      horodatage_creation: datetime
     }
     Document "1" --> "0..1" Commune
 
@@ -37,7 +37,8 @@ classDiagram
       texte_brut: str
       texte_reconnu: str
       ignore: bool
-      created_at: datetime
+      horodatage_creation: datetime
+      horodatage_modification: datetime
     }
     Document "1" --> "0..n" Page
 
@@ -46,7 +47,7 @@ classDiagram
       score: float
       resultat: str
       commentaire_traitement: str
-      created_at: datetime
+      horodatage_creation: datetime
     }
     Page "1" --> "0..n" TraitementReconnaissance
 

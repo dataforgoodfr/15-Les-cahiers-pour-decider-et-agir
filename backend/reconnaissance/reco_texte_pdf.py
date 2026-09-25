@@ -80,11 +80,10 @@ async def main() -> int:
                 cleaned.strip()
                 and r.score >= container.settings().seuil_qualite_texte_pdf
             ):
-                r.resultat = p.texte_brut
+                r.resultat = cleaned
                 p.texte_reconnu = r.resultat
             else:
                 r.commentaire_traitement = f"Qualité inférieure au seuil de {container.settings().seuil_qualite_texte_pdf}"
-
         await db_session.commit()
 
 
