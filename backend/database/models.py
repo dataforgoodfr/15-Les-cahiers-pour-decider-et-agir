@@ -91,9 +91,10 @@ class Page(Base):
     num_page: Mapped[int] = mapped_column()
     texte_brut: Mapped[str] = mapped_column()
     texte_reconnu: Mapped[str] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
+    horodatage_creation: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+    horodatage_modification: Mapped[datetime] = mapped_column(onupdate=func.now())
     document_id: Mapped[UUID_Type] = mapped_column(ForeignKey("document.id"))
     document: Mapped[Document] = relationship()
 
@@ -102,14 +103,14 @@ class MethodeReconnaissance(enum.Enum):
     PDF_TEXT = "Extraction du texte depuis les meta-données PDF"
 
 
-class Reconnaissance(Base):
+class TraitementReconnaissance(Base):
     __tablename__ = "reconnaissance"
     id: Mapped[UUID_Type] = mapped_column(primary_key=True, insert_default=uuid7)
     methode: Mapped[MethodeReconnaissance] = mapped_column(nullable=False)
     score: Mapped[float] = mapped_column(nullable=False)
     resultat: Mapped[str] = mapped_column(nullable=True)
     commentaire_traitement: Mapped[str] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
+    horodatage_creation: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     page_id: Mapped[UUID_Type] = mapped_column(ForeignKey("page.id"))

@@ -33,7 +33,7 @@ def upgrade() -> None:
         sa.Column("taille_fichier", sa.Integer, nullable=False),
         sa.Column("commune_id", sa.Uuid, sa.ForeignKey("commune.id"), nullable=True),
         sa.Column(
-            "created_at",
+            "horodatage_creation",
             sa.DateTime(timezone=True),
             nullable=False,
             server_default=func.now(),
@@ -48,10 +48,13 @@ def upgrade() -> None:
         sa.Column("texte_reconnu", sa.String, nullable=True),
         sa.Column("document_id", sa.Uuid, sa.ForeignKey("document.id"), nullable=True),
         sa.Column(
-            "created_at",
+            "horodatage_creation",
             sa.DateTime(timezone=True),
             nullable=False,
             server_default=func.now(),
+        ),
+        sa.Column(
+            "horodatage_modification", sa.DateTime(timezone=True), onupdate=func.now()
         ),
     )
 
@@ -60,3 +63,5 @@ def downgrade() -> None:
     """Downgrade schema."""
     op.drop_table("page")
     op.drop_table("document")
+    op.execute("DROP TYPE typedocument")
+    op.execute("DROP TYPE modedocument")

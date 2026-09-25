@@ -23,7 +23,7 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """Upgrade schema."""
     op.create_table(
-        "reconnaissance",
+        "traitement_reconnaissance",
         sa.Column("id", sa.Uuid, primary_key=True, nullable=False),
         sa.Column("page_id", sa.Uuid, sa.ForeignKey("page.id"), nullable=False),
         sa.Column("methode", sa.Enum(MethodeReconnaissance), nullable=False),
@@ -31,7 +31,7 @@ def upgrade() -> None:
         sa.Column("resultat", sa.String, nullable=True),
         sa.Column("commentaire_traitement", sa.String, nullable=True),
         sa.Column(
-            "created_at",
+            "horodatage_creation",
             sa.DateTime(timezone=True),
             nullable=False,
             server_default=func.now(),
@@ -41,4 +41,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_table("reconnaissance")
+    op.drop_table("traitement_reconnaissance")
+    op.execute("DROP TYPE methodereconnaissance")
