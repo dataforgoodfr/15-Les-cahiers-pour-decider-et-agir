@@ -41,19 +41,19 @@ classDiagram
     }
     Document "1" --> "0..n" Page
 
-    class Reconnaissance {
+    class TraitementReconnaissance {
       methode: Enum #"PDF_TEXT", ...
       score: float
       resultat: str
       commentaire_traitement: str
       created_at: datetime
     }
-    Page "1" --> "0..n" Reconnaissance
+    Page "1" --> "0..n" TraitementReconnaissance
 
     class Contribution {
       texte: str
       mode: Enum #"M", "D", "MD"
-      anonymise: bool
+      anonymisee: bool
     }
     Contribution "1" --> "1" Page: page_debut
     Contribution "1" --> "1" Page: page_fin
