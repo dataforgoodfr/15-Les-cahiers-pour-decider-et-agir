@@ -34,3 +34,14 @@ async def get_commune_by_code(session: AsyncSession, code_insee: str) -> Commune
         select(Commune).where(Commune.code_insee == code_insee)
     )
     return result.scalars().first()
+
+
+async def liste_communes(
+    session: AsyncSession, departement_id: str | None
+) -> list[Commune]:
+    """List all communes in the database."""
+    query = select(Commune)
+    if departement_id:
+        query = query.where(Commune.departement_id == departement_id)
+    result = await session.execute(query)
+    return result.scalars().all()
