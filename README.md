@@ -1,42 +1,51 @@
-# Template DataForGood
+# Les cahiers pour décider et agir
 
-This file will become your README and also the index of your
-documentation.
+Projet [Data For Good](https://dataforgood.fr/), saison 2026-2027, avec
+l'association [Des cahiers pour décider et agir](https://www.decider-agir.fr/).
 
-# Contributing
+## Le projet
 
+Pendant le Grand débat national (fin 2018 - début 2019), des milliers de
+communes ont ouvert des « cahiers citoyens » où chacun pouvait écrire ses
+doléances.
+
+**Des cahiers pour décider et agir** est un projet associatif : organiser la
+restitution de ces cahiers. Data For Good l'accompagne sur la partie données.
+
+## Où on en est
+
+- **Le contenu est encore mal balisé.** Il faut le structurer avant de pouvoir
+  l'exploiter.
+- **Une analyse des cahiers est en cours** pour dégager un panel représentatif.
+- **De nombreux cahiers sont au format texte.** Leur exploitation demande un
+  travail particulier, mené par le Campus Condorcet.
+
+Le POC de l'été 2026 a porté sur trois départements (Ain, Eure-et-Loir,
+Mayenne). Son code est dans [dataforgoodfr/cahier_doleances](https://github.com/dataforgoodfr/cahier_doleances).
+
+## Les données
+
+Les cahiers contiennent des opinions politiques signées : ce sont des données
+sensibles. **Aucune donnée des cahiers n'entre dans ce dépôt**, qui est public.
+Les règles sont dans [docs/donnees.md](docs/donnees.md).
+À lire avant toute contribution.
+
+## Organisation
+
+Le travail est suivi dans les [issues](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues).
+
+Pour commencer, voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Installation
 
-- [Installation de Python](#installation-de-python)
-
-Ce projet utilise [uv](https://docs.astral.sh/uv/) pour la gestion des dépendances Python. Il est préréquis pour l'installation de ce projet.
-
-Une fois installé, il suffit de lancer la commande suivante pour installer la version de Python adéquate, créer un environnement virtuel et installer les dépendances du projet.
+Le projet utilise [uv](https://docs.astral.sh/uv/) :
 
 ```bash
 uv sync
 ```
 
-A l'usage, si vous utilisez VSCode, l'environnement virtuel sera automatiquement activé lorsque vous ouvrirez le projet. Sinon, il suffit de l'activer manuellement avec la commande suivante :
+Puis lancer les scripts avec `uv run ...`.
 
-```bash
-source .venv/bin/activate
-```
+## Licence
 
-Ou alors, utilisez la commande `uv run ...` (au lieu de `python ...`) pour lancer un script Python. Par exemple:
-
-```bash
-uv run pipelines/run.py run build_database
-```
-
-
-## Lancer les precommit-hook localement
-
-[Installer les precommit](https://pre-commit.com/)
-
-    pre-commit run --all-files
-
-## Utiliser Tox pour tester votre code
-
-    tox -vv
+Voir [LICENSE](LICENSE).
