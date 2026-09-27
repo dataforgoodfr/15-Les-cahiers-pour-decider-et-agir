@@ -85,6 +85,9 @@ async def main():
             async for departement in chargement_departements(db_session, region):
                 coros.append(chargement_communes(db_session, departement))
         await asyncio.gather(*coros)
+        r_1 = create_region(db_session, "-1", "Etranger ou inconnu")
+        d_1 = create_departement(db_session, r_1, "-1", "Etranger ou inconnu")
+        create_commune(db_session, d_1, "-1", "Etranger ou inconnu")
 
         await db_session.commit()
 

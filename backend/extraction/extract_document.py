@@ -1,7 +1,10 @@
 import os
 from pathlib import Path
 
-from database.repositories.communes_repo import get_commune_by_code
+from database.repositories.communes_repo import (
+    get_commune_by_code,
+    recherche_commune_proche_cp,
+)
 from database.repositories.document_repo import create_document
 from infra.errors import AppException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -45,8 +48,16 @@ async def extract_document(session: AsyncSession, filepath: Path):
     document.code_postal = parsed["code_postal"]
     document.type_document = parsed["type_contrib"]
     document.mode_document = parsed["mode_contrib"]
+    document.commune_id = None
     if parsed["code_insee"]:
         commune = await get_commune_by_code(session, parsed["code_insee"])
         if commune:
             document.commune_id = commune.id
+    if not document.commune_id:
+        # Commune non identifiée par le code INSEE, recherche par le CP
+        commune = await recherche_commune_proche_cp(session, document.code_postal)
+        if not commune:
+            # Pas trouvé -> la commune n'existe pas où le document vient de l'étranger
+            commune = await get_commune_by_code(session, "-1")
+        document.commune_id = commune.id
     return document
