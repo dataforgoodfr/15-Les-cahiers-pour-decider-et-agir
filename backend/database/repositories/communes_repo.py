@@ -45,3 +45,17 @@ async def liste_communes(
         query = query.where(Commune.departement_id == departement_id)
     result = await session.execute(query)
     return result.scalars().all()
+
+
+async def recherche_commune_proche_cp(session: AsyncSession, cp) -> Commune | None:
+    # Recherche la commune la plus peuplée correspondant à un code postal
+    # cette fonction peut être utilisée pour associer un document à une commune
+    # qui n'a pas pu être identifiée par le code INSEE
+    query = (
+        select(Commune)
+        .where(Commune.codes_postaux.any(cp))
+        .order_by(Commune.population.desc())
+        .limit(1)
+    )
+    result = await session.execute(query)
+    return result.scalars().first()
