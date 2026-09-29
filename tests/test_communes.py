@@ -44,6 +44,7 @@ def ref():
             commune(
                 "ARM", "13201", "Marseille 1er Arrondissement", "13", "93", "13055"
             ),
+            commune("ARM", "13202", "Marseille 2e Arrondissement", "13", "93", "13055"),
             commune("COM", "21213", "Crimolois", "21", "27"),
             commune("COM", "07103", "Saint-Julien-d'Intres", "07", "84"),
             commune("COM", "97611", "Mamoudzou", "976", "06"),
@@ -64,8 +65,9 @@ def ref():
         populations=[
             {"DEPCOM": "01004", "PMUN": "14035"},
             {"DEPCOM": "01025", "PMUN": "4057"},
-            {"DEPCOM": "13055", "PMUN": "863310"},
+            # Marseille n'a de ligne que par arrondissement
             {"DEPCOM": "13201", "PMUN": "39786"},
+            {"DEPCOM": "13202", "PMUN": "24153"},
             {"DEPCOM": "21213", "PMUN": "1068"},
             {"DEPCOM": "07103", "PMUN": "613"},
             # Communes_associees_ou_deleguees.csv, lu après Communes.csv
@@ -125,6 +127,10 @@ def test_arrondissement_municipal(ref):
     assert c["type_2019"] == "ARM"
     assert c["population_incluse_dans"] == "13055"
     assert c["densite"] == "1"
+
+
+def test_population_de_la_ville_somme_ses_arrondissements(ref):
+    assert rattacher("13055", ref)["population_2017"] == str(39786 + 24153)
 
 
 def test_fusion_apres_2019_prend_la_densite_de_la_commune_nouvelle(ref):

@@ -42,6 +42,8 @@ millésimes.
 - **Code supprimé au 1er janvier 2019** (le système de dépôt utilisait parfois
   le COG 2018) : rattaché à la commune nouvelle, type `supprimée`, sans
   population propre.
+- **Paris, Lyon, Marseille** : les populations légales ne les donnent que par
+  arrondissement ; la population de la commune est leur somme.
 - **Mayotte** : absente des populations légales millésimées 2017.
 - **Non rattachés** : `00000` (commune non renseignée), collectivités
   d'outre-mer hors COG des communes, `99999` (étranger), codes disparus avant

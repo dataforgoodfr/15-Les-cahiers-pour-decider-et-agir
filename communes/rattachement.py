@@ -92,6 +92,14 @@ class Referentiel:
             # Communes.csv est lu en premier : sa ligne de plein exercice reste
             # la bonne quand une commune déléguée porte le même code.
             pop.setdefault(ligne["DEPCOM"].strip(), int(ligne["PMUN"]))
+        # Paris, Lyon et Marseille n'ont de ligne que par arrondissement municipal
+        arrondissements: dict[str, int] = {}
+        for code, ligne in cog.items():
+            if ligne["typecom"] == ARRONDISSEMENT and code in pop:
+                parente = ligne["comparent"]
+                arrondissements[parente] = arrondissements.get(parente, 0) + pop[code]
+        for parente, total in arrondissements.items():
+            pop.setdefault(parente, total)
         index: dict[str, list[dict[str, str]]] = {}
         for m in sorted(mouvements, key=lambda m: m["DATE_EFF"]):
             index.setdefault(m["COM_AV"], []).append(m)
