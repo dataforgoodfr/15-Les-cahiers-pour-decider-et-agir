@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="384" viewBox="0 0 900 384" role="img" aria-labelledby="titre">
+<style>
+  .fond { fill: #ffffff; }
+  text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; fill: #1f1f1f; }
+  .titre { font-size: 17px; font-weight: 600; }
+  .niveau { font-size: 14px; font-weight: 600; }
+  .total { font-size: 12px; fill: #5a5a5a; }
+  .libelle { font-size: 12px; }
+  .note { font-size: 11px; fill: #5a5a5a; }
+  .suite0 { fill: #2a6fbf; }
+  .suite1 { fill: #8db8e8; }
+  .ecarte { fill: #d9d9d6; }
+  .lien { fill: #2a6fbf; opacity: 0.12; }
+  @media (prefers-color-scheme: dark) {
+    .fond { fill: #161b22; }
+    text { fill: #e6e6e6; }
+    .total, .note { fill: #a8a8a8; }
+    .suite0 { fill: #4a8fdf; }
+    .suite1 { fill: #2b5c94; }
+    .ecarte { fill: #3a3a38; }
+    .lien { fill: #4a8fdf; opacity: 0.18; }
+  }
+</style>
+<rect class="fond" width="900" height="384"/>
+<text id="titre" class="titre" x="16" y="30">Du versement BnF aux pages écrites des cahiers citoyens</text>
+<text class="niveau" x="16" y="94">Versement BnF</text>
+<text class="total" x="16" y="111">762 578 pages</text>
+<rect class="suite0" x="170.0" y="78" width="425.4" height="34" rx="3"><title>cahiers citoyens (CC) : 459 078 pages</title></rect>
+<text class="libelle" x="174.0" y="72">cahiers citoyens (CC) 60 %</text>
+<rect class="ecarte" x="597.4" y="78" width="197.5" height="34" rx="3"><title>courriers (CO) : 214 300 pages</title></rect>
+<text class="libelle" x="601.4" y="72">courriers (CO) 28 %</text>
+<rect class="ecarte" x="797.0" y="78" width="58.4" height="34" rx="3"><title>réunions (CR) : 64 834 pages</title></rect>
+<text class="libelle" text-anchor="end" x="855.3" y="128">réunions (CR) 9 %</text>
+<rect class="ecarte" x="857.3" y="78" width="20.7" height="34" rx="3"><title>réunions par courriel (IL) : 24 366 pages</title></rect>
+<text class="libelle" text-anchor="end" x="878.0" y="142">réunions par courriel (IL) 3 %</text>
+<polygon class="lien" points="170.0,112 597.4,112 597.4,172 170.0,172"/>
+<text class="niveau" x="16" y="190">Cahiers citoyens</text>
+<text class="total" x="16" y="207">459 078 pages</text>
+<rect class="suite0" x="170.0" y="174" width="255.4" height="34" rx="3"><title>écrites : 276 445 pages</title></rect>
+<text class="libelle" x="174.0" y="168">écrites 60 %</text>
+<rect class="ecarte" x="427.4" y="174" width="134.3" height="34" rx="3"><title>vierges : 146 358 pages</title></rect>
+<text class="libelle" x="431.4" y="168">vierges 32 %</text>
+<rect class="ecarte" x="563.7" y="174" width="31.8" height="34" rx="3"><title>ajoutées à la numérisation : 36 275 pages</title></rect>
+<text class="libelle" text-anchor="end" x="595.4" y="224">ajoutées à la numérisation 8 %</text>
+<polygon class="lien" points="170.0,208 427.4,208 427.4,268 170.0,268"/>
+<text class="niveau" x="16" y="286">Pages écrites</text>
+<text class="total" x="16" y="303">276 445 pages</text>
+<rect class="suite0" x="170.0" y="270" width="121.8" height="34" rx="3"><title>dactylographiées : 132 988 pages</title></rect>
+<text class="libelle" text-anchor="end" x="291.8" y="320">dactylographiées 48 %</text>
+<rect class="suite1" x="293.8" y="270" width="131.6" height="34" rx="3"><title>manuscrites : 143 457 pages</title></rect>
+<text class="libelle" x="297.8" y="264">manuscrites 52 %</text>
+<text class="note" x="16" y="354">Pages comptées dans les PDF du versement ; types de page par l'outil de typage (issue #17), les pages mixtes comptées dactylographiées. État au 2026-10-01.</text>
+</svg>
