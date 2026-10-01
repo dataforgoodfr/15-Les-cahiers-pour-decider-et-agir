@@ -7,7 +7,8 @@ région, population et degré de densité.
 uv run python -m communes <corpus.csv> [--colonne code_insee] [--sortie data/communes]
 ```
 
-L'entrée a une ligne par commune ; ses colonnes sont recopiées. Les sources
+L'entrée a une ligne par commune ; ses colonnes sont recopiées, suffixées
+`_corpus` si elles portent le nom d'une variable ci-dessous. Les sources
 sont téléchargées une fois dans `data/sources/`. Les sorties vont dans
 `data/communes/` (hors git) :
 

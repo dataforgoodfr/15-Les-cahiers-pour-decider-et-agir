@@ -3,7 +3,8 @@
     uv run python -m communes <corpus.csv> [--colonne code_insee] [--sortie data/communes]
 
 Le fichier d'entrée a une ligne par commune et une colonne de codes INSEE ;
-ses autres colonnes sont recopiées telles quelles. Sorties :
+ses autres colonnes sont recopiées, suffixées `_corpus` si elles portent le nom
+d'une variable INSEE (`departement` devient `departement_corpus`). Sorties :
 
 - `communes.csv` : les lignes rattachées, avec les variables de `rattachement.COLONNES` ;
 - `non_rattaches.csv` : les autres, avec la raison.
@@ -14,7 +15,13 @@ import csv
 from collections import Counter
 from pathlib import Path
 
-from communes.rattachement import COLONNES, Referentiel, raison_non_rattache, rattacher
+from communes.rattachement import (
+    COLONNES,
+    Referentiel,
+    raison_non_rattache,
+    rattacher,
+    renommer_entree,
+)
 
 
 def main() -> None:
@@ -38,11 +45,12 @@ def main() -> None:
         if variables is None:
             rejetees.append({**ligne, "raison": raison_non_rattache(code, ref)})
         else:
-            rattachees.append({**ligne, **variables})
+            recopiees = {renommer_entree(c): v for c, v in ligne.items()}
+            rattachees.append({**recopiees, **variables})
 
     args.sortie.mkdir(parents=True, exist_ok=True)
     for nom, colonnes, table in (
-        ("communes.csv", entree + COLONNES, rattachees),
+        ("communes.csv", [renommer_entree(c) for c in entree] + COLONNES, rattachees),
         ("non_rattaches.csv", entree + ["raison"], rejetees),
     ):
         with (args.sortie / nom).open("w", encoding="utf-8", newline="") as f:

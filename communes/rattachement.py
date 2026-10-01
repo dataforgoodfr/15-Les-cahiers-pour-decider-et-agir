@@ -171,6 +171,11 @@ def _decrire(mouvement: dict[str, str]) -> str:
     )
 
 
+def renommer_entree(colonne: str) -> str:
+    """Nom en sortie d'une colonne du corpus : suffixée si une variable INSEE a le même."""
+    return f"{colonne}_corpus" if colonne in COLONNES else colonne
+
+
 def raison_non_rattache(code: str, ref: Referentiel) -> str:
     if code == "00000":
         return "commune non renseignée à la source"

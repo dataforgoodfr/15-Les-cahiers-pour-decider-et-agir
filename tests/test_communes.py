@@ -5,7 +5,13 @@ Les lignes reprennent de vrais cas du COG, sans aucune donnée des cahiers.
 
 import pytest
 
-from communes.rattachement import Referentiel, raison_non_rattache, rattacher
+from communes.rattachement import (
+    COLONNES,
+    Referentiel,
+    raison_non_rattache,
+    rattacher,
+    renommer_entree,
+)
 
 
 def commune(typecom, com, libelle, dep="", reg="", comparent=""):
@@ -169,3 +175,10 @@ def test_mayotte_sans_population(ref):
 def test_non_rattaches(ref, code, raison):
     assert rattacher(code, ref) is None
     assert raison in raison_non_rattache(code, ref)
+
+
+def test_colonne_du_corpus_homonyme_d_une_variable_est_suffixee():
+    assert renommer_entree("departement") == "departement_corpus"
+    assert renommer_entree("pages") == "pages"
+    sortie = [renommer_entree(c) for c in ["code_insee", "departement"]] + COLONNES
+    assert len(sortie) == len(set(sortie))
