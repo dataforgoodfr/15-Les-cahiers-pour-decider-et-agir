@@ -5,8 +5,8 @@
 
 Les dossiers sont ceux des cahiers citoyens du versement (`BnF_GDN_XX_PDF/CC`).
 Écrit `concatenes.csv` dans la sortie : une ligne par fichier, avec sa
-catégorie, les pages de garde d'autres communes et leurs codes INSEE, et les
-pages qui leur reviennent. Des codes et des comptes, jamais de texte.
+catégorie, les pages de garde d'autres communes et leurs codes INSEE, les
+pages qui leur reviennent, et les pages de garde illisibles à vérifier. Des codes et des comptes, jamais de texte.
 """
 
 import argparse
@@ -51,10 +51,11 @@ def main() -> None:
                 "categorie",
                 "autres_communes",
                 "pages_autres_communes",
+                "gardes_illisibles",
             ]
         )
         for fichier in pool.imap_unordered(lire, pdfs(args.chemins), chunksize=20):
-            categorie, trouvees = classer(fichier, noms, parentes)
+            categorie, trouvees, illisibles = classer(fichier, noms, parentes)
             autres = pages_d_autres_communes(fichier, trouvees)
             categories[categorie] += 1
             pages[categorie] += autres
@@ -68,6 +69,7 @@ def main() -> None:
                         f"p{p}:{'/'.join(c)}" for p, c in sorted(trouvees.items())
                     ),
                     autres,
+                    " ".join(f"p{p}" for p in illisibles),
                 ]
             )
 

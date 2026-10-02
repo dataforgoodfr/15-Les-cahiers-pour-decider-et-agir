@@ -16,10 +16,14 @@ code postal (des noms de fichier les inversent) ou la même commune parente
 - `mal_rattache` : la première page de garde désigne une autre commune, et
   aucune ne désigne celle du fichier : le code du nom de fichier est faux ;
 - `commune_retrouvee` : le nom de fichier n'a pas de commune (`00000`), la page
-  de garde la donne.
+  de garde la donne ;
+- `a_verifier` : aucune autre commune n'est lue, mais une page de garde après
+  la première a une commune illisible (écrite à la main, le plus souvent) : un
+  autre cahier commence peut-être là. Ses pages sont données, pour une
+  vérification à la main ou par un modèle de vision.
 
-Une page de garde dont la commune est écrite à la main n'est pas lisible ici :
-ces concaténations-là sont manquées.
+Une page de garde manuscrite est fréquente (8 % d'entre elles), mais presque
+toujours la première du fichier : elle ne cache alors pas de concaténation.
 """
 
 import re
@@ -44,6 +48,7 @@ CONFORME = "conforme"
 CONCATENE = "concatene"
 MAL_RATTACHE = "mal_rattache"
 COMMUNE_RETROUVEE = "commune_retrouvee"
+A_VERIFIER = "a_verifier"
 
 
 @dataclass
@@ -108,7 +113,8 @@ def codes_du_nom(nom: str) -> tuple[str, str]:
 
 
 def classer(fichier: Fichier, noms: dict[str, str], parentes: dict[str, str]):
-    """Catégorie du fichier, et pages de garde d'autres communes {page: codes}."""
+    """Catégorie du fichier, pages de garde d'autres communes {page: codes} et
+    pages de garde illisibles après la première."""
     insee, postal = codes_du_nom(fichier.nom)
 
     def racine(code):
@@ -116,9 +122,12 @@ def classer(fichier: Fichier, noms: dict[str, str], parentes: dict[str, str]):
 
     meme = autres = 0
     trouvees: dict[int, list[str]] = {}
-    for page, texte in fichier.gardes:
+    illisibles: list[int] = []
+    for rang, (page, texte) in enumerate(fichier.gardes):
         nommees = communes_nommees(texte, insee, noms)
         if not nommees:
+            if rang > 0:
+                illisibles.append(page)
             continue
         if insee and (
             {insee, postal} & nommees or racine(insee) in map(racine, nommees)
@@ -128,12 +137,12 @@ def classer(fichier: Fichier, noms: dict[str, str], parentes: dict[str, str]):
             autres += 1
             trouvees[page] = sorted(nommees)
     if not trouvees:
-        return CONFORME, {}
+        return (A_VERIFIER if illisibles else CONFORME), {}, illisibles
     if not insee:
-        return COMMUNE_RETROUVEE, trouvees
+        return COMMUNE_RETROUVEE, trouvees, illisibles
     if not meme and min(trouvees) <= DEBUT_DE_FICHIER:
-        return MAL_RATTACHE, trouvees
-    return CONCATENE, trouvees
+        return MAL_RATTACHE, trouvees, illisibles
+    return CONCATENE, trouvees, illisibles
 
 
 def pages_d_autres_communes(fichier: Fichier, trouvees: dict[int, list[str]]) -> int:

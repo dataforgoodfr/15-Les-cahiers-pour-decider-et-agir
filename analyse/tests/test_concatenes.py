@@ -4,6 +4,7 @@ import pymupdf
 import pytest
 
 from concatenes.concatenes import (
+    A_VERIFIER,
     COMMUNE_RETROUVEE,
     CONCATENE,
     CONFORME,
@@ -63,7 +64,7 @@ def test_cahier_d_une_autre_commune_a_la_suite():
         (1, garde("Villieu-Loyes-Mollon - 01450")),
         (41, garde("VIRIAT- 01451 01440")),
     )
-    categorie, trouvees = classer(f, NOMS, PARENTES)
+    categorie, trouvees, _ = classer(f, NOMS, PARENTES)
     assert (categorie, trouvees) == (CONCATENE, {41: ["01451"]})
     assert pages_d_autres_communes(f, trouvees) == 20
 
@@ -88,9 +89,18 @@ def test_fichier_sans_commune():
     assert classer(f, NOMS, PARENTES)[0] == COMMUNE_RETROUVEE
 
 
-def test_page_de_garde_illisible():
+def test_premiere_page_de_garde_illisible():
     f = fichier("01450", (1, garde("« Ville » - « Code INSEE »")))
-    assert classer(f, NOMS, PARENTES) == (CONFORME, {})
+    assert classer(f, NOMS, PARENTES) == (CONFORME, {}, [])
+
+
+def test_page_de_garde_illisible_plus_loin_est_a_verifier():
+    f = fichier(
+        "01450",
+        (1, garde("Villieu-Loyes-Mollon - 01450")),
+        (23, garde("Commune - « Ville » Code INSEE")),
+    )
+    assert classer(f, NOMS, PARENTES) == (A_VERIFIER, {}, [23])
 
 
 def test_lire_repere_les_pages_de_garde(tmp_path):
