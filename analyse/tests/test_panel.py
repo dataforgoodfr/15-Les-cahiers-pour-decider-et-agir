@@ -51,6 +51,7 @@ def test_cahiers_compte_les_pages_par_type():
         page("CC_23000_190225_23096_MD_1.pdf", "manuscrite"),
         page("CC_23000_190225_23096_MD_1.pdf", "dactylographiée"),
         page("CC_23000_190225_23096_MD_1.pdf", "vierge"),
+        page("CC_23000_190225_23096_MD_1.pdf", "mixte"),
         page("CC_33000_190225_33063_MD_2.pdf", "manuscrite"),
         page("CC_33000_190225_33039_MD_3.pdf", "manuscrite"),  # hors panel
         page("CO_23000_190215_D_4.pdf", "manuscrite"),  # pas un cahier citoyen
@@ -61,13 +62,14 @@ def test_cahiers_compte_les_pages_par_type():
         "CC_33000_190225_33063_MD_2.pdf",
     ]
     creuse = panel[0]
-    assert (creuse["pages"], creuse["dactylographiees"], creuse["manuscrites"]) == (
-        4,
-        1,
-        1,
-    )
+    assert (
+        creuse["pages"],
+        creuse["dactylographiees"],
+        creuse["mixtes"],
+        creuse["manuscrites"],
+    ) == (5, 1, 1, 1)
     assert par_departement(panel, {"33063"}) == {
-        "23": {"cahiers": 1, "pages": 4, "ecrites": 2},
+        "23": {"cahiers": 1, "pages": 5, "ecrites": 3},
         "33063": {"cahiers": 1, "pages": 1, "ecrites": 1},
     }
 

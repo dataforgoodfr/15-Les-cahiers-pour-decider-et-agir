@@ -78,6 +78,7 @@ def cahiers(lignes, departements, communes) -> list[dict]:
                 "departement": departement(code),
                 "pages": 0,
                 "dactylographiees": 0,
+                "mixtes": 0,
                 "manuscrites": 0,
             },
         )
@@ -86,6 +87,8 @@ def cahiers(lignes, departements, communes) -> list[dict]:
             continue
         if ligne["type_page"] == "manuscrite":
             cahier["manuscrites"] += 1
+        elif ligne["type_page"] == "mixte":
+            cahier["mixtes"] += 1
         else:
             cahier["dactylographiees"] += 1
     return sorted(panel.values(), key=lambda c: c["fichier"])
@@ -114,5 +117,7 @@ def par_departement(panel: list[dict], communes) -> dict[str, dict]:
         c = compte[cle]
         c["cahiers"] += 1
         c["pages"] += cahier["pages"]
-        c["ecrites"] += cahier["dactylographiees"] + cahier["manuscrites"]
+        c["ecrites"] += (
+            cahier["dactylographiees"] + cahier["mixtes"] + cahier["manuscrites"]
+        )
     return dict(sorted(compte.items()))

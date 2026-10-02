@@ -12,7 +12,7 @@ uv run pytest
 
 | Module | Issue | Ce qu'il fait |
 |---|---|---|
-| `typage` | #17 | Type chaque page : vierge, dactylographiée ou manuscrite |
+| `typage` | #17 | Type chaque page : vierge, dactylographiée, mixte ou manuscrite |
 | `cascade` | #41 | Du versement aux pages écrites, niveau par niveau |
 | `communes` | #19 | Variables INSEE de 2019 des communes du corpus |
 | `communes.representativite` | #20 | Écart du corpus (ou d'un panel) à la France |

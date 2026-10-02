@@ -29,15 +29,17 @@ Sorties :
    Les inventaires et documents d'accompagnement (`A_lire/`) sont exclus.
 2. **Cahiers citoyens** (CC) : les pages ajoutées à la numérisation
    (intercalaires, pages de garde) et les pages vierges sont écartées.
-3. **Pages écrites** : dactylographiées ou manuscrites.
+3. **Pages écrites** : dactylographiées, mixtes (formulaires remplis à la
+   main) ou manuscrites.
 
 ## Limites
 
 - Seuls les CC sont typés. Les courriers (CO) sont dans le périmètre des
   doléances, mais leurs pages ne sont pas encore typées ; CR et IL sont hors
   périmètre.
-- Le typage ne distingue pas les pages mixtes (dactylographiées complétées à
-  la main) : elles sont comptées dactylographiées.
+- Les pages mixtes reconnues sont les formulaires imprimés remplis à la main.
+  Une page dactylographiée complétée à la main hors formulaire reste
+  dactylographiée.
 - Vérification à la main du typage sur 100 pages tirées au hasard : aucune
-  page vierge manquée (0 sur 48) ; 2 inversions entre dactylographiée et
-  manuscrite, 6 pages mixtes (issue #17).
+  page vierge manquée (0 sur 48), 3 pages mixtes sur 3 reconnues, 2 inversions
+  entre dactylographiée et manuscrite (issue #17).
