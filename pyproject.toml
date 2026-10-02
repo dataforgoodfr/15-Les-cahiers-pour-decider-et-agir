@@ -5,6 +5,7 @@ description = "Data For Good : restitution des cahiers citoyens de 2019 avec l'a
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "openpyxl>=3.1.5",
     "pymupdf>=1.28.2",
     "wordfreq>=3.1.1",
 ]
