@@ -36,15 +36,14 @@ Le travail est suivi dans les [issues](https://github.com/dataforgoodfr/15-Les-c
 
 Pour commencer, voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Installation
+## Organisation du dépôt
 
-Le projet utilise [uv](https://docs.astral.sh/uv/) :
+- [`analyse/`](analyse/) : mesures sur le corpus (typage des pages, communes,
+  panel). Sous-projet autonome, avec son `pyproject.toml`.
+- [`docs/`](docs/) : règles sur les données.
 
-```bash
-uv sync
-```
-
-Puis lancer les scripts avec `uv run ...`.
+Chaque sous-projet utilise [uv](https://docs.astral.sh/uv/) : `cd analyse && uv sync`,
+puis `uv run ...`.
 
 ## Licence
 

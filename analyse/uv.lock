@@ -12,7 +12,7 @@ wheels = [
 ]
 
 [[package]]
-name = "cahiers-pour-decider-et-agir"
+name = "cahiers-analyse"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
