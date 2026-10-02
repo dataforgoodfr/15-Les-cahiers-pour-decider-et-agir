@@ -9,6 +9,7 @@ import pymupdf
 from cascade.cascade import (
     DACTYLOGRAPHIEES,
     MANUSCRITES,
+    MIXTES,
     SERVICE,
     VIERGES,
     categorie,
@@ -51,6 +52,7 @@ def test_typage_page_de_service_passe_avant_le_type(tmp_path):
         ("CC_a.pdf", "vierge", "0"),
         ("CC_a.pdf", "manuscrite", "0"),
         ("CC_a.pdf", "dactylographiée", "0"),
+        ("CC_a.pdf", "mixte", "0"),
         ("CO_b.pdf", "manuscrite", "0"),
     ]
     with chemin.open("w", encoding="utf-8", newline="") as f:
@@ -59,13 +61,15 @@ def test_typage_page_de_service_passe_avant_le_type(tmp_path):
         for i, (fichier, type_page, service) in enumerate(lignes):
             ecrivain.writerow([fichier, i, type_page, service])
     assert lire_typage([tmp_path]) == Counter(
-        {SERVICE: 2, VIERGES: 1, MANUSCRITES: 1, DACTYLOGRAPHIEES: 1}
+        {SERVICE: 2, VIERGES: 1, MANUSCRITES: 1, DACTYLOGRAPHIEES: 1, MIXTES: 1}
     )
 
 
 def test_chaque_niveau_garde_une_partie_du_precedent():
     pages = Counter({"CC": 10, "CO": 5, "CR": 3, "IL": 2})
-    typage = Counter({SERVICE: 1, VIERGES: 4, DACTYLOGRAPHIEES: 3, MANUSCRITES: 2})
+    typage = Counter(
+        {SERVICE: 1, VIERGES: 4, DACTYLOGRAPHIEES: 2, MIXTES: 1, MANUSCRITES: 2}
+    )
     cascade = niveaux(pages, typage)
     assert [n.pages for n in cascade] == [20, 10, 5]
     for niveau, suivant in pairwise(cascade):
