@@ -45,9 +45,11 @@
 <polygon class="lien" points="170.0,208 427.4,208 427.4,268 170.0,268"/>
 <text class="niveau" x="16" y="286">Pages écrites</text>
 <text class="total" x="16" y="303">276 445 pages</text>
-<rect class="suite0" x="170.0" y="270" width="121.8" height="34" rx="3"><title>dactylographiées : 132 988 pages</title></rect>
-<text class="libelle" text-anchor="end" x="291.8" y="320">dactylographiées 48 %</text>
-<rect class="suite1" x="293.8" y="270" width="131.6" height="34" rx="3"><title>manuscrites : 143 457 pages</title></rect>
-<text class="libelle" x="297.8" y="264">manuscrites 52 %</text>
-<text class="note" x="16" y="354">Pages comptées dans les PDF du versement ; types de page par l'outil de typage (issue #17), les pages mixtes comptées dactylographiées. État au 2026-10-01.</text>
+<rect class="suite0" x="170.0" y="270" width="117.6" height="34" rx="3"><title>dactylographiées : 128 422 pages</title></rect>
+<text class="libelle" text-anchor="end" x="287.6" y="320">dactylographiées 46 %</text>
+<rect class="suite1" x="289.6" y="270" width="3.3" height="34" rx="3"><title>mixtes : 5 714 pages</title></rect>
+<text class="libelle" text-anchor="end" x="292.9" y="334">mixtes 2 %</text>
+<rect class="suite1" x="294.9" y="270" width="130.5" height="34" rx="3"><title>manuscrites : 142 309 pages</title></rect>
+<text class="libelle" x="298.9" y="264">manuscrites 51 %</text>
+<text class="note" x="16" y="354">Pages comptées dans les PDF du versement ; types de page par l'outil de typage (issue #17) ; mixtes : formulaires remplis à la main. État au 2026-10-02.</text>
 </svg>

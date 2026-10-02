@@ -257,8 +257,8 @@ def svg(cascade: list[Niveau], date: str) -> str:
     y = HAUT + PAS * len(cascade) + 10
     morceaux.append(
         f'<text class="note" x="16" y="{y}">Pages comptées dans les PDF du versement ; '
-        "types de page par l'outil de typage (issue #17), les pages mixtes comptées "
-        f"dactylographiées. État au {date}.</text>"
+        "types de page par l'outil de typage (issue #17) ; mixtes : formulaires "
+        f"remplis à la main. État au {date}.</text>"
     )
     morceaux.append("</svg>")
     return "\n".join(morceaux) + "\n"
