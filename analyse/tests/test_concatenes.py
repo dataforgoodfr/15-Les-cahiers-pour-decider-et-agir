@@ -13,6 +13,7 @@ from concatenes.concatenes import (
     classer,
     codes_du_nom,
     communes_nommees,
+    desordre,
     lire,
     pages_d_autres_communes,
 )
@@ -94,6 +95,15 @@ def test_premiere_page_de_garde_illisible():
     assert classer(f, NOMS, PARENTES) == (CONFORME, {}, [])
 
 
+def test_code_du_fichier_sans_le_nom_est_la_meme_commune():
+    f = fichier(
+        "01450",
+        (1, garde("Villieu-Loyes-Mollon - 01450")),
+        (3, garde("« VILLIEU » - « Code INSEE 01450 « Code postal 01800")),
+    )
+    assert classer(f, NOMS, PARENTES) == (CONFORME, {}, [])
+
+
 def test_page_de_garde_illisible_plus_loin_est_a_verifier():
     f = fichier(
         "01450",
@@ -116,3 +126,16 @@ def test_lire_repere_les_pages_de_garde(tmp_path):
     f = lire(chemin)
     assert (f.nom, f.pages) == ("CC_01800_190301_01450_MD_1.pdf", 3)
     assert [p for p, _ in f.gardes] == [1]
+
+
+def test_desordre_des_pages_de_service():
+    normal = Fichier("f", 20, [(1, ""), (11, "")], [9, 19])
+    assert desordre(normal) == []
+    double = Fichier("f", 10, [(1, ""), (3, "")], [9])
+    assert desordre(double) == ["p3:garde_en_double"]
+    recto_verso = Fichier("f", 10, [(1, "")], [8, 9])
+    assert desordre(recto_verso) == []
+    sans_garde = Fichier("f", 30, [(1, "")], [9, 29])
+    assert desordre(sans_garde) == ["p29:cahier_sans_garde"]
+    inverse = Fichier("f", 10, [(5, "")], [2, 9])
+    assert desordre(inverse) == ["p2:intercalaire_avant_garde"]

@@ -22,6 +22,13 @@ code postal (des noms de fichier les inversent) ou la même commune parente
   autre cahier commence peut-être là. Ses pages sont données, pour une
   vérification à la main ou par un modèle de vision.
 
+Chaque cahier numérisé suit la séquence page de garde, pages écrites,
+intercalaire « Fin des pages écrites ». `desordre` signale les écarts. Deux
+pages de service de même nature à la suite sont le recto et le verso d'un même
+feuillet si elles se touchent ; à deux pages d'écart, le feuillet est en
+double ; plus loin, un cahier a perdu sa page de garde ou son intercalaire,
+ou ses pages sont dans le désordre.
+
 Une page de garde manuscrite est fréquente (8 % d'entre elles), mais presque
 toujours la première du fichier : elle ne cache alors pas de concaténation.
 """
@@ -57,18 +64,21 @@ class Fichier:
     pages: int
     # page de garde : numéro de page et texte
     gardes: list[tuple[int, str]] = field(default_factory=list)
+    intercalaires: list[int] = field(default_factory=list)
 
 
 def lire(chemin) -> Fichier:
-    """Les pages de garde d'un PDF, repérées dans la couche texte."""
+    """Les pages de garde et les intercalaires d'un PDF, dans la couche texte."""
     with pymupdf.open(chemin) as doc:
         fichier = Fichier(Path(chemin).name, doc.page_count)
         for numero, page in enumerate(doc, start=1):
             texte = page.get_text()
             mots = texte.split()
-            if len(mots) > MOTS_MAX or _INTERCALAIRE.search(texte):
+            if len(mots) > MOTS_MAX:
                 continue
-            if _GARDE.search(texte):
+            if _INTERCALAIRE.search(texte):
+                fichier.intercalaires.append(numero)
+            elif _GARDE.search(texte):
                 fichier.gardes.append((numero, " ".join(mots)))
     return fichier
 
@@ -88,17 +98,22 @@ def communes_nommees(texte: str, insee: str, noms: dict[str, str]) -> set[str]:
 
     Un code tronqué (« - 288 ») est complété par le département du fichier.
     """
+    lu = normaliser(_GARDE.split(texte, maxsplit=1)[-1])
+    return {
+        c
+        for c in codes_lus(texte, insee)
+        if c in noms and len(nom := normaliser(noms[c])) > 2 and nom in lu
+    }
+
+
+def codes_lus(texte: str, insee: str) -> set[str]:
+    """Les codes à cinq chiffres de la page de garde, codes tronqués complétés."""
     apres = _GARDE.split(texte, maxsplit=1)[-1]
     compact = _ESPACE_DANS_CODE.sub(r"\1\2", apres)
     codes = set(_CODE.findall(compact))
     if insee:
         codes |= {departement(insee) + c for c in _CODE_TRONQUE.findall(compact)}
-    lu = normaliser(apres)
-    return {
-        c
-        for c in codes
-        if c in noms and len(nom := normaliser(noms[c])) > 2 and nom in lu
-    }
+    return codes
 
 
 def codes_du_nom(nom: str) -> tuple[str, str]:
@@ -126,7 +141,11 @@ def classer(fichier: Fichier, noms: dict[str, str], parentes: dict[str, str]):
     for rang, (page, texte) in enumerate(fichier.gardes):
         nommees = communes_nommees(texte, insee, noms)
         if not nommees:
-            if rang > 0:
+            # le code du fichier lui-même, sans le nom (« FRANÇOIS » pour
+            # « Le François ») : la même commune
+            if insee and insee in codes_lus(texte, insee):
+                meme += 1
+            elif rang > 0:
                 illisibles.append(page)
             continue
         if insee and (
@@ -151,3 +170,23 @@ def pages_d_autres_communes(fichier: Fichier, trouvees: dict[int, list[str]]) ->
     return sum(
         suivante - page for page, suivante in pairwise(debuts) if page in trouvees
     )
+
+
+def desordre(fichier: Fichier) -> list[str]:
+    """Écarts à la séquence page de garde, pages écrites, intercalaire."""
+    service = sorted(
+        [(page, "garde") for page, _ in fichier.gardes]
+        + [(page, "intercalaire") for page in fichier.intercalaires]
+    )
+    ecarts = []
+    if service and service[0][1] == "intercalaire":
+        ecarts.append(f"p{service[0][0]}:intercalaire_avant_garde")
+    manque = {"garde": "sans_intercalaire", "intercalaire": "sans_garde"}
+    for (avant, a), (page, b) in pairwise(service):
+        if a != b or page - avant == 1:  # recto et verso d'un même feuillet
+            continue
+        if page - avant == 2:
+            ecarts.append(f"p{page}:{b}_en_double")
+        else:
+            ecarts.append(f"p{page}:cahier_{manque[b]}")
+    return ecarts
