@@ -49,6 +49,16 @@ def test_communes_nommees(texte, insee, attendu):
     assert communes_nommees(texte, insee, NOMS) == attendu
 
 
+def test_attestation_de_remise_de_la_prefecture():
+    texte = (
+        "PRÉFET DE SAONE-ET-LOIRE GRAND DEBAT NATIONAL CAHIER D'EXPRESSION CITOYENNE "
+        "le préfet certifie avoir reçu le cahier d'expression citoyenne de la commune "
+        "de ;VIRIAT Portant le n° : 01451-01 portant le n° INSEE :01451 "
+        "portant le code postal : 01440"
+    )
+    assert communes_nommees(texte, "01450", NOMS) == {"01451"}
+
+
 def test_codes_du_nom():
     assert codes_du_nom("CC_01800_190301_01450_MD_15590.pdf") == ("01450", "01800")
     assert codes_du_nom("CC_31270_190228_31588s_MD_15982.pdf") == ("31588", "31270")
@@ -120,12 +130,15 @@ def test_lire_repere_les_pages_de_garde(tmp_path):
             "Cahier citoyen\nViriat - 01451\n01440",
             "Nous demandons " * 40 + "un cahier citoyen pour tous",  # trop longue
             "Fin des pages écrites",
+            "Le préfet certifie avoir reçu le cahier d'expression citoyenne "
+            + "de la commune de Viriat, n° INSEE 01451. " * 6,
         ]:
             doc.new_page().insert_textbox(pymupdf.Rect(50, 50, 550, 800), texte)
         doc.save(chemin)
     f = lire(chemin)
-    assert (f.nom, f.pages) == ("CC_01800_190301_01450_MD_1.pdf", 3)
-    assert [p for p, _ in f.gardes] == [1]
+    assert (f.nom, f.pages) == ("CC_01800_190301_01450_MD_1.pdf", 4)
+    assert [p for p, _ in f.gardes] == [1, 4]
+    assert f.intercalaires == [3]
 
 
 def test_desordre_des_pages_de_service():

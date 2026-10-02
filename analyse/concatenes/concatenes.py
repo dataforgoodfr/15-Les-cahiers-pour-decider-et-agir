@@ -3,8 +3,10 @@
 Le rattachement à la commune (#19) lit le code INSEE dans le nom du fichier.
 Chaque cahier numérisé commence par une page de garde, ajoutée à la
 numérisation : « Cahier citoyen », le nom de la commune, son code INSEE (parfois
-tronqué aux trois derniers chiffres) et son code postal. On lit ces pages dans
-la couche texte, sans OCR.
+tronqué aux trois derniers chiffres) et son code postal. En Saône-et-Loire,
+c'est l'attestation de remise de la préfecture (« certifie avoir reçu le cahier
+d'expression citoyenne de la commune de… »). On lit ces pages dans la couche
+texte, sans OCR.
 
 Une page de garde désigne une commune quand son nom et son code y figurent
 ensemble ; c'est la même commune que le fichier si elle a son code INSEE, son
@@ -42,8 +44,13 @@ from pathlib import Path
 import pymupdf
 
 _GARDE = re.compile(r"cahier\s+citoyen", re.IGNORECASE)
+_ATTESTATION = re.compile(r"certifie\s+avoir\s+re\S*\s+le\s+cahier", re.IGNORECASE)
+_DEBUT_COMMUNE = re.compile(
+    r"cahier\s+citoyen|certifie\s+avoir\s+re\S*\s+le\s+cahier", re.IGNORECASE
+)
 _INTERCALAIRE = re.compile(r"fin\s+des\s+pages\s+[ée]crites", re.IGNORECASE)
 MOTS_MAX = 30  # une page de garde est courte
+MOTS_MAX_ATTESTATION = 150
 _NOM_FICHIER = re.compile(r"^CC_(\w{5})_\d{6}_(\w+?)_")
 _CODE = re.compile(r"(?<!\d)(\d{5}|2[AB]\d{3})(?!\d)")
 _CODE_TRONQUE = re.compile(r"-\s*(\d{3})(?!\d)")
@@ -74,9 +81,11 @@ def lire(chemin) -> Fichier:
         for numero, page in enumerate(doc, start=1):
             texte = page.get_text()
             mots = texte.split()
-            if len(mots) > MOTS_MAX:
+            if len(mots) <= MOTS_MAX_ATTESTATION and _ATTESTATION.search(texte):
+                fichier.gardes.append((numero, " ".join(mots)))
+            elif len(mots) > MOTS_MAX:
                 continue
-            if _INTERCALAIRE.search(texte):
+            elif _INTERCALAIRE.search(texte):
                 fichier.intercalaires.append(numero)
             elif _GARDE.search(texte):
                 fichier.gardes.append((numero, " ".join(mots)))
@@ -98,7 +107,7 @@ def communes_nommees(texte: str, insee: str, noms: dict[str, str]) -> set[str]:
 
     Un code tronqué (« - 288 ») est complété par le département du fichier.
     """
-    lu = normaliser(_GARDE.split(texte, maxsplit=1)[-1])
+    lu = normaliser(_DEBUT_COMMUNE.split(texte, maxsplit=1)[-1])
     return {
         c
         for c in codes_lus(texte, insee)
@@ -108,7 +117,7 @@ def communes_nommees(texte: str, insee: str, noms: dict[str, str]) -> set[str]:
 
 def codes_lus(texte: str, insee: str) -> set[str]:
     """Les codes à cinq chiffres de la page de garde, codes tronqués complétés."""
-    apres = _GARDE.split(texte, maxsplit=1)[-1]
+    apres = _DEBUT_COMMUNE.split(texte, maxsplit=1)[-1]
     compact = _ESPACE_DANS_CODE.sub(r"\1\2", apres)
     codes = set(_CODE.findall(compact))
     if insee:
