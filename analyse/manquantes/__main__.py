@@ -31,6 +31,7 @@ from manquantes.manquantes import (
     COMPLET_,
     FICHIERS_MIN,
     INCOMPLET,
+    VERSION,
     classer,
     coupure,
     illisible,
@@ -116,7 +117,7 @@ def main() -> None:
         for m in modeles:
             ecrivain.writerow(
                 [m.numero, len(m.pages)]
-                + [statuts[(m.numero, s)] for s in (COMPLET_, "version", INCOMPLET)]
+                + [statuts[(m.numero, s)] for s in (COMPLET_, VERSION, INCOMPLET)]
             )
 
     total = Counter()
