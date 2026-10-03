@@ -19,5 +19,6 @@ uv run pytest
 | `panel` | #22 | Panel aligné sur l'échantillon du Campus Condorcet |
 | `concatenes` | #42 | Fichiers qui contiennent le cahier d'une autre commune |
 | `orientation` | #43 | Pages tournées d'un quart de tour |
+| `manquantes` | #43 | Pages manquantes des courriers et formulaires types |
 
 Chaque module décrit sa commande dans sa docstring ou son README.
