@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pymupdf
 
-from manquantes.manquantes import decrire, lignes
+from manquantes.manquantes import decrire, departager, lignes
 
 _partage = {}
 
@@ -30,4 +30,6 @@ def pages_frequentes(chemin: Path) -> tuple[str, list[set[str]]]:
 
 def exemplaires_du_fichier(chemin: Path):
     ts = textes(chemin)
-    return [e for m in _partage["modeles"] for e in decrire(chemin.name, ts, m)]
+    modeles = _partage["modeles"]
+    tous = [e for m in modeles for e in decrire(chemin.name, ts, m)]
+    return departager(tous, {m.numero: len(m.pages) for m in modeles})

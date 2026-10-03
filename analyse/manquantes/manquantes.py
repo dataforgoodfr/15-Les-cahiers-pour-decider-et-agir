@@ -10,11 +10,22 @@ On lit la couche texte, sans OCR, en trois temps :
    appartient à un modèle ;
 2. les **modèles** : les lignes qui reviennent dans les mêmes fichiers sont
    regroupées, puis découpées en pages d'après leurs exemplaires complets.
-   Chaque page du modèle est décrite par ses paires de mots consécutifs ;
+   Les pages de service (attestation de remise, page de garde, page de
+   clôture) sont écartées : elles encadrent le cahier, et leur absence ne dit
+   rien d'une page de courrier perdue. De même pour les en-têtes, lignes
+   imprimées sur chaque feuille d'un cahier. Chaque page du modèle est
+   décrite par ses paires de mots consécutifs ; une page de modèle de moins
+   de 10 paires se retrouverait par hasard, elle est écartée ;
 3. les **exemplaires** : une page porte une page du modèle si elle en contient
-   au moins la moitié des paires de mots. Les paires résistent au découpage
-   des lignes par l'OCR et à quelques mots mal lus ; une page sans rapport
-   n'en a presque aucune.
+   au moins la moitié des paires de mots ; un courrier court peut tenir sur
+   une seule page, qui en porte alors plusieurs. Les paires résistent au
+   découpage des lignes par l'OCR et à quelques mots mal lus ; une page sans
+   rapport n'en a presque aucune.
+
+Un même courrier existe souvent en plusieurs modèles presque identiques : une
+page peut alors porter des exemplaires de plusieurs modèles. Dans chaque
+fichier, on garde le meilleur (le plus de pages du modèle, puis les pages les
+mieux reconnues), et on écarte ceux qui partagent une de ses pages.
 
 Un exemplaire incomplet n'a pas toujours perdu une page. Un même courrier
 circule parfois en plusieurs **versions**, une courte et une longue : un
@@ -41,6 +52,7 @@ LIGNES_PAR_FICHIER_MAX = 200  # au-delà, un recueil de modèles : ignoré
 COMPLET = 0.9  # part des lignes d'un exemplaire complet
 ETENDUE_MAX = 12  # pages d'un exemplaire, au plus
 LIGNES_PAR_PAGE_MIN = 2  # lignes d'une page de modèle
+PAIRES_PAR_PAGE_MIN = 10  # paires de mots d'une page de modèle
 SEUIL_PAGE = 0.5  # part des paires de mots d'une page de modèle
 ECART_MAX = 2  # pages entre deux pages d'un même exemplaire (verso vierge)
 VERSION_MIN = 5  # exemplaires partiels identiques qui font une version
@@ -48,6 +60,10 @@ MOTS_FIN = 3  # mots de fin qui identifient une version
 MOTS_PHRASE = 3  # mots d'une ligne de texte suivi (hors titres, numéros)
 MOTS_LISIBLE = 20  # mots d'une page dont la couche texte est lisible
 _FIN_DE_PHRASE = re.compile(r"[.!?…:;»\"')\]]\s*$")
+_PAGE_DE_SERVICE = re.compile(
+    r"\b(attestation de remise|certifie avoir recu|porte le n|cachet de la mairie"
+    r"|pages vierges)\b"
+)
 SERVICE = {
     "cahier citoyen",
     "fin des pages ecrites",
@@ -120,9 +136,11 @@ def regrouper(lignes_par_fichier: dict[str, set[str]]) -> list[list[str]]:
 
 def structurer(groupe: list[str], fichiers: dict[str, list[set[str]]]) -> list[set]:
     """Les pages du modèle, d'après ses exemplaires complets : la page
-    relative la plus fréquente de chaque ligne. Une liste de jeux de lignes."""
+    relative la plus fréquente de chaque ligne, hors en-têtes (lignes sur
+    plusieurs pages d'un même exemplaire). Une liste de jeux de lignes."""
     lignes_du_groupe = set(groupe)
     pages_relatives = defaultdict(list)
+    repetitions = defaultdict(list)
     for pages in fichiers.values():
         portees = [(p, ls & lignes_du_groupe) for p, ls in enumerate(pages)]
         portees = [(p, ls) for p, ls in portees if ls]
@@ -133,10 +151,19 @@ def structurer(groupe: list[str], fichiers: dict[str, list[set[str]]]) -> list[s
         for p, ls in portees:
             for ligne in ls:
                 pages_relatives[ligne].append(p - portees[0][0])
+        for ligne, n in Counter(lg for _, ls in portees for lg in ls).items():
+            repetitions[ligne].append(n)
     pages = defaultdict(set)
     for ligne, relatives in pages_relatives.items():
-        pages[statistics.mode(relatives)].add(ligne)
-    return [ls for _, ls in sorted(pages.items()) if len(ls) >= LIGNES_PAR_PAGE_MIN]
+        if statistics.median(repetitions[ligne]) == 1:
+            pages[statistics.mode(relatives)].add(ligne)
+    return [
+        ls
+        for _, ls in sorted(pages.items())
+        if len(ls) >= LIGNES_PAR_PAGE_MIN
+        and len(set().union(*map(paires, ls))) >= PAIRES_PAR_PAGE_MIN
+        and not any(_PAGE_DE_SERVICE.search(lg) for lg in ls)
+    ]
 
 
 @dataclass
@@ -153,17 +180,23 @@ def modele(numero: int, pages_de_lignes: list[set[str]]) -> Modele:
 
 def exemplaires(pages: list[set[tuple[str, str]]], m: Modele) -> list[list[tuple]]:
     """Les exemplaires du modèle dans un fichier : suites de (page du fichier,
-    page du modèle), dans l'ordre du modèle."""
+    page du modèle), triées dans l'ordre du modèle. Les pages d'un exemplaire
+    se suivent de près, dans n'importe quel ordre (feuille numérisée à
+    l'envers), sans qu'une page du modèle revienne."""
     trouves = []
     for p, pp in enumerate(pages):
         for k, empreinte in enumerate(m.pages):
             if len(empreinte & pp) >= SEUIL_PAGE * len(empreinte):
-                dernier = trouves[-1][-1] if trouves else None
-                if dernier and k > dernier[1] and p - dernier[0] <= ECART_MAX:
-                    trouves[-1].append((p, k))
+                suite = trouves[-1] if trouves else []
+                if (
+                    suite
+                    and k not in {kk for _, kk in suite}
+                    and p - suite[-1][0] <= ECART_MAX
+                ):
+                    suite.append((p, k))
                 else:
                     trouves.append([(p, k)])
-    return trouves
+    return [sorted(suite, key=lambda pk: pk[1]) for suite in trouves]
 
 
 def _lignes_de_texte(texte: str) -> list[str]:
@@ -194,6 +227,7 @@ class Exemplaire:
     fin_coupee: bool
     avant_illisible: bool  # la page qui précède n'a pas de texte lisible
     apres_illisible: bool
+    part: float = 1.0  # part moyenne des paires de mots des pages trouvées
 
 
 def decrire(fichier: str, textes: list[str], m: Modele) -> list[Exemplaire]:
@@ -217,9 +251,29 @@ def decrire(fichier: str, textes: list[str], m: Modele) -> list[Exemplaire]:
                 finit_en_cours(textes[derniere]),
                 illisible(premiere - 1),
                 illisible(derniere + 1),
+                statistics.mean(
+                    len(m.pages[k] & pages[p]) / len(m.pages[k]) for p, k in suite
+                ),
             )
         )
     return resultat
+
+
+def departager(
+    tous: list[Exemplaire], pages_par_modele: dict[int, int]
+) -> list[Exemplaire]:
+    """Les exemplaires d'un fichier, sans ceux qui partagent une page avec un
+    meilleur : plus de pages du modèle trouvées, puis mieux reconnues."""
+    gardes, prises = [], set()
+    for e in sorted(
+        tous,
+        key=lambda e: (len(e.portees) / pages_par_modele[e.modele], e.part),
+        reverse=True,
+    ):
+        if prises.isdisjoint(e.pages):
+            gardes.append(e)
+            prises.update(e.pages)
+    return gardes
 
 
 def classer(tous: list[Exemplaire], pages_par_modele: dict[int, int]):

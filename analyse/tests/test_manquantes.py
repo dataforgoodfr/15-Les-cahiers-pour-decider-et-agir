@@ -12,6 +12,7 @@ from manquantes.manquantes import (
     commence_en_cours,
     coupure,
     decrire,
+    departager,
     exemplaires,
     finit_en_cours,
     illisible,
@@ -46,6 +47,16 @@ def test_exemplaires_dans_l_ordre_du_modele():
     pages = [PAGE_1, "", PAGE_2, AUTRE, PAGE_1, PAGE_2, PAGE_2]
     trouves = exemplaires([paires(t) for t in pages], COURRIER)
     assert trouves == [[(0, 0), (2, 1)], [(4, 0), (5, 1)], [(6, 1)]]
+
+
+def test_feuille_numerisee_a_l_envers():
+    trouves = exemplaires([paires(PAGE_2), paires(PAGE_1)], COURRIER)
+    assert trouves == [[(1, 0), (0, 1)]]
+
+
+def test_un_courrier_court_tient_sur_une_page():
+    trouves = exemplaires([paires(PAGE_1 + "\n" + PAGE_2)], COURRIER)
+    assert trouves == [[(0, 0), (0, 1)]]
 
 
 def test_exemplaire_mal_lu_reste_reconnu():
@@ -103,6 +114,16 @@ def test_decrire():
     assert e.fin_coupee and not e.debut_coupe and not e.apres_illisible
 
 
+def test_un_courrier_est_compte_dans_son_meilleur_modele():
+    variante = PAGE_2.replace("Veuillez agréer nos salutations respectueuses.", "")
+    proche = modele(1, [lignes(PAGE_1), lignes(variante + "\nUne ligne en plus ici")])
+    textes = [PAGE_1, PAGE_2]
+    tous = decrire("f.pdf", textes, COURRIER) + decrire("f.pdf", textes, proche)
+    assert len(tous) == 2
+    (garde,) = departager(tous, {0: 2, 1: 2})
+    assert (garde.modele, garde.pages) == (0, [1, 2])
+
+
 @pytest.fixture
 def peu_de_fichiers(monkeypatch):
     monkeypatch.setattr(manquantes, "FICHIERS_MIN", 2)
@@ -118,3 +139,35 @@ def test_apprendre_un_modele_sur_deux_pages(peu_de_fichiers):
     (groupe,) = regrouper({nom: set().union(*ps) for nom, ps in pages.items()})
     structure = structurer(groupe, pages)
     assert structure == [lignes(PAGE_1), lignes(PAGE_2)]
+
+
+def test_les_pages_de_service_ne_font_pas_partie_du_modele(peu_de_fichiers):
+    garde = (
+        "Le présent cahier d'expression citoyen de la commune de\n"
+        "porte le n° 12 et compte 8 pages\n"
+        "Cachet de la mairie et signature du maire"
+    )
+    pages = {
+        nom: [lignes(garde), lignes(PAGE_1), lignes(PAGE_2)]
+        for nom in ("a.pdf", "b.pdf", "c.pdf")
+    }
+    (groupe,) = regrouper({nom: set().union(*ps) for nom, ps in pages.items()})
+    assert structurer(groupe, pages) == [lignes(PAGE_1), lignes(PAGE_2)]
+
+
+def test_les_en_tetes_ne_font_pas_partie_du_modele(peu_de_fichiers):
+    en_tete = "Association des maires du département\nCahier citoyen d'expression"
+    feuilles = [lignes(en_tete + "\n" + t) for t in (PAGE_1, PAGE_2, AUTRE)]
+    pages = {nom: feuilles for nom in ("a.pdf", "b.pdf", "c.pdf")}
+    (groupe,) = regrouper({nom: set().union(*ps) for nom, ps in pages.items()})
+    assert structurer(groupe, pages) == [lignes(PAGE_1), lignes(PAGE_2)]
+
+
+def test_une_page_trop_courte_ne_fait_pas_partie_du_modele(peu_de_fichiers):
+    couverture = "Département des Ardennes\nexpression et propositions\nouverture du"
+    pages = {
+        nom: [lignes(couverture), lignes(PAGE_1), lignes(PAGE_2)]
+        for nom in ("a.pdf", "b.pdf", "c.pdf")
+    }
+    (groupe,) = regrouper({nom: set().union(*ps) for nom, ps in pages.items()})
+    assert structurer(groupe, pages) == [lignes(PAGE_1), lignes(PAGE_2)]
