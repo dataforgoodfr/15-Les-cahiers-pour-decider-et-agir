@@ -49,7 +49,10 @@ def departement(code: str) -> str:
 
 
 def dans_panel(code: str | None, departements, communes) -> bool:
-    return code is not None and (code in communes or departement(code) in departements)
+    """`departements` à None : tous les cahiers rattachés à une commune."""
+    return code is not None and (
+        departements is None or code in communes or departement(code) in departements
+    )
 
 
 def lire_typage(chemins: list[Path]):
