@@ -20,8 +20,11 @@ l'association accèdent à la base, cahiers non anonymisés compris.
 
 La plateforme montre un panel représentatif, pas tout le corpus. L'association
 a besoin d'une sélection « gold » de moins d'une centaine de cahiers pour ses
-médias. Les chantiers de données visent la qualité nécessaire pour ce panel,
-pas l'exhaustivité.
+médias. Cette sélection doit sortir d'une méthode de tirage automatique, dont
+les critères restent à définir avec l'association
+([#21](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/21)).
+Les chantiers de données visent la qualité nécessaire pour ce panel, pas
+l'exhaustivité.
 
 Le produit doit être décidé en novembre 2026, pour l'arrivée des bénévoles ;
 livraison au premier trimestre 2027. Le détail est dans l'issue
