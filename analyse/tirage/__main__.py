@@ -9,7 +9,8 @@ Méthode dans `tirage.tirage`. Écrit dans la sortie :
 - `cahiers.csv` : les cahiers tirés, avec leur commune, sa taille et sa
   région, et leurs pages par type ;
 - `rapport.md` : cahiers tirés par tranche de taille et par région, contre la
-  part de la population française.
+  part de la population française ; profil des communes (CSP, âges, revenu)
+  du tirage et du corpus, contre la France (`tirage.profil`).
 
 Des codes, des noms de communes et des comptes, jamais de texte.
 """
@@ -20,10 +21,12 @@ import random
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from communes import sources
 from communes.rattachement import COMMUNE, Referentiel
 from communes.representativite import TRANCHES, univers
 from panel.panel import cahiers as compter_pages
 from panel.panel import lire_typage
+from tirage import profil
 from tirage.tirage import allouer, choisir_cahiers, tirer_communes
 
 
@@ -53,6 +56,74 @@ def tableau(titre: str, tires: Counter, parts: dict[str, float], ordre) -> list[
     for groupe in ordre:
         attendus = n * parts.get(groupe, 0) / total
         lignes.append(f"| {groupe} | {tires[groupe]} | {attendus:.1f} |")
+    return lignes + [""]
+
+
+def ligne_pct(groupe: str, *colonnes: dict[str, float]) -> str:
+    return (
+        f"| {groupe} | "
+        + " | ".join(f"{c.get(groupe, 0):.0%}" for c in colonnes)
+        + " |"
+    )
+
+
+def profils(cache: Path, france: dict, corpus: list[str], tires: list[str]):
+    """Section du rapport : CSP, âges et revenu des communes, contre la France.
+
+    `corpus` et `tires` : la commune de plein exercice de chaque cahier.
+    """
+    structure = sources.colonnes_csv_zip(
+        sources.telecharger(sources.STRUCTURE_POPULATION, cache),
+        "base-cc-evol-struct-pop-2017.CSV",
+        profil.COLONNES,
+    )
+    lignes = [
+        "## Profil des communes",
+        "",
+        (
+            "Chaque cahier porte le profil de sa commune (recensement et Filosofi "
+            "2017) : ce n'est pas celui des contributeurs."
+        ),
+        "",
+    ]
+    for titre, groupes in (("CSP (15 ans et plus)", profil.CSP), ("Âges", profil.AGES)):
+        colonnes = [
+            profil.france(structure, france, groupes),
+            profil.moyenne(structure, corpus, groupes),
+            profil.moyenne(structure, tires, groupes),
+        ]
+        lignes += [
+            f"### {titre}",
+            "",
+            "| | France | corpus | tirage |",
+            "|---|---|---|---|",
+        ]
+        lignes += [ligne_pct(g, *colonnes) for g in dict.fromkeys(groupes.values())]
+        lignes.append("")
+
+    medianes = sources.revenus_medians(sources.telecharger(sources.REVENUS, cache))
+    populations = {code: c["population"] for code, c in france.items()}
+    seuils = profil.seuils_quarts(medianes, populations)
+    codes = list(populations)
+    colonnes = [
+        profil.repartition(
+            [profil.quart(medianes.get(c), seuils) for c in codes],
+            [populations[c] for c in codes],
+        ),
+        profil.repartition([profil.quart(medianes.get(c), seuils) for c in corpus]),
+        profil.repartition([profil.quart(medianes.get(c), seuils) for c in tires]),
+    ]
+    lignes += [
+        "### Revenu médian de la commune",
+        "",
+        "Quarts de la population française, seuils : "
+        + ", ".join(f"{s} €" for s in seuils)
+        + ". Inconnu : secret statistique ou commune nouvelle de 2019.",
+        "",
+        "| | France | corpus | tirage |",
+        "|---|---|---|---|",
+    ]
+    lignes += [ligne_pct(g, *colonnes) for g in [*profil.QUARTS, profil.INCONNU]]
     return lignes + [""]
 
 
@@ -148,6 +219,12 @@ def main() -> None:
         Counter(lg["region"] for lg in lignes),
         habitants_par_region,
         sorted(habitants_par_region),
+    )
+    rapport += profils(
+        args.cache,
+        france,
+        [c["commune_parente"] for c in par_cahier.values()],
+        [par_cahier[f]["commune_parente"] for f in tires],
     )
     texte = "\n".join(rapport)
     (args.sortie / "rapport.md").write_text(texte, encoding="utf-8")

@@ -32,6 +32,18 @@ MOUVEMENTS = (
 GRILLE_DENSITE = (
     "https://www.insee.fr/fr/statistiques/fichier/2114627/grille_densite_2021.zip"
 )
+# Recensement 2017, structure de la population par commune (âges, CSP),
+# géographie au 1er janvier 2019 : https://www.insee.fr/fr/statistiques/4515565
+STRUCTURE_POPULATION = (
+    "https://www.insee.fr/fr/statistiques/fichier/4515565/"
+    "base-ccc-evol-struct-pop-2017.zip"
+)
+# Filosofi 2017, revenu disponible par commune, géographie au 1er janvier 2018 :
+# https://www.insee.fr/fr/statistiques/4291712
+REVENUS = (
+    "https://www.insee.fr/fr/statistiques/fichier/4291712/"
+    "indic-struct-distrib-revenu-2017-COMMUNES.zip"
+)
 
 
 def telecharger(url: str, cache: Path) -> bytes:
@@ -74,3 +86,31 @@ def grille_densite(contenu: bytes) -> dict[str, int]:
         if ligne[0] and ligne[2]:
             grille[str(ligne[0]).strip()] = int(ligne[2])
     return grille
+
+
+def colonnes_csv_zip(
+    contenu: bytes, nom: str, colonnes: list[str], delimiteur: str = ";"
+) -> dict[str, dict[str, str]]:
+    """Quelques colonnes d'un gros CSV d'archive, indexées par CODGEO."""
+    with zipfile.ZipFile(io.BytesIO(contenu)) as archive, archive.open(nom) as brut:
+        lecteur = csv.DictReader(
+            io.TextIOWrapper(brut, encoding="utf-8-sig"), delimiter=delimiteur
+        )
+        return {ligne["CODGEO"]: {c: ligne[c] for c in colonnes} for ligne in lecteur}
+
+
+def revenus_medians(contenu: bytes) -> dict[str, int]:
+    """Revenu disponible médian par unité de consommation, par code commune.
+
+    Absent (secret statistique) pour les communes de moins de 50 ménages.
+    """
+    with zipfile.ZipFile(io.BytesIO(contenu)) as archive:
+        classeur = openpyxl.load_workbook(
+            io.BytesIO(archive.read("FILO2017_DISP_COM.xlsx")), read_only=True
+        )
+    medianes = {}
+    for ligne in classeur["ENSEMBLE"].iter_rows(min_row=7, values_only=True):
+        code, mediane = ligne[0], ligne[6]
+        if code and isinstance(mediane, (int, float)):
+            medianes[str(code)] = int(mediane)
+    return medianes
