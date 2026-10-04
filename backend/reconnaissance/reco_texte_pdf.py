@@ -3,7 +3,7 @@ import logging
 import re
 
 from database.models import MethodeReconnaissance
-from database.repositories.page_repo import list_pages
+from database.repositories.page_repo import liste_pages
 from database.repositories.reconnaissance_repo import create_reconnaissance
 from infra.container import Container
 from tqdm.asyncio import tqdm
@@ -65,7 +65,7 @@ def clean_page_text(text: str) -> str:
 
 async def main() -> int:
     async with container.database().get_session() as db_session:
-        async for p in tqdm(await list_pages(db_session)):
+        async for p in tqdm(await liste_pages(db_session)):
             # tqdm(pages, "Reconnaissance par extraction du texte PDF"):
             # await db_session.begin()
             cleaned = clean_page_text(p.texte_brut)
