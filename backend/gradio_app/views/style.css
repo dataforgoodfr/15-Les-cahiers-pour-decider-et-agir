@@ -1,0 +1,33 @@
+/* Styles de la vue commune, chargés via css_paths au montage du Blocks. */
+
+/* --- navigation entre la vue tableau (/) et la vue graphe (/graphe) --- */
+.nav {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.nav h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.nav-lien {
+  padding: 7px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #4f46e5;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav-lien:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
