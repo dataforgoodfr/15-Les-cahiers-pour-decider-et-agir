@@ -22,7 +22,7 @@ async def main(recursive: bool) -> int:
         for f in tqdm(pdf_paths, "Extraction des données depuis les fichiers PDF"):
             await db_session.begin()
             document = await extract_document(db_session, f)
-            await extract_pdf_pages(db_session, document)
+            document.nb_pages = await extract_pdf_pages(db_session, document)
             document.chemin = str(Path(document.chemin).relative_to(racine))
             await db_session.commit()
 

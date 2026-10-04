@@ -58,6 +58,6 @@ async def extract_document(session: AsyncSession, filepath: Path):
         commune = await recherche_commune_proche_cp(session, document.code_postal)
         if not commune:
             # Pas trouvé -> la commune n'existe pas où le document vient de l'étranger
-            commune = await get_commune_by_code(session, "-1")
+            commune = await get_commune_by_code(session, "99999")
         document.commune_id = commune.id
     return document
