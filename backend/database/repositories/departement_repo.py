@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from database.models import Departement, Region
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +14,7 @@ def create_departement(session: AsyncSession, region: Region, code: str, nom: st
 
 
 async def liste_departements(
-    session: AsyncSession, region_id: str | None, region: Region | None = None
+    session: AsyncSession, region_id: UUID | None, region: Region | None = None
 ) -> list[Departement]:
     """List all departements in the database."""
     query = select(Departement)

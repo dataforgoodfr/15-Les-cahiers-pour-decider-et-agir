@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from database.models import Commune, Departement
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,7 +39,7 @@ async def get_commune_by_code(session: AsyncSession, code_insee: str) -> Commune
 
 
 async def liste_communes(
-    session: AsyncSession, departement_id: str | None
+    session: AsyncSession, departement_id: UUID | None
 ) -> list[Commune]:
     """List all communes in the database."""
     query = select(Commune)

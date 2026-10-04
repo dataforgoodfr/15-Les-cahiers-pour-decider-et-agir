@@ -53,18 +53,18 @@ class Commune(Base):
 class TypeDocument(enum.Enum):
     """Type de document."""
 
-    CC = "Cahier citoyen"
-    CO = "Contribution individuelle"
-    CR = "Compte rendu de réunion d'initiative locale"
-    IL = "Comptes rendus envoyés en pièce jointe de messages électroniques"
+    CC = "CC"
+    CO = "CO"
+    CR = "CR"
+    IL = "IL"
 
 
 class ModeDocument(enum.Enum):
     """Mode de document."""
 
-    M = "Manuscrit"
-    D = "Dactylographié"
-    MD = "Manuscrit et dactylographié"
+    M = "M"
+    D = "D"
+    MD = "MD"
 
 
 class Document(Base):
@@ -77,6 +77,7 @@ class Document(Base):
     mode_document: Mapped[ModeDocument] = mapped_column(nullable=False)
     code_postal: Mapped[str] = mapped_column(nullable=True)
     taille_fichier: Mapped[int] = mapped_column(nullable=False)
+    nb_pages: Mapped[int] = mapped_column(nullable=True)
     horodatage_creation: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

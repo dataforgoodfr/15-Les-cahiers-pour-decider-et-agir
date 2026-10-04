@@ -31,6 +31,7 @@ def upgrade() -> None:
         sa.Column("mode_document", sa.Enum(ModeDocument), nullable=False),
         sa.Column("code_postal", sa.String, nullable=False),
         sa.Column("taille_fichier", sa.Integer, nullable=False),
+        sa.Column("nb_pages", sa.Integer, nullable=True),
         sa.Column("commune_id", sa.Uuid, sa.ForeignKey("commune.id"), nullable=True),
         sa.Column(
             "horodatage_creation",
