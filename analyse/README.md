@@ -22,5 +22,6 @@ uv run pytest
 | `orientation` | #43 | Pages tournées d'un quart de tour |
 | `inventaires` | #43 | Documents inventoriés sans fichier, fichiers sans inventaire |
 | `manquantes` | #43 | Pages manquantes des courriers et formulaires types |
+| `annotation` | #5, #7 | Outil local d'annotation : vérités terrain sur les pages, listes à revoir |
 
 Chaque module décrit sa commande dans sa docstring ou son README.
