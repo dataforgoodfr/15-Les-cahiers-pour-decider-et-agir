@@ -10,6 +10,7 @@ from tirage.tirage import (
     arrondir,
     caler,
     choisir_contributions,
+    garantir,
     tirer_communes,
 )
 
@@ -38,6 +39,15 @@ def test_arrondir_tient_les_cases_et_les_deux_marges():
                 tirees[c[axe]] += k
             assert all(abs(tirees[m] - e) < 1 for m, e in exactes.items())
         assert allocation[(0, 0)] == 0
+
+
+def test_garantir_une_unite_au_groupe():
+    cases = {("t", "Paris"): 90, ("t", "Lyon"): 9, ("t", "Guyane"): 1}
+    allocation = garantir(arrondir(cases, 10), cases, lambda c: c[1] == "Guyane")
+    # Lyon (0,9) avait été arrondi au-dessus : c'est lui qui cède son unité
+    assert allocation == {("t", "Paris"): 9, ("t", "Lyon"): 0, ("t", "Guyane"): 1}
+    # déjà servi : rien ne bouge
+    assert garantir(allocation, cases, lambda c: c[1] == "Guyane") == allocation
 
 
 def test_caler_sur_deux_marges():

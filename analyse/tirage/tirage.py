@@ -13,7 +13,8 @@ mixte ou manuscrite). Le tirage représente les habitants, pas les communes :
    que les habitants de la France (calage sur marges) ;
 2. chaque case tranche × région reçoit sa part du tirage, arrondie au-dessus
    ou au-dessous, de sorte que chaque tranche et chaque région reçoivent leur
-   part à une unité près (arrondi contrôlé) ;
+   part à une unité près (arrondi contrôlé). L'outre-mer reçoit au moins une
+   contribution, prise à la case de métropole la plus arrondie au-dessus ;
 3. dans une case, les communes sont tirées avec une probabilité
    proportionnelle à leur poids (tirage systématique) ;
 4. à chaque tirage d'une commune, une contribution : un cahier de la commune,
@@ -53,6 +54,9 @@ def caler(
                 m = c[variable]
                 poids[code] *= cible.get(m, 0) / total / sommes[m]
     return poids
+
+
+OUTRE_MER = {"Guadeloupe", "Martinique", "Guyane", "La Réunion", "Mayotte"}
 
 
 def allouer(parts: dict, n: int) -> dict:
@@ -99,6 +103,20 @@ def arrondir(cases: dict[tuple, float], n: int) -> dict[tuple, int]:
         if exactes[(i, j)] > k and capacite[("l", i), ("c", j)] == 0:
             allocation[(i, j)] += 1
     return allocation
+
+
+def garantir(allocation: dict, cases: dict, dans) -> dict:
+    """Au moins une unité aux cases du groupe (`dans(case)` vrai), prise à la
+    case hors du groupe la plus arrondie au-dessus de sa part."""
+    if sum(k for c, k in allocation.items() if dans(c)):
+        return allocation
+    n, total = sum(allocation.values()), sum(cases.values())
+    recoit = max((c for c in cases if dans(c)), key=lambda c: cases[c])
+    donne = max(
+        (c for c, k in allocation.items() if k and not dans(c)),
+        key=lambda c: allocation[c] - n * cases[c] / total,
+    )
+    return allocation | {recoit: allocation[recoit] + 1, donne: allocation[donne] - 1}
 
 
 def flot_maximal(capacite: dict) -> int:

@@ -33,7 +33,14 @@ from communes.representativite import TRANCHES, univers
 from panel.panel import cahiers as compter_pages
 from panel.panel import lire_typage
 from tirage import profil
-from tirage.tirage import arrondir, caler, choisir_contributions, tirer_communes
+from tirage.tirage import (
+    OUTRE_MER,
+    arrondir,
+    caler,
+    choisir_contributions,
+    garantir,
+    tirer_communes,
+)
 
 
 def parente(chemin: Path) -> tuple[dict[str, str], dict[str, str]]:
@@ -187,7 +194,10 @@ def main() -> None:
         cases[c["taille"], c["region"]] += poids[code]
     rng = random.Random(args.graine)
     tires = []
-    for (taille, region), n in sorted(arrondir(cases, args.nombre).items()):
+    allocation = garantir(
+        arrondir(cases, args.nombre), cases, lambda c: c[1] in OUTRE_MER
+    )
+    for (taille, region), n in sorted(allocation.items()):
         communes = [
             (code, poids[code], ())
             for code, c in corpus.items()

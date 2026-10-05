@@ -13,6 +13,7 @@ le changer et refaire le tirage en quelques minutes.
 | Objectif | Ressembler aux habitants de la France | Une commune a d'autant plus de chances de sortir qu'elle est peuplée. Paris pèse plus qu'un village, même si le village a écrit davantage. |
 | Territoire | France entière | Toutes les régions, outre-mer compris. |
 | Taille de commune et région | Chacune reçoit sa part de la population, à une unité près | Pas de région ni de taille de commune surreprésentée par hasard. |
+| Outre-mer | Au moins une contribution garantie | Avec 100 contributions, l'outre-mer en reçoit 3 (Guadeloupe, Martinique, La Réunion), selon sa part de la population. |
 | Écriture | Dactylographié seulement, pour commencer | Les cahiers entièrement manuscrits ne peuvent pas sortir tant que la lecture automatique des manuscrits n'est pas prête. |
 | Nombre | 100 | Assez pour se faire une idée, trop peu pour mesurer des écarts fins. |
 
@@ -25,14 +26,11 @@ contributions ressemblent à la France.
 
 ## Questions pour l'association
 
-1. **Outre-mer et Corse.** Avec 100 contributions, la Guyane (0,4 attendue)
-   et la Corse (0,5) ne sortent pas. Faut-il leur garantir une contribution
-   chacune ?
-2. **Revenu.** Le niveau de revenu des communes varie de quelques points d'un
+1. **Revenu.** Le niveau de revenu des communes varie de quelques points d'un
    tirage à l'autre. Faut-il le fixer, comme la taille et la région ?
-3. **Manuscrits.** Ils représentent la moitié des pages. Faut-il attendre de
+2. **Manuscrits.** Ils représentent la moitié des pages. Faut-il attendre de
    pouvoir les inclure avant de lire la sélection ?
-4. **Autre critère.** Y a-t-il un critère qui compte pour vous et qui manque
+3. **Autre critère.** Y a-t-il un critère qui compte pour vous et qui manque
    (thème, longueur, période du débat…) ?
 
 ## Annexe : ce que donne le tirage
