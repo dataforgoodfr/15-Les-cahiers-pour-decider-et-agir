@@ -1,10 +1,17 @@
 """Tirage pour l'association, sur des communes construites pour le test."""
 
 import random
+from collections import defaultdict
 
 from panel.panel import dans_panel
 from tirage import profil
-from tirage.tirage import allouer, choisir_cahiers, tirer_communes
+from tirage.tirage import (
+    allouer,
+    arrondir,
+    caler,
+    choisir_contributions,
+    tirer_communes,
+)
 
 
 def test_allouer_aux_plus_forts_restes():
@@ -13,8 +20,44 @@ def test_allouer_aux_plus_forts_restes():
     assert sum(allouer({"a": 0.71, "b": 0.29}, 7).values()) == 7
 
 
+def test_arrondir_tient_les_cases_et_les_deux_marges():
+    rng = random.Random(4)
+    for _ in range(50):
+        cases = {(i, j): rng.random() ** 3 for i in range(7) for j in range(18)}
+        cases[(0, 0)] = 0
+        n = 100
+        allocation = arrondir(cases, n)
+        total = sum(cases.values())
+        assert sum(allocation.values()) == n
+        for c, k in allocation.items():
+            assert abs(k - n * cases[c] / total) < 1
+        for axe in (0, 1):
+            exactes, tirees = defaultdict(float), defaultdict(int)
+            for c, k in allocation.items():
+                exactes[c[axe]] += n * cases[c] / total
+                tirees[c[axe]] += k
+            assert all(abs(tirees[m] - e) < 1 for m, e in exactes.items())
+        assert allocation[(0, 0)] == 0
+
+
+def test_caler_sur_deux_marges():
+    communes = {
+        "a": {"population": 10, "taille": "petite", "region": "nord"},
+        "b": {"population": 10, "taille": "grande", "region": "nord"},
+        "c": {"population": 10, "taille": "petite", "region": "sud"},
+        "d": {"population": 70, "taille": "grande", "region": "sud"},
+    }
+    cibles = {
+        "taille": {"petite": 40, "grande": 60},
+        "region": {"nord": 50, "sud": 50, "absente": 10},
+    }
+    poids = caler(communes, cibles)
+    assert abs(poids["a"] + poids["c"] - 0.4) < 1e-6
+    assert abs(poids["a"] + poids["b"] - 0.5) < 1e-6
+
+
 def test_tirer_communes_proportionnel_a_la_population():
-    communes = [("grande", 900, "r1"), ("petite", 100, "r2")]
+    communes = [("grande", 900, ("t", "r1")), ("petite", 100, ("t", "r2"))]
     tirees = tirer_communes(communes, 10, random.Random(1))
     assert len(tirees) == 10
     assert tirees.count("grande") == 9
@@ -22,21 +65,28 @@ def test_tirer_communes_proportionnel_a_la_population():
 
 
 def test_tirer_communes_se_refait_avec_la_meme_graine():
-    communes = [(f"c{i}", i + 1, f"r{i % 3}") for i in range(50)]
+    communes = [(f"c{i}", i + 1, ("t", f"r{i % 3}")) for i in range(50)]
     assert tirer_communes(communes, 7, random.Random(3)) == tirer_communes(
         communes, 7, random.Random(3)
     )
     assert tirer_communes(communes, 0, random.Random(3)) == []
 
 
-def test_choisir_autant_de_cahiers_distincts_que_de_tirages():
-    cahiers = {"ville": ["v1", "v2", "v3"], "village": ["w1"]}
-    choisis = choisir_cahiers(
+def test_une_contribution_par_tirage_de_commune():
+    cahiers = {"ville": {"v1": 1, "v2": 0}, "village": {"w1": 3}}
+    choisies = choisir_contributions(
         ["ville", "ville", "village", "village"], cahiers, random.Random(0)
     )
-    assert len([c for c in choisis if c.startswith("v")]) == 2
-    assert len(set(choisis)) == len(choisis)
-    assert choisis.count("w1") == 1  # un seul cahier dans le village
+    # une grande ville tirée deux fois donne deux contributions, même avec un
+    # seul cahier retenu
+    assert [f for f, _ in choisies] == ["v1", "v1", "w1", "w1"]
+    assert all(0 < position <= 1 for _, position in choisies)
+
+
+def test_cahier_choisi_selon_ses_pages():
+    cahiers = {"ville": {"gros": 9, "mince": 1}}
+    choisies = choisir_contributions(["ville"] * 1000, cahiers, random.Random(0))
+    assert 850 < sum(f == "gros" for f, _ in choisies) < 950
 
 
 def test_dans_panel_sans_departements_garde_toute_la_france():

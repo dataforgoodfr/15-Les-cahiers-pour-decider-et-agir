@@ -17,7 +17,7 @@ uv run pytest
 | `communes` | #19 | Variables INSEE de 2019 des communes du corpus |
 | `communes.representativite` | #20 | Écart du corpus (ou d'un panel) à la France |
 | `panel` | #22 | Panel aligné sur l'échantillon du Campus Condorcet |
-| `tirage` | #21 | Une centaine de cahiers représentatifs des habitants, pour l'association |
+| `tirage` | #21 | Une centaine de contributions représentatives des habitants, pour l'association |
 | `concatenes` | #42 | Fichiers qui contiennent le cahier d'une autre commune |
 | `orientation` | #43 | Pages tournées d'un quart de tour |
 | `inventaires` | #43 | Documents inventoriés sans fichier, fichiers sans inventaire |

@@ -1,16 +1,22 @@
-"""Tirage d'une centaine de cahiers pour l'association (issue #21).
+"""Tirage d'une centaine de contributions pour l'association (issue #21).
 
     uv run python -m tirage [--typage data/typage/departements]
         [--communes data/communes/communes.csv] [--cache data/sources]
-        [--nombre 100] [--graine 2026] [--sortie data/tirage]
+        [--nombre 100] [--graine 2026] [--avec-manuscrits]
+        [--sortie data/tirage]
 
 Méthode dans `tirage.tirage`. Écrit dans la sortie :
 
-- `cahiers.csv` : les cahiers tirés, avec leur commune, sa taille et sa
-  région, et leurs pages par type ;
-- `rapport.md` : cahiers tirés par tranche de taille et par région, contre la
-  part de la population française ; profil des communes (CSP, âges, revenu)
+- `contributions.csv` : une ligne par contribution tirée, son cahier et la
+  position où la prendre, avec la commune, sa taille, sa région et les pages
+  du cahier par type ;
+- `rapport.md` : contributions tirées par tranche de taille et par région,
+  contre la
+    part de la population française ; profil des communes (CSP, âges, revenu)
   du tirage et du corpus, contre la France (`tirage.profil`).
+
+Sans `--avec-manuscrits`, seules les pages dactylographiées comptent : un
+cahier entièrement manuscrit ne peut pas sortir.
 
 Des codes, des noms de communes et des comptes, jamais de texte.
 """
@@ -27,7 +33,7 @@ from communes.representativite import TRANCHES, univers
 from panel.panel import cahiers as compter_pages
 from panel.panel import lire_typage
 from tirage import profil
-from tirage.tirage import allouer, choisir_cahiers, tirer_communes
+from tirage.tirage import arrondir, caler, choisir_contributions, tirer_communes
 
 
 def parente(chemin: Path) -> tuple[dict[str, str], dict[str, str]]:
@@ -49,7 +55,7 @@ def tableau(titre: str, tires: Counter, parts: dict[str, float], ordre) -> list[
     lignes = [
         f"## {titre}",
         "",
-        "| | cahiers tirés | attendus selon la population |",
+        "| | contributions tirées | attendues selon la population |",
         "|---|---|---|",
     ]
     n = sum(tires.values())
@@ -70,7 +76,8 @@ def ligne_pct(groupe: str, *colonnes: dict[str, float]) -> str:
 def profils(cache: Path, france: dict, corpus: list[str], tires: list[str]):
     """Section du rapport : CSP, âges et revenu des communes, contre la France.
 
-    `corpus` et `tires` : la commune de plein exercice de chaque cahier.
+    `corpus` : la commune de plein exercice de chaque cahier ; `tires`, de
+    chaque contribution tirée.
     """
     structure = sources.colonnes_csv_zip(
         sources.telecharger(sources.STRUCTURE_POPULATION, cache),
@@ -81,8 +88,8 @@ def profils(cache: Path, france: dict, corpus: list[str], tires: list[str]):
         "## Profil des communes",
         "",
         (
-            "Chaque cahier porte le profil de sa commune (recensement et Filosofi "
-            "2017) : ce n'est pas celui des contributeurs."
+            "Chaque cahier ou contribution porte le profil de sa commune "
+            "(recensement et Filosofi 2017) : ce n'est pas celui des contributeurs."
         ),
         "",
     ]
@@ -138,45 +145,66 @@ def main() -> None:
     parser.add_argument("--cache", type=Path, default=Path("data/sources"))
     parser.add_argument("--nombre", type=int, default=100)
     parser.add_argument("--graine", type=int, default=2026)
+    parser.add_argument(
+        "--avec-manuscrits",
+        action="store_true",
+        help="compter aussi les pages mixtes et manuscrites",
+    )
     parser.add_argument("--sortie", type=Path, default=Path("data/tirage"))
     args = parser.parse_args()
 
     france = univers(Referentiel.telecharger(args.cache))
     parentes, noms = parente(args.communes)
 
-    # Cahiers écrits, regroupés par commune de plein exercice
-    par_cahier, par_commune = {}, defaultdict(list)
+    # Pages retenues de chaque cahier, regroupés par commune de plein exercice
+    par_cahier, par_commune = {}, defaultdict(dict)
     for cahier in compter_pages(lire_typage(args.typage), None, ()):
-        ecrites = cahier["dactylographiees"] + cahier["mixtes"] + cahier["manuscrites"]
+        retenues = cahier["dactylographiees"]
+        if args.avec_manuscrits:
+            retenues += cahier["mixtes"] + cahier["manuscrites"]
         code = parentes.get(cahier["code_insee"])
-        if not ecrites or code not in france:
+        if not retenues or code not in france:
             continue
         par_cahier[cahier["fichier"]] = cahier | {"commune_parente": code}
-        par_commune[code].append(cahier["fichier"])
+        par_commune[code][cahier["fichier"]] = retenues
 
     habitants_par_taille = defaultdict(int)
     for c in france.values():
         habitants_par_taille[c["taille"]] += c["population"]
     habitants_par_taille.pop("population inconnue", None)
-    allocation = allouer(habitants_par_taille, args.nombre)
+    habitants_par_region = defaultdict(int)
+    for c in france.values():
+        habitants_par_region[c["region"]] += c["population"]
 
+    corpus = {
+        code: france[code] for code in sorted(par_commune) if france[code]["population"]
+    }
+    poids = caler(
+        corpus, {"taille": habitants_par_taille, "region": habitants_par_region}
+    )
+    cases = defaultdict(float)
+    for code, c in corpus.items():
+        cases[c["taille"], c["region"]] += poids[code]
     rng = random.Random(args.graine)
     tires = []
-    for taille, n in allocation.items():
+    for (taille, region), n in sorted(arrondir(cases, args.nombre).items()):
         communes = [
-            (code, france[code]["population"], france[code]["region"])
-            for code in sorted(par_commune)
-            if france[code]["taille"] == taille and france[code]["population"]
+            (code, poids[code], ())
+            for code, c in corpus.items()
+            if (c["taille"], c["region"]) == (taille, region)
         ]
-        tires += choisir_cahiers(tirer_communes(communes, n, rng), par_commune, rng)
+        tires += choisir_contributions(
+            tirer_communes(communes, n, rng), par_commune, rng
+        )
 
     lignes = []
-    for fichier in sorted(tires):
+    for fichier, position in sorted(tires):
         cahier = par_cahier[fichier]
         commune = france[cahier["commune_parente"]]
         lignes.append(
             {
                 "fichier": fichier,
+                "position": position,
                 "code_insee": cahier["code_insee"],
                 "commune": noms.get(cahier["code_insee"], ""),
                 "departement": cahier["departement"],
@@ -191,20 +219,25 @@ def main() -> None:
         )
 
     args.sortie.mkdir(parents=True, exist_ok=True)
-    with (args.sortie / "cahiers.csv").open("w", encoding="utf-8", newline="") as f:
+    with (args.sortie / "contributions.csv").open(
+        "w", encoding="utf-8", newline=""
+    ) as f:
         ecrivain = csv.DictWriter(f, list(lignes[0]))
         ecrivain.writeheader()
         ecrivain.writerows(lignes)
 
-    habitants_par_region = defaultdict(int)
-    for c in france.values():
-        habitants_par_region[c["region"]] += c["population"]
     rapport = [
-        f"# Tirage de {len(lignes)} cahiers (graine {args.graine})",
+        f"# Tirage de {len(lignes)} contributions (graine {args.graine})",
         "",
         (
-            f"Univers : {len(par_cahier)} cahiers citoyens écrits, "
-            f"dans {len(par_commune)} communes."
+            f"Univers : {len(par_cahier)} cahiers citoyens avec des pages "
+            + ("écrites" if args.avec_manuscrits else "dactylographiées")
+            + f", dans {len(par_commune)} communes."
+        ),
+        "",
+        (
+            "Dans chaque cahier tiré, compter les n contributions retenues et "
+            "prendre la ⌈position × n⌉-ième."
         ),
         "",
     ]
@@ -224,7 +257,7 @@ def main() -> None:
         args.cache,
         france,
         [c["commune_parente"] for c in par_cahier.values()],
-        [par_cahier[f]["commune_parente"] for f in tires],
+        [par_cahier[f]["commune_parente"] for f, _ in tires],
     )
     texte = "\n".join(rapport)
     (args.sortie / "rapport.md").write_text(texte, encoding="utf-8")
