@@ -26,11 +26,9 @@ contributions ressemblent à la France.
 
 ## Questions pour l'association
 
-1. **Revenu.** Le niveau de revenu des communes varie de quelques points d'un
-   tirage à l'autre. Faut-il le fixer, comme la taille et la région ?
-2. **Manuscrits.** Ils représentent la moitié des pages. Faut-il attendre de
+1. **Manuscrits.** Ils représentent la moitié des pages. Faut-il attendre de
    pouvoir les inclure avant de lire la sélection ?
-3. **Autre critère.** Y a-t-il un critère qui compte pour vous et qui manque
+2. **Autre critère.** Y a-t-il un critère qui compte pour vous et qui manque
    (thème, longueur, période du débat…) ?
 
 ## Annexe : ce que donne le tirage
