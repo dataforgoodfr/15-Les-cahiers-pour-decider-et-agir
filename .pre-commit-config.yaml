@@ -10,3 +10,15 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: mixed-line-ending
+      - id: check-added-large-files
+      - id: detect-private-key
+  # Aucune donnée des cahiers dans git (docs/donnees.md) : on refuse les
+  # fichiers de données, quel que soit leur contenu. Un faux positif se règle
+  # en ajoutant une exception à `exclude`, dans une PR relue.
+  - repo: local
+    hooks:
+      - id: pas-de-donnees
+        name: aucune donnée des cahiers (docs/donnees.md)
+        entry: "Fichier de données refusé, voir docs/donnees.md :"
+        language: fail
+        files: '(?i)(^|/)data/|\.(pdf|jpe?g|png|gif|tiff?|webp|heic|csv|tsv|txt|jsonl|xlsx?|ods|parquet|feather|arrow|db|sqlite3?|duckdb|sql|dump|pkl|pickle|npy|npz|zip|gz|bz2|xz|7z|tar|rar)$'
