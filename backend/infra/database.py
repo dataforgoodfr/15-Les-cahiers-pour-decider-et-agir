@@ -23,20 +23,18 @@ class Database:
                 yield session
             except exc.IntegrityError as e:
                 await session.rollback()
-                self.logger.exception(e.orig.args[0], exc_info=True)
+                self.logger.exception(e.orig.args[0])
                 raise DBException(error_code="database_integrity_error") from e
             except exc.DataError as e:
                 await session.rollback()
-                self.logger.exception(e.orig.args[0], exc_info=True)
+                self.logger.exception(e.orig.args[0])
                 raise DBException(error_code="database_data_error") from e
             except exc.ProgrammingError as e:
                 await session.rollback()
-                self.logger.exception(e.orig.args[0], exc_info=True)
+                self.logger.exception(e.orig.args[0])
                 raise DBException(error_code="database_programming_error") from e
             except Exception:
-                self.logger.exception(
-                    "Session rollback, exception in cause", exc_info=True
-                )
+                self.logger.exception("Session rollback, exception in cause")
                 await session.rollback()
                 raise
             finally:
