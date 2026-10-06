@@ -11,7 +11,7 @@ const etat = {
   groupes: {},        // groupe -> étiquettes, pour les menus
   problemes: [],      // problèmes qu'on peut cocher sur une page
   types: [],          // types de page, pour corriger le typage
-  rotations: new Map(), // "fichier|page" -> 90 | 180 | 270 (affichage seulement)
+  rotations: new Map(), // "fichier|page" -> 90 | 180 | 270, gardée dans le carnet
   lignes: new Map(),  // "fichier|page" -> lignes OCR positionnées (affichage local)
   vignettes: new Map(), // page -> <img> de la vignette, sans src avant chargement
   liste: null,        // {nom, titre, consigne, elements}
@@ -118,6 +118,7 @@ async function ouvrirCahier(fichier, page = 1, defilerVers) {
   $("titre-cahier").classList.remove("discret");
   $("total-pages").textContent = `/ ${etat.cahier.pages.length}`;
   $("champ-page").max = etat.cahier.pages.length;
+  reprendreRotations();
   dessinerVignettes();
   construireFeuilles();
   allerPage(page, defilerVers);
@@ -166,9 +167,32 @@ function pivoter() {
   const c = cle(etat.cahier.fichier, etat.page);
   const r = (rotation() + 90) % 360;
   if (r) etat.rotations.set(c, r); else etat.rotations.delete(c);
-  try { localStorage.setItem("rotations", JSON.stringify([...etat.rotations])); } catch { /* sans stockage */ }
+  // gardée dans le carnet : l'ordre de lecture des notes en dépend
+  api("/api/qualifier", { fichier: etat.cahier.fichier, page: etat.page, champ: "rotation", valeur: r })
+    .catch((e) => message(`Rotation non enregistrée : ${e.message}`));
   dimensionner();
   allerPage(etat.page);
+}
+
+function reprendreRotations() {
+  // les rotations du cahier viennent du carnet
+  for (const p of etat.cahier.pages) {
+    const c = cle(etat.cahier.fichier, p.page);
+    if (p.rotation) etat.rotations.set(c, p.rotation); else etat.rotations.delete(c);
+  }
+}
+
+async function verserRotationsLocales() {
+  // avant le carnet, les rotations restaient dans le navigateur : on les y verse
+  let locales;
+  try { locales = JSON.parse(localStorage.getItem("rotations") || "[]"); } catch { return; }
+  for (const [c, valeur] of locales) {
+    const i = c.lastIndexOf("|");
+    try {
+      await api("/api/qualifier", { fichier: c.slice(0, i), page: Number(c.slice(i + 1)), champ: "rotation", valeur });
+    } catch { return; } // on réessaiera au prochain démarrage
+  }
+  try { localStorage.removeItem("rotations"); } catch { /* sans stockage */ }
 }
 
 function largeurAffichee() {
@@ -1085,9 +1109,9 @@ document.addEventListener("keydown", async (ev) => {
   let preferee;
   try {
     preferee = localStorage.getItem("etiquette");
-    etat.rotations = new Map(JSON.parse(localStorage.getItem("rotations") || "[]"));
   } catch { /* sans stockage */ }
   remplirEtiquettes($("etiquette"), etat.etiquettes.includes(preferee) ? preferee : undefined);
+  await verserRotationsLocales();
   await chargerListes();
   await lireAdresse();
 })();

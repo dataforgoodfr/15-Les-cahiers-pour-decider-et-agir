@@ -36,7 +36,8 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   le haut de la vue, ou la dernière cliquée.
 - **Pivoter l'affichage** d'un quart de tour (`t`), page par page, pour lire
   une page numérisée de travers. Les notes restent justes : elles sont
-  gardées dans le repère du PDF.
+  gardées dans le repère du PDF. La rotation est gardée dans le carnet : elle
+  donne l'ordre de lecture des notes de la page (`selection`).
 - **Voir les métadonnées de la page**, à droite : son typage (type, encre,
   qualité, mots, page de service) et ce que les analyses y ont détecté
   (`orientation`, `manquantes`, `concatenes`, inventaire), lus dans `data/`.
