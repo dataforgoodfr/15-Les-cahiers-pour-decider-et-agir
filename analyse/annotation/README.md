@@ -19,15 +19,21 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   par page, zoom, vignettes de toutes les pages avec leur type (D
   dactylographiée, M manuscrite, MD mixte, V vierge ; les pages de service
   sont pâlies).
-- **Noter sur la page** : un clic pose un point, un glisser trace un
-  rectangle. Chaque note a une étiquette et un texte libre ; la position est
-  gardée en points PDF. Étiquettes de structure (début et fin de
+- **Noter sur la page**, sans formulaire : un clic pose un début de
+  contribution, un double clic une fin, un glisser caviarde la zone (note de
+  l'étiquette de donnée personnelle choisie, bloc de coordonnées sinon).
+  La note s'enregistre aussitôt et reste choisie : Suppr l'annule. Un clic
+  sur une note l'ouvre pour changer son étiquette ou son texte. Chaque note a
+  une étiquette et un texte libre ; la position est gardée en points PDF. Étiquettes de structure (début et fin de
   contribution, date, signature) et de données personnelles (nom, prénom,
   adresse, courriel, téléphone, autre donnée identifiante, bloc de
   coordonnées), à encadrer d'un
   rectangle : ce sera la référence de l'anonymisation (#7). Ne pas recopier
   la donnée dans le texte de la note. Une note ouverte se déplace en la glissant, et
   se redimensionne par les poignées de ses coins.
+- **Faire défiler le cahier** : les pages se suivent les unes sous les autres ;
+  la page courante (panneau de droite, statut, vignette) est celle qui occupe
+  le haut de la vue, ou la dernière cliquée.
 - **Pivoter l'affichage** d'un quart de tour (`t`), page par page, pour lire
   une page numérisée de travers. Les notes restent justes : elles sont
   gardées dans le repère du PDF.

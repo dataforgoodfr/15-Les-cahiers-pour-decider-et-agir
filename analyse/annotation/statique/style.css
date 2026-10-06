@@ -93,19 +93,19 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: v
 .raccourcis dt { font-family: ui-monospace, monospace; }
 .raccourcis dd { margin: 0; color: var(--discret); }
 main#vue { grid-area: vue; overflow: auto; position: relative; padding: 12px; }
-#feuille { position: relative; margin: 0 auto; box-shadow: 0 1px 4px rgb(0 0 0 / .25); overflow: hidden; }
-#image { position: absolute; left: 0; top: 0; transform-origin: 0 0; user-select: none; background: #fff; }
-#calque { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
-#calque .note { fill: color-mix(in srgb, var(--note) 15%, transparent); stroke: var(--note); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: pointer; }
-#calque .note.courant { stroke-width: 4px; cursor: move; }
-#calque .poignee { fill: var(--surface); stroke: var(--note); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: nwse-resize; }
-#calque .numero-note { fill: var(--note); font-weight: 700; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
-#calque .marque { stroke: var(--marque); stroke-width: 2px; stroke-dasharray: 8 5; vector-effect: non-scaling-stroke; fill: color-mix(in srgb, var(--marque) 10%, transparent); pointer-events: none; }
-#calque .masque { fill: rgb(20 20 20 / 0.6); stroke: none; cursor: pointer; pointer-events: all; }
-#calque .masque.retabli { fill: transparent; stroke: var(--retabli); stroke-width: 2px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
-#calque .etiquette-retabli { fill: var(--retabli); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
-#calque .etiquette-marque { fill: var(--marque); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
-#calque .trace { fill: none; stroke: var(--note); stroke-width: 2px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.feuille { position: relative; margin: 0 auto 12px; box-shadow: 0 1px 4px rgb(0 0 0 / .25); overflow: hidden; background: #fff; }
+.feuille .image { position: absolute; left: 0; top: 0; transform-origin: 0 0; user-select: none; background: #fff; }
+.calque { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+.calque .note { fill: color-mix(in srgb, var(--note) 15%, transparent); stroke: var(--note); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: pointer; }
+.calque .note.courant { stroke-width: 4px; cursor: move; }
+.calque .poignee { fill: var(--surface); stroke: var(--note); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: nwse-resize; }
+.calque .numero-note { fill: var(--note); font-weight: 700; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.calque .marque { stroke: var(--marque); stroke-width: 2px; stroke-dasharray: 8 5; vector-effect: non-scaling-stroke; fill: color-mix(in srgb, var(--marque) 10%, transparent); pointer-events: none; }
+.calque .masque { fill: rgb(20 20 20 / 0.6); stroke: none; cursor: pointer; pointer-events: all; }
+.calque .masque.retabli { fill: transparent; stroke: var(--retabli); stroke-width: 2px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.calque .etiquette-retabli { fill: var(--retabli); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.calque .etiquette-marque { fill: var(--marque); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.calque .trace { fill: none; stroke: var(--note); stroke-width: 2px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 #vide { text-align: center; margin-top: 20vh; }
 footer#vignettes {
   grid-area: vignettes;
@@ -143,6 +143,6 @@ label.ligne { display: grid; gap: 2px; margin-bottom: 8px; }
 .source.verifie { background: var(--vue); color: var(--surface); }
 .cases .detecte { font-size: 11px; color: var(--revoir); }
 #panneau-notes textarea { width: 100%; resize: vertical; }
-#calque .ligne-ocr { fill: transparent; stroke: var(--vue); stroke-width: 1px; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
-#calque .ligne-ocr:hover { fill: color-mix(in srgb, var(--vue) 18%, transparent); }
+.calque .ligne-ocr { fill: transparent; stroke: var(--vue); stroke-width: 1px; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
+.calque .ligne-ocr:hover { fill: color-mix(in srgb, var(--vue) 18%, transparent); }
 #accepter { width: 100%; margin-top: 8px; }

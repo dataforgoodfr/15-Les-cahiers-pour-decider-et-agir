@@ -50,10 +50,7 @@
 </aside>
 
 <main id="vue">
-  <div id="feuille" hidden>
-    <img id="image" alt="" draggable="false">
-    <svg id="calque" xmlns="http://www.w3.org/2000/svg"></svg>
-  </div>
+  <div id="feuilles"></div>
   <p id="vide" class="discret">Ouvrez un cahier ou choisissez une liste.</p>
 </main>
 
@@ -78,7 +75,7 @@
     </label>
   </section>
   <h2>Notes de la page</h2>
-  <p class="discret aide">Clic : point. Glisser : rectangle.</p>
+  <p class="discret aide">Clic : début de contribution. Double clic : fin. Glisser : caviarder. Enregistré aussitôt, Suppr annule.</p>
   <form id="formulaire-note" hidden>
     <label>Étiquette <select id="note-etiquette"></select></label>
     <label>Texte <textarea id="note-texte" rows="4"></textarea></label>
