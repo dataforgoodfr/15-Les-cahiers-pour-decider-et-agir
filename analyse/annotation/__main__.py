@@ -118,6 +118,7 @@ def application(
                             "problemes_auto": sorted(coches.get(p["page"], ())),
                             "problemes": qualif.get("problemes", {}),
                             "type_verifie": qualif.get("type"),
+                            "rotation": qualif.get("rotation", 0),
                             "remarque": qualif.get("remarque", ""),
                         }
                     )

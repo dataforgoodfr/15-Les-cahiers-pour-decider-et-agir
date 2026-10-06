@@ -190,6 +190,7 @@ def test_carnet_qualifie_les_pages(tmp_path):
     carnet.qualifier("a.pdf", 2, "illisible", True)
     carnet.qualifier("a.pdf", 2, "page tournée", True)
     carnet.qualifier("a.pdf", 2, "illisible", False)  # décoché : on le garde
+    carnet.qualifier("a.pdf", 2, "rotation", 90)
     carnet.qualifier("a.pdf", 3, "type", "mixte")
     carnet.qualifier("a.pdf", 3, "remarque", "à relire")
     carnet.qualifier("a.pdf", 0, "remarque", "cahier relié à l'envers")
@@ -198,6 +199,7 @@ def test_carnet_qualifie_les_pages(tmp_path):
             "problemes": {"illisible": False, "page tournée": True},
             "type": None,
             "remarque": "",
+            "rotation": 90,
         },
         ("a.pdf", 3): {"problemes": {}, "type": "mixte", "remarque": "à relire"},
         ("a.pdf", 0): {
@@ -208,7 +210,7 @@ def test_carnet_qualifie_les_pages(tmp_path):
     }
     # une analyse ne lit pas les remarques, qui peuvent citer le cahier
     assert "remarque" not in carnet.qualifications(remarques=False)[("a.pdf", 3)]
-    for champ, valeur in (("inconnu", True), ("type", "imprimée")):
+    for champ, valeur in (("inconnu", True), ("type", "imprimée"), ("rotation", 45)):
         with pytest.raises(ValueError):
             carnet.qualifier("a.pdf", 2, champ, valeur)
 

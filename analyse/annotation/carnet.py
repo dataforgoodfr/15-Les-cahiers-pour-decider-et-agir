@@ -18,7 +18,9 @@ encore si l'analyse change ses identifiants.
 
 Une qualification porte sur toute la page (ou, page 0, sur le cahier) : un
 problème tranché à la main (page tournée, illisible…), le type de page
-vérifié, qui corrige ou confirme le typage, ou une remarque libre.
+vérifié, qui corrige ou confirme le typage, la rotation de l'affichage qui
+rend la page lisible (l'ordre de lecture des notes en dépend), ou une
+remarque libre.
 """
 
 import json
@@ -39,6 +41,7 @@ PROBLEMES = (
     "doublon",
 )
 TYPES = ("dactylographiée", "manuscrite", "mixte", "vierge")
+ROTATIONS = (0, 90, 180, 270)  # quart de tour de l'affichage, sens horaire
 
 
 class Carnet:
@@ -151,12 +154,15 @@ class Carnet:
 
         Un problème prend une valeur booléenne : décocher un problème détecté
         par une analyse est une information, on la garde. Le type vérifié
-        prend une valeur de TYPES (None l'efface), la remarque un texte libre.
+        prend une valeur de TYPES (None l'efface), la rotation une de ROTATIONS,
+        la remarque un texte libre.
         """
         if champ in PROBLEMES:
             valeur = bool(valeur)
         elif champ == "remarque":
             valeur = str(valeur or "")
+        elif champ == "rotation" and valeur in ROTATIONS:
+            valeur = int(valeur)
         elif champ != "type" or valeur not in (*TYPES, None):
             raise ValueError(f"qualification inconnue : {champ} = {valeur}")
         return self._ecrire(
@@ -170,8 +176,8 @@ class Carnet:
         )
 
     def qualifications(self, remarques: bool = True) -> dict[tuple[str, int], dict]:
-        """Par page : problèmes tranchés à la main ({nom: bool}), type vérifié
-        et remarque. Une analyse passe `remarques=False` : la remarque est un
+        """Par page : problèmes tranchés à la main ({nom: bool}), type vérifié,
+        rotation (si posée) et remarque. Une analyse passe `remarques=False` : la remarque est un
         texte libre qui peut citer le cahier."""
         pages: dict[tuple[str, int], dict] = {}
         for e in self.evenements():
@@ -181,7 +187,7 @@ class Carnet:
                 (e["fichier"], e["page"]),
                 {"problemes": {}, "type": None, "remarque": ""},
             )
-            if e["champ"] in ("type", "remarque"):
+            if e["champ"] in ("type", "remarque", "rotation"):
                 page[e["champ"]] = e["valeur"]
             else:
                 page["problemes"][e["champ"]] = e["valeur"]
