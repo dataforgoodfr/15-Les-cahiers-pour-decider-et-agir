@@ -53,7 +53,17 @@ class Corpus:
     def pages(self, fichier: str) -> list[dict]:
         """Dimensions affichées (points PDF) et type de chaque page."""
         chemin = self.chemin(fichier)
-        types = self._typage(chemin.parent.name).get(fichier, {})
+        # le typage est rangé par dossier du versement (BnF_GDN_75_PDF), au-dessus
+        # du sous-dossier du type de document (CC, CO, CR)
+        dossier = next(
+            (
+                d.name
+                for d in chemin.parents
+                if (self.typage_dossier / f"{d.name}.csv").exists()
+            ),
+            chemin.parent.name,
+        )
+        types = self._typage(dossier).get(fichier, {})
         with pymupdf.open(chemin) as doc:
             return [
                 {
