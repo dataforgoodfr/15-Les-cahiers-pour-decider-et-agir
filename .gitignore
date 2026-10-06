@@ -170,3 +170,9 @@ data/
 *.parquet
 *.sqlite
 *.db
+
+# Fichiers générés par PyCharm
+.idea/
+
+# Directives aux agents de Pycharm Junie
+.junie/

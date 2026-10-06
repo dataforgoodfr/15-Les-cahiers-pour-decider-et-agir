@@ -22,3 +22,4 @@ repos:
         entry: "Fichier de données refusé, voir docs/donnees.md :"
         language: fail
         files: '(?i)(^|/)data/|\.(pdf|jpe?g|png|gif|tiff?|webp|heic|csv|tsv|txt|jsonl|xlsx?|ods|parquet|feather|arrow|db|sqlite3?|duckdb|sql|dump|pkl|pickle|npy|npz|zip|gz|bz2|xz|7z|tar|rar)$'
+        exclude: '^extraction/chabin/references/liste_pdfs_raw_17\.txt$'
