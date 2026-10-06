@@ -231,7 +231,32 @@ function construireFeuilles() {
   });
   $("feuilles").replaceChildren(...etat.feuilles.map((f) => f.feuille));
   $("vide").hidden = true;
+  masquerVierges();
   dimensionner();
+}
+
+// Les pages vierges (typage, ou type vérifié) sont masquées du défilement,
+// sauf demande : le typage peut se tromper, les vignettes les montrent toutes
+// et un clic sur l'une l'affiche.
+const estVierge = (p) => (p.type_verifie || p.type) === "vierge";
+
+function masquerVierges() {
+  const voir = $("voir-vierges").checked;
+  let masquees = 0;
+  for (const p of etat.cahier.pages) {
+    const cache = !voir && estVierge(p) && p.page !== etat.page;
+    etat.feuilles[p.page - 1].feuille.hidden = cache;
+    masquees += cache;
+  }
+  $("compte-vierges").textContent = masquees ? `(${masquees} masquées)` : "";
+}
+
+function pageVoisine(sens) {
+  // la page affichée suivante (sens 1) ou précédente (−1)
+  for (let n = etat.page + sens; n >= 1 && n <= etat.cahier.pages.length; n += sens) {
+    if (!etat.feuilles[n - 1].feuille.hidden) return n;
+  }
+  return etat.page;
 }
 
 function dimensionner() {
@@ -269,6 +294,7 @@ function allerPage(n, defilerVers) {
   if (!etat.cahier) return;
   activerPage(Math.min(Math.max(1, n), etat.cahier.pages.length));
   const { feuille } = etat.feuilles[etat.page - 1];
+  feuille.hidden = false; // une page vierge demandée s'affiche
   let haut = 0, gauche = 0;
   if (defilerVers !== undefined) {
     const s = largeurAffichee() / dimensionsVue()[0];
@@ -305,6 +331,7 @@ function pageEnVue() {
   const repere = $("vue").scrollTop + $("vue").clientHeight / 3;
   let n = 1;
   for (const { feuille } of etat.feuilles) {
+    if (feuille.hidden) continue;
     if (feuille.offsetTop > repere) break;
     n = Number(feuille.dataset.page);
   }
@@ -810,7 +837,7 @@ async function qualifier(champ, valeur, page = etat.page) {
     return;
   }
   if (page === 0) etat.cahier.remarque = valeur;
-  else if (champ === "type") p.type_verifie = valeur;
+  else if (champ === "type") { p.type_verifie = valeur; masquerVierges(); }
   else if (champ === "remarque") p.remarque = valeur;
   else p.problemes[champ] = valeur;
   if (champ === "remarque") {
@@ -1021,8 +1048,14 @@ $("recherche").addEventListener("submit", async (ev) => {
 
 // ---------- navigation, zoom, clavier ----------
 
-$("page-prec").addEventListener("click", () => allerPage(etat.page - 1));
-$("page-suiv").addEventListener("click", () => allerPage(etat.page + 1));
+$("page-prec").addEventListener("click", () => allerPage(pageVoisine(-1)));
+$("page-suiv").addEventListener("click", () => allerPage(pageVoisine(1)));
+$("voir-vierges").addEventListener("change", (ev) => {
+  try { localStorage.setItem("voirVierges", ev.target.checked ? "1" : ""); } catch { /* sans stockage */ }
+  if (!etat.cahier) return;
+  masquerVierges();
+  allerPage(etat.page);
+});
 $("champ-page").addEventListener("change", (ev) => allerPage(Number(ev.target.value)));
 
 function zoomer(facteur) {
@@ -1077,8 +1110,8 @@ document.addEventListener("keydown", async (ev) => {
   if (ev.key === "Escape") { fermerFormulaire(); if (etat.cahier) rafraichirPage(); return; }
   if (ev.target.closest("input, textarea, select") || ev.ctrlKey || ev.metaKey || ev.altKey) return;
   const actions = {
-    ArrowLeft: () => allerPage(etat.page - 1),
-    ArrowRight: () => allerPage(etat.page + 1),
+    ArrowLeft: () => allerPage(pageVoisine(-1)),
+    ArrowRight: () => allerPage(pageVoisine(1)),
     n: () => allerElement(etat.index + 1),
     p: () => allerElement(etat.index - 1),
     v: async () => {
@@ -1109,6 +1142,7 @@ document.addEventListener("keydown", async (ev) => {
   let preferee;
   try {
     preferee = localStorage.getItem("etiquette");
+    $("voir-vierges").checked = localStorage.getItem("voirVierges") === "1";
   } catch { /* sans stockage */ }
   remplirEtiquettes($("etiquette"), etat.etiquettes.includes(preferee) ? preferee : undefined);
   await verserRotationsLocales();

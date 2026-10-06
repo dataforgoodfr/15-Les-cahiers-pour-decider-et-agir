@@ -34,6 +34,9 @@ la machine : les pages, les notes et les listes ne la quittent pas.
 - **Faire défiler le cahier** : les pages se suivent les unes sous les autres ;
   la page courante (panneau de droite, statut, vignette) est celle qui occupe
   le haut de la vue, ou la dernière cliquée.
+  Les pages vierges (typage ou type vérifié) sont masquées du défilement,
+  sauf si la case « Pages vierges » est cochée ; leur vignette reste, et un
+  clic dessus les affiche.
 - **Pivoter l'affichage** d'un quart de tour (`t`), page par page, pour lire
   une page numérisée de travers. Les notes restent justes : elles sont
   gardées dans le repère du PDF. La rotation est gardée dans le carnet : elle

@@ -75,7 +75,8 @@ def test_listes_aller_retour(tmp_path):
 
 @pytest.fixture
 def serveur(tmp_path):
-    dossier = tmp_path / "versement" / "BnF_GDN_00_PDF"
+    # comme le versement : dossier du département, puis du type de document
+    dossier = tmp_path / "versement" / "BnF_GDN_00_PDF" / "CC"
     dossier.mkdir(parents=True)
     with pymupdf.open() as doc:
         for _ in range(2):
