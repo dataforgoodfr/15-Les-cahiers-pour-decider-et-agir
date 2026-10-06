@@ -51,6 +51,13 @@ LISTES = [
 ]
 
 
+# la règle ne voit pas la numérotation manuscrite (#64)
+SUITE = (
+    " Une feuille de suite du même auteur (numérotation des demandes qui "
+    "continue, numéro de feuille) n'ouvre pas de contribution : ne pas accepter."
+)
+
+
 def pages_lues(typage: list[Path], fichiers: set[str]) -> dict[str, list[int]]:
     """Numéros des pages dactylographiées de chaque cahier, hors service."""
     pages = defaultdict(list)
@@ -106,6 +113,7 @@ def ecrire_listes(dossier: Path, trouves: list[dict], resume: list[dict]):
                 f"règle « {regle.strip()} ». Juste : « a » l'accepte comme note "
                 f"« {DEBUT} ». Faux : ne rien accepter. Ajouter les débuts manqués, "
                 "puis marquer la page vue (v)."
+                + (SUITE if regle.startswith("gabarit") else "")
             ),
             elements,
             tache=TACHE,
