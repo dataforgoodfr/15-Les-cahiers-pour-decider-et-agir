@@ -24,5 +24,10 @@ uv run pytest
 | `manquantes` | #43 | Pages manquantes des courriers et formulaires types |
 | `contributions` | #5 | Débuts des contributions (courriels, formulaires), mesurés sur les notes de l'outil d'annotation |
 | `annotation` | #5, #7 | Outil local d'annotation : vérités terrain sur les pages, listes à revoir |
+| `anonymisation` | #7 | Données personnelles (règles, zones de formulaire, modèles locaux), à vérifier dans l'outil d'annotation |
+
+Les modèles locaux de l'anonymisation (GLiNER) sont dans un groupe à part :
+`uv sync --group modeles`. Les LLM passent par [Ollama](https://ollama.com/),
+sur cette machine.
 
 Chaque module décrit sa commande dans sa docstring ou son README.
