@@ -45,7 +45,8 @@ def code_insee(fichier: str) -> str | None:
 
 
 def departement(code: str) -> str:
-    return code[:3] if code.startswith("97") else code[:2]
+    # outre-mer (97x) et collectivités du Pacifique (98x) : trois chiffres
+    return code[:3] if code[:2] in ("97", "98") else code[:2]
 
 
 def dans_panel(code: str | None, departements, communes) -> bool:
