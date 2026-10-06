@@ -23,6 +23,7 @@ const etat = {
   retablis: new Set(), // "fichier|page|id" des repérages rétablis (listes à masquer)
   note: null,         // identifiant de la note ouverte dans le formulaire
   brouillon: null,    // position d'une note en cours de création
+  feuilles: [],       // par page : {feuille, image, calque}
 };
 
 // ---------- utilitaires ----------
@@ -118,6 +119,7 @@ async function ouvrirCahier(fichier, page = 1, defilerVers) {
   $("total-pages").textContent = `/ ${etat.cahier.pages.length}`;
   $("champ-page").max = etat.cahier.pages.length;
   dessinerVignettes();
+  construireFeuilles();
   allerPage(page, defilerVers);
 }
 
@@ -165,6 +167,7 @@ function pivoter() {
   const r = (rotation() + 90) % 360;
   if (r) etat.rotations.set(c, r); else etat.rotations.delete(c);
   try { localStorage.setItem("rotations", JSON.stringify([...etat.rotations])); } catch { /* sans stockage */ }
+  dimensionner();
   allerPage(etat.page);
 }
 
@@ -173,34 +176,96 @@ function largeurAffichee() {
   return Math.max(300, $("vue").clientWidth - 32);
 }
 
-function allerPage(n, defilerVers) {
-  if (!etat.cahier) return;
-  etat.page = Math.min(Math.max(1, n), etat.cahier.pages.length);
-  fermerFormulaire();
-  const p = pageCourante();
-  const [largeurVue, hauteurVue] = dimensionsVue();
-  const s = largeurAffichee() / largeurVue; // pixels par point
-  const feuille = $("feuille");
-  feuille.style.width = `${largeurVue * s}px`;
-  feuille.style.height = `${hauteurVue * s}px`;
-  const image = $("image");
-  image.style.width = `${p.largeur * s}px`;
-  image.style.height = `${p.hauteur * s}px`;
-  image.style.transform = TRANSFORMATIONS[rotation()];
-  image.onload = () => {
-    planifier();
-    if (defilerVers === undefined) { $("vue").scrollTop = 0; $("vue").scrollLeft = 0; return; }
-    if (defilerVers === BAS) { $("vue").scrollTop = $("vue").scrollHeight; $("vue").scrollLeft = 0; return; }
-    const [u, v] = versVue(0, defilerVers);
-    $("vue").scrollTop = Math.max(0, v * s - 120);
-    $("vue").scrollLeft = rotation() % 180 ? Math.max(0, u * s - 120) : 0;
-  };
-  image.src = urlImage(etat.cahier.fichier, etat.page, p.largeur * s);
-  $("calque").setAttribute("viewBox", `0 0 ${largeurVue} ${hauteurVue}`);
-  $("calque").setAttribute("preserveAspectRatio", "none");
-  feuille.hidden = false;
+// Les pages du cahier défilent les unes sous les autres, chacune avec son
+// image et son calque. La page courante est celle qui occupe le haut de la
+// vue : le panneau, les vignettes et les fonctions du calque travaillent sur
+// elle ; `surPage` les fait travailler sur une autre.
+
+const calqueCourant = () => etat.feuilles[etat.page - 1].calque;
+
+function surPage(n, fn) {
+  const courante = etat.page;
+  etat.page = n;
+  try { return fn(); } finally { etat.page = courante; }
+}
+
+let observateur;
+function construireFeuilles() {
+  observateur?.disconnect();
+  // une image se charge quand sa page approche de la vue
+  observateur = new IntersectionObserver((entrees) => {
+    for (const e of entrees) if (e.isIntersecting) chargerImage(Number(e.target.dataset.page));
+  }, { root: $("vue"), rootMargin: "100% 0px" });
+  etat.feuilles = etat.cahier.pages.map((p) => {
+    const feuille = element("div", { class: "feuille" });
+    feuille.dataset.page = p.page;
+    const image = element("img", { class: "image", alt: "", draggable: "false" });
+    const calque = element("svg", { class: "calque", preserveAspectRatio: "none" });
+    feuille.append(image, calque);
+    observateur.observe(feuille);
+    return { feuille, image, calque };
+  });
+  $("feuilles").replaceChildren(...etat.feuilles.map((f) => f.feuille));
   $("vide").hidden = true;
-  $("champ-page").value = etat.page;
+  dimensionner();
+}
+
+function dimensionner() {
+  // taille de chaque feuille selon le zoom et sa rotation
+  for (const p of etat.cahier.pages) {
+    surPage(p.page, () => {
+      const { feuille, image, calque } = etat.feuilles[p.page - 1];
+      const [largeurVue, hauteurVue] = dimensionsVue();
+      const s = largeurAffichee() / largeurVue; // pixels par point
+      feuille.style.width = `${largeurVue * s}px`;
+      feuille.style.height = `${hauteurVue * s}px`;
+      image.style.width = `${p.largeur * s}px`;
+      image.style.height = `${p.hauteur * s}px`;
+      image.style.transform = TRANSFORMATIONS[rotation()];
+      calque.setAttribute("viewBox", `0 0 ${largeurVue} ${hauteurVue}`);
+      if (image.getAttribute("src")) chargerImage(p.page); // à la nouvelle largeur
+      dessinerCalque();
+    });
+  }
+}
+
+function chargerImage(n) {
+  surPage(n, () => {
+    const p = pageCourante();
+    const url = urlImage(etat.cahier.fichier, n, p.largeur * (largeurAffichee() / dimensionsVue()[0]));
+    const { image } = etat.feuilles[n - 1];
+    if (image.getAttribute("src") !== url) image.src = url;
+  });
+}
+
+let defilementProgramme = false; // le défilement vient de allerPage, pas de l'utilisateur
+
+function allerPage(n, defilerVers) {
+  // défile jusqu'à la page n, à son haut ou à l'ordonnée `defilerVers` (points PDF)
+  if (!etat.cahier) return;
+  activerPage(Math.min(Math.max(1, n), etat.cahier.pages.length));
+  const { feuille } = etat.feuilles[etat.page - 1];
+  let haut = 0, gauche = 0;
+  if (defilerVers !== undefined) {
+    const s = largeurAffichee() / dimensionsVue()[0];
+    const [u, v] = versVue(0, defilerVers);
+    haut = Math.max(0, v * s - 120);
+    gauche = rotation() % 180 ? Math.max(0, u * s - 120) : 0;
+  }
+  defilementProgramme = true;
+  $("vue").scrollTop = feuille.offsetTop + haut;
+  $("vue").scrollLeft = gauche ? feuille.offsetLeft + gauche : 0;
+}
+
+function activerPage(n) {
+  // la page n devient la page courante, sans défiler
+  if (!etat.cahier) return;
+  fermerFormulaire();
+  const ancienne = etat.page;
+  etat.page = n;
+  // l'ancienne page perd sa note choisie et son brouillon
+  if (ancienne !== n && etat.feuilles[ancienne - 1]) surPage(ancienne, dessinerCalque);
+  $("champ-page").value = n;
   $("pivoter").classList.toggle("actif", rotation() !== 0);
   dessinerCalque();
   dessinerNotes();
@@ -208,33 +273,34 @@ function allerPage(n, defilerVers) {
   dessinerInfos();
   marquerVignette();
   ecrireAdresse();
+  planifier();
 }
 
-// La molette défile la page ; arrivée au bord, elle passe à la page voisine,
-// montrée par le haut (suivante) ou par le bas (précédente).
-const BAS = Infinity;
-const POUSSEE = 150; // px de molette au-delà du bord avant de changer de page
-const REPOS = 400; // ms sans changer de page : l'inertie du pavé tactile ne saute pas de page
-let poussee = 0;
-let dernierChangement = 0;
-$("vue").addEventListener("wheel", (ev) => {
-  if (!etat.cahier || ev.ctrlKey || Math.abs(ev.deltaY) < Math.abs(ev.deltaX)) return;
-  const vue = $("vue");
-  const enBas = vue.scrollTop + vue.clientHeight >= vue.scrollHeight - 2;
-  const enHaut = vue.scrollTop <= 0;
-  const sens = ev.deltaY > 0 ? 1 : -1;
-  if (!(sens > 0 ? enBas : enHaut)) { poussee = 0; return; }
-  ev.preventDefault();
-  if (Date.now() - dernierChangement < REPOS) return;
-  const voisine = etat.page + sens;
-  if (voisine < 1 || voisine > etat.cahier.pages.length) return;
-  // l'unité de deltaY est le pixel, la ligne ou la page selon le périphérique
-  poussee += Math.abs(ev.deltaY) * [1, 16, vue.clientHeight][ev.deltaMode];
-  if (poussee < POUSSEE) return;
-  poussee = 0;
-  dernierChangement = Date.now();
-  allerPage(voisine, sens > 0 ? undefined : BAS);
-}, { passive: false });
+function pageEnVue() {
+  // la page sous le premier tiers de la vue
+  const repere = $("vue").scrollTop + $("vue").clientHeight / 3;
+  let n = 1;
+  for (const { feuille } of etat.feuilles) {
+    if (feuille.offsetTop > repere) break;
+    n = Number(feuille.dataset.page);
+  }
+  return n;
+}
+
+let imageDefilement = 0;
+$("vue").addEventListener("scroll", () => {
+  if (defilementProgramme) { defilementProgramme = false; return; }
+  if (!etat.cahier || trace || glisse) return;
+  cancelAnimationFrame(imageDefilement);
+  imageDefilement = requestAnimationFrame(() => {
+    const n = pageEnVue();
+    if (n !== etat.page) activerPage(n);
+  });
+});
+
+function dessinerCalques() {
+  for (const p of etat.cahier.pages) surPage(p.page, dessinerCalque);
+}
 
 // ---------- calque : repérages et notes ----------
 
@@ -272,7 +338,7 @@ function forme(x0, y0, x1, y1, classe) {
 }
 
 function dessinerCalque() {
-  const calque = $("calque");
+  const calque = calqueCourant();
   calque.replaceChildren();
   const p = pageCourante();
   const taille = 12 * echelle();
@@ -364,7 +430,7 @@ function poignees(n) {
 let glisse = null; // note qu'on déplace ou redimensionne
 function commencerGlisse(ev, n, prise) {
   ev.preventDefault();
-  $("calque").setPointerCapture(ev.pointerId);
+  calqueCourant().setPointerCapture(ev.pointerId);
   glisse = { n, prise, depart: pointPdf(ev), origine: { x0: n.x0, y0: n.y0, x1: n.x1, y1: n.y1 } };
 }
 
@@ -418,7 +484,7 @@ function lignesOcr() {
 
 function pointPdf(ev) {
   // point cliqué, en points PDF (repère de la page, pas de l'affichage)
-  const calque = $("calque");
+  const calque = calqueCourant();
   const pt = calque.createSVGPoint();
   pt.x = ev.clientX;
   pt.y = ev.clientY;
@@ -431,24 +497,30 @@ function pointPdf(ev) {
 }
 
 let trace = null;
-$("calque").addEventListener("pointerdown", (ev) => {
-  if (!etat.cahier || ev.button !== 0) return;
+// en capture : la page cliquée devient courante avant que ses notes ne
+// reçoivent le clic
+$("feuilles").addEventListener("pointerdown", (ev) => {
+  const feuille = ev.target.closest(".feuille");
+  if (feuille && Number(feuille.dataset.page) !== etat.page) activerPage(Number(feuille.dataset.page));
+}, true);
+$("feuilles").addEventListener("pointerdown", (ev) => {
+  if (!etat.cahier || ev.button !== 0 || !ev.target.closest(".calque")) return;
   ev.preventDefault();
-  $("calque").setPointerCapture(ev.pointerId);
+  calqueCourant().setPointerCapture(ev.pointerId);
   const d = pointPdf(ev);
   trace = { depart: ev, x0: d.x, y0: d.y };
   etat.note = null;
   etat.brouillon = { x0: d.x, y0: d.y, x1: d.x, y1: d.y };
   dessinerCalque();
 });
-$("calque").addEventListener("pointermove", (ev) => {
+$("feuilles").addEventListener("pointermove", (ev) => {
   if (glisse) { suivreGlisse(ev); return; }
   if (!trace) return;
   const d = pointPdf(ev);
   etat.brouillon = { x0: trace.x0, y0: trace.y0, x1: d.x, y1: d.y };
   dessinerCalque();
 });
-$("calque").addEventListener("pointerup", (ev) => {
+$("feuilles").addEventListener("pointerup", (ev) => {
   if (glisse) { finirGlisse(); return; }
   if (!trace) return;
   const bouge = Math.hypot(ev.clientX - trace.depart.clientX, ev.clientY - trace.depart.clientY) > 4;
@@ -476,14 +548,16 @@ const DOUBLE_CLIC = 300; // ms
 let clic = null; // clic simple en attente : un second clic en fait une fin
 
 function cliquer(point) {
-  if (clic && Math.hypot(point.x0 - clic.point.x0, point.y0 - clic.point.y0) < 10) {
+  // la page est retenue au clic : on a pu défiler avant la fin du délai
+  const page = etat.page;
+  if (clic && clic.page === page && Math.hypot(point.x0 - clic.point.x0, point.y0 - clic.point.y0) < 10) {
     clearTimeout(clic.minuterie);
     clic = null;
-    poserNoteRapide(point, FIN);
+    poserNoteRapide(point, FIN, page);
     return;
   }
-  if (clic) { clearTimeout(clic.minuterie); poserNoteRapide(clic.point, DEBUT); }
-  clic = { point, minuterie: setTimeout(() => { clic = null; poserNoteRapide(point, DEBUT); }, DOUBLE_CLIC) };
+  if (clic) { clearTimeout(clic.minuterie); poserNoteRapide(clic.point, DEBUT, clic.page); }
+  clic = { point, page, minuterie: setTimeout(() => { clic = null; poserNoteRapide(point, DEBUT, page); }, DOUBLE_CLIC) };
 }
 
 function etiquetteMasque() {
@@ -493,19 +567,20 @@ function etiquetteMasque() {
   return etat.groupes[PERSONNELLES].includes(courante) ? courante : etat.groupes[PERSONNELLES].at(-1);
 }
 
-async function poserNoteRapide(cadre, etiquette) {
+async function poserNoteRapide(cadre, etiquette, page = etat.page) {
   try {
     const note = await api("/api/notes", {
-      fichier: etat.cahier.fichier, page: etat.page, ...cadre, etiquette, texte: "",
+      fichier: etat.cahier.fichier, page, ...cadre, etiquette, texte: "",
     });
     etat.cahier.notes.push(note);
     // la note posée reste choisie : Suppr l'annule
-    etat.note = note.id;
+    if (page === etat.page) etat.note = note.id;
     message(`${etiquette} (Suppr pour annuler)`);
   } catch (e) {
     message(`Échec : ${e.message}`);
   }
-  etat.brouillon = null;
+  if (page === etat.page) etat.brouillon = null;
+  else surPage(page, dessinerCalque);
   rafraichirPage();
 }
 
@@ -726,13 +801,12 @@ async function qualifier(champ, valeur, page = etat.page) {
 $("type-verifie").addEventListener("change", (ev) => qualifier("type", ev.target.value || null));
 $("remarque-page").addEventListener("change", (ev) => qualifier("remarque", ev.target.value));
 $("remarque-cahier").addEventListener("change", (ev) => qualifier("remarque", ev.target.value, 0));
-$("voir-ocr").addEventListener("change", () => etat.cahier && dessinerCalque());
+$("voir-ocr").addEventListener("change", () => etat.cahier && dessinerCalques());
 
 // ---------- file de chargement des images ----------
 //
-// La page à voir part tout de suite. Une fois arrivée, la file charge, dans
-// l'ordre : les pages voisines en grand, les prochaines pages de la liste à
-// revoir, puis les vignettes, de la page courante vers l'extérieur. Au plus
+// Les pages du cahier se chargent à l'approche de la vue. La file charge, dans
+// l'ordre : les prochaines pages de la liste à revoir, puis les vignettes, de la page courante vers l'extérieur. Au plus
 // trois images à la fois, pour qu'une page demandée ne fasse jamais la queue.
 
 const PAS_LARGEUR = 100; // comme le serveur : même URL, même cache
@@ -768,9 +842,6 @@ function planifier() {
   const total = etat.cahier.pages.length;
   const grande = largeurAffichee();
   const file = [];
-  for (const d of [1, -1, 2, -2]) {
-    if (n + d >= 1 && n + d <= total) file.push({ url: urlImage(fichier, n + d, grande) });
-  }
   if (etat.liste) {
     for (const e of etat.liste.elements.slice(etat.index + 1, etat.index + 4)) {
       file.push({ url: urlImage(e.fichier, e.page, grande) });
@@ -934,13 +1005,14 @@ function zoomer(facteur) {
   if (!etat.cahier) return;
   etat.zoom = facteur === null ? null
     : Math.min(3000, Math.max(300, Math.round(largeurAffichee() * facteur)));
+  dimensionner();
   allerPage(etat.page);
 }
 $("zoom-plus").addEventListener("click", () => zoomer(1.25));
 $("zoom-moins").addEventListener("click", () => zoomer(0.8));
 $("zoom-ajuster").addEventListener("click", () => zoomer(null));
 $("pivoter").addEventListener("click", () => pivoter());
-$("voir-marques").addEventListener("change", () => etat.cahier && dessinerCalque());
+$("voir-marques").addEventListener("change", () => etat.cahier && dessinerCalques());
 async function choisirEtiquette(nom) {
   $("etiquette").value = nom;
   try { localStorage.setItem("etiquette", nom); } catch { /* sans stockage */ }
@@ -974,7 +1046,7 @@ $("etiquette").addEventListener("change", (ev) => {
 let minuterieTaille;
 window.addEventListener("resize", () => {
   clearTimeout(minuterieTaille);
-  minuterieTaille = setTimeout(() => { if (etat.cahier && etat.zoom === null) allerPage(etat.page); }, 200);
+  minuterieTaille = setTimeout(() => { if (etat.cahier && etat.zoom === null) { dimensionner(); allerPage(etat.page); } }, 200);
 });
 
 document.addEventListener("keydown", async (ev) => {
@@ -998,7 +1070,7 @@ document.addEventListener("keydown", async (ev) => {
     a: () => accepterMarques(),
     Delete: () => supprimerNote(),
     Backspace: () => supprimerNote(),
-    m: () => { $("voir-marques").checked = !$("voir-marques").checked; if (etat.cahier) dessinerCalque(); },
+    m: () => { $("voir-marques").checked = !$("voir-marques").checked; if (etat.cahier) dessinerCalques(); },
     ...Object.fromEntries(raccourcis().map((nom, i) => [String(i + 1), () => choisirEtiquette(nom)])),
   };
   if (actions[ev.key]) { ev.preventDefault(); await actions[ev.key](); }
