@@ -59,7 +59,7 @@ def render(database_state: gr.State, pdf_path: gr.State):
         current_pdf = gr.State(None)
 
         with gr.Row():
-            with gr.Column(scale=0.5) as col:
+            with gr.Column(scale=0.5):
                 region = gr.Dropdown(
                     label="Region", choices=[], interactive=True, filterable=True
                 )

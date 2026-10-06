@@ -163,6 +163,13 @@ cython_debug/
 .ruff_cache
 # Données locales : sources téléchargées et tables produites (voir docs/donnees.md)
 data/
+# Fichiers de données, refusés aussi par le hook pas-de-donnees (.pre-commit-config.yaml)
+*.pdf
+*.csv
+*.xlsx
+*.parquet
+*.sqlite
+*.db
 
 # Fichiers générés par PyCharm
 .idea/

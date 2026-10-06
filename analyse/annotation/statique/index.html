@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Annotation des cahiers</title>
+<link rel="stylesheet" href="/statique/style.css">
+</head>
+<body>
+<header>
+  <form id="recherche" autocomplete="off">
+    <input id="champ-cahier" list="propositions" placeholder="Ouvrir un cahier (nom ou code INSEE)" spellcheck="false">
+    <datalist id="propositions"></datalist>
+  </form>
+  <div id="titre-cahier" class="discret">Aucun cahier ouvert</div>
+  <nav class="groupe" aria-label="Pages">
+    <button id="page-prec" title="Page précédente (←)">◀</button>
+    <input id="champ-page" type="number" min="1" value="1" aria-label="Page">
+    <span id="total-pages" class="discret">/ 0</span>
+    <button id="page-suiv" title="Page suivante (→)">▶</button>
+  </nav>
+  <div class="groupe" aria-label="Zoom">
+    <button id="zoom-moins" title="Dézoomer (−)">−</button>
+    <button id="zoom-ajuster" title="Ajuster à la largeur (0)">Largeur</button>
+    <button id="zoom-plus" title="Zoomer (+)">+</button>
+    <button id="pivoter" title="Pivoter l'affichage d'un quart de tour (t)">↻ Pivoter</button>
+  </div>
+  <div class="groupe" aria-label="Statut de la page">
+    <button id="statut-vue" class="statut" data-statut="vue" title="Page vue (v)">✓ Vue</button>
+    <button id="statut-revoir" class="statut" data-statut="a_revoir" title="À revoir (r)">? À revoir</button>
+  </div>
+  <label class="groupe">Étiquette
+    <select id="etiquette"></select>
+  </label>
+  <label class="groupe" title="Montrer ou cacher les repérages (m)"><input id="voir-marques" type="checkbox" checked> Repérages</label>
+  <label class="groupe" title="Cadres des lignes de la couche texte (OCR du versement) ; survoler pour lire"><input id="voir-ocr" type="checkbox"> Texte OCR</label>
+</header>
+
+<aside id="panneau-listes">
+  <h2>Listes à revoir</h2>
+  <select id="choix-liste"><option value="">— aucune —</option></select>
+  <p id="consigne" class="discret"></p>
+  <div id="progression" class="discret"></div>
+  <div class="groupe">
+    <button id="elem-prec" title="Élément précédent (p)">↑ Préc.</button>
+    <button id="elem-suiv" title="Élément suivant (n)">↓ Suiv.</button>
+  </div>
+  <button id="accepter" title="Transformer les repérages de la page en notes (a)">Accepter les repérages</button>
+  <ol id="elements"></ol>
+</aside>
+
+<main id="vue">
+  <div id="feuilles"></div>
+  <p id="vide" class="discret">Ouvrez un cahier ou choisissez une liste.</p>
+</main>
+
+<aside id="panneau-notes">
+  <section id="infos" hidden>
+    <h2>Page <span id="infos-numero"></span></h2>
+    <dl id="typage" class="proprietes"></dl>
+    <label class="ligne">Type de page <span id="source-type" class="source"></span>
+      <select id="type-verifie"></select>
+    </label>
+    <h2>Problèmes</h2>
+    <div id="problemes" class="cases"></div>
+    <label class="ligne">Remarques sur la page
+      <textarea id="remarque-page" rows="3"></textarea>
+    </label>
+    <h2>Détections</h2>
+    <ul id="constats-page" class="constats"></ul>
+    <h2>Cahier</h2>
+    <ul id="constats-cahier" class="constats"></ul>
+    <label class="ligne">Remarques sur le cahier
+      <textarea id="remarque-cahier" rows="3"></textarea>
+    </label>
+  </section>
+  <h2>Notes de la page</h2>
+  <p class="discret aide">Clic : début de contribution. Double clic : fin. Glisser : caviarder. Enregistré aussitôt, Suppr annule.</p>
+  <form id="formulaire-note" hidden>
+    <label>Étiquette <select id="note-etiquette"></select></label>
+    <label>Texte <textarea id="note-texte" rows="4"></textarea></label>
+    <div class="groupe">
+      <button type="submit" id="note-enregistrer">Enregistrer</button>
+      <button type="button" id="note-annuler">Annuler</button>
+      <button type="button" id="note-supprimer" class="danger" hidden>Supprimer</button>
+    </div>
+  </form>
+  <ol id="notes"></ol>
+  <details>
+    <summary>Raccourcis</summary>
+    <dl class="raccourcis">
+      <dt>← →</dt><dd>page</dd>
+      <dt>n p</dt><dd>élément de liste</dd>
+      <dt>v</dt><dd>vue, puis élément suivant</dd>
+      <dt>r</dt><dd>à revoir</dd>
+      <dt>+ − 0</dt><dd>zoom</dd>
+      <dt>t</dt><dd>pivoter l'affichage</dd>
+      <dt>1 à 9</dt><dd>choisir l'étiquette (et celle de la note ouverte) ; en masquage, les données personnelles</dd>
+      <dt>a</dt><dd>accepter les repérages de la page</dd>
+      <dt>clic</dt><dd>sur un repérage caché : le rétablir (listes à masquer)</dd>
+      <dt>m</dt><dd>montrer ou cacher les repérages</dd>
+      <dt>Suppr</dt><dd>supprimer la note ouverte</dd>
+      <dt>Échap</dt><dd>annuler</dd>
+    </dl>
+  </details>
+</aside>
+
+<footer id="vignettes"></footer>
+<div id="message" role="status"></div>
+<script src="/statique/app.js"></script>
+</body>
+</html>

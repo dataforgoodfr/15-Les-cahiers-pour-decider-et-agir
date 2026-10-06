@@ -1,0 +1,148 @@
+:root {
+  --fond: #f4f3ef;
+  --surface: #ffffff;
+  --texte: #1d1d1b;
+  --discret: #6b6a65;
+  --bord: #d9d7d0;
+  --accent: #2456a6;
+  --note: #2456a6;
+  --marque: #d26a00;
+  --retabli: #1a7f37;
+  --vue: #2e7d32;
+  --revoir: #b26a00;
+  --danger: #b3261e;
+  --courant: #fff4c2;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #1b1b1a;
+    --surface: #262624;
+    --texte: #ecebe6;
+    --discret: #a3a29c;
+    --bord: #3d3c39;
+    --accent: #8ab4f8;
+    --note: #8ab4f8;
+    --marque: #ffa94d;
+    --retabli: #57c47a;
+    --vue: #81c995;
+    --revoir: #fdd663;
+    --danger: #f28b82;
+    --courant: #4a4320;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body {
+  display: grid;
+  grid-template-columns: 260px 1fr 300px;
+  grid-template-rows: auto 1fr 132px;
+  grid-template-areas: "haut haut haut" "listes vue notes" "vignettes vignettes vignettes";
+  font: 14px/1.4 system-ui, sans-serif;
+  background: var(--fond);
+  color: var(--texte);
+}
+header {
+  grid-area: haut;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--bord);
+}
+#recherche input { width: 320px; }
+#titre-cahier { font-weight: 600; color: var(--texte); }
+.groupe { display: inline-flex; align-items: center; gap: 4px; }
+.discret { color: var(--discret); }
+button, input, select, textarea {
+  font: inherit; color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--bord); border-radius: 4px;
+  padding: 3px 8px;
+}
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.actif { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+button.danger { color: var(--danger); }
+#champ-page { width: 64px; }
+aside {
+  overflow-y: auto; padding: 8px 12px;
+  background: var(--surface);
+}
+#panneau-listes { grid-area: listes; border-right: 1px solid var(--bord); }
+#panneau-notes { grid-area: notes; border-left: 1px solid var(--bord); }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--discret); margin: 8px 0; }
+#choix-liste { width: 100%; }
+#elements, #notes { list-style: none; padding: 0; margin: 8px 0; }
+#elements li, #notes li {
+  padding: 4px 6px; border-radius: 4px; cursor: pointer;
+  display: flex; gap: 6px; align-items: baseline;
+}
+#elements li:hover, #notes li:hover { background: var(--fond); }
+#elements li.courant, #notes li.courant { background: var(--courant); }
+.pastille { width: 8px; height: 8px; border-radius: 50%; flex: none; border: 1px solid var(--discret); }
+.pastille.vue { background: var(--vue); border-color: var(--vue); }
+.pastille.a_revoir { background: var(--revoir); border-color: var(--revoir); }
+.nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#notes .numero { font-weight: 600; color: var(--note); }
+#notes .texte { white-space: pre-wrap; color: var(--discret); }
+#formulaire-note { display: grid; gap: 8px; margin-bottom: 12px; padding: 8px; border: 1px solid var(--accent); border-radius: 6px; }
+#formulaire-note label { display: grid; gap: 2px; }
+#formulaire-note textarea { width: 100%; resize: vertical; }
+.aide { margin: 0 0 8px; }
+.raccourcis { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; }
+.raccourcis dt { font-family: ui-monospace, monospace; }
+.raccourcis dd { margin: 0; color: var(--discret); }
+main#vue { grid-area: vue; overflow: auto; position: relative; padding: 12px; }
+.feuille { position: relative; margin: 0 auto 12px; box-shadow: 0 1px 4px rgb(0 0 0 / .25); overflow: hidden; background: #fff; }
+.feuille .image { position: absolute; left: 0; top: 0; transform-origin: 0 0; user-select: none; background: #fff; }
+.calque { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+.calque .note { fill: color-mix(in srgb, var(--note) 15%, transparent); stroke: var(--note); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: pointer; }
+.calque .note.courant { stroke-width: 4px; cursor: move; }
+.calque .poignee { fill: var(--surface); stroke: var(--note); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: nwse-resize; }
+.calque .numero-note { fill: var(--note); font-weight: 700; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.calque .marque { stroke: var(--marque); stroke-width: 2px; stroke-dasharray: 8 5; vector-effect: non-scaling-stroke; fill: color-mix(in srgb, var(--marque) 10%, transparent); pointer-events: none; }
+.calque .masque { fill: rgb(20 20 20 / 0.6); stroke: none; cursor: pointer; pointer-events: all; }
+.calque .masque.retabli { fill: transparent; stroke: var(--retabli); stroke-width: 2px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.calque .etiquette-retabli { fill: var(--retabli); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.calque .etiquette-marque { fill: var(--marque); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.calque .trace { fill: none; stroke: var(--note); stroke-width: 2px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+#vide { text-align: center; margin-top: 20vh; }
+footer#vignettes {
+  grid-area: vignettes;
+  display: flex; gap: 6px; overflow-x: auto; padding: 8px 12px;
+  background: var(--surface); border-top: 1px solid var(--bord);
+}
+.vignette { flex: none; position: relative; cursor: pointer; border: 2px solid transparent; border-radius: 3px; }
+.vignette img { display: block; height: 96px; background: #fff; }
+.vignette.courant { border-color: var(--accent); }
+.vignette.vue { box-shadow: inset 0 -4px 0 var(--vue); }
+.vignette.a_revoir { box-shadow: inset 0 -4px 0 var(--revoir); }
+.vignette .legende {
+  position: absolute; left: 2px; bottom: 2px; padding: 0 4px; border-radius: 3px;
+  font-size: 11px; background: rgb(0 0 0 / .65); color: #fff;
+}
+.vignette .compte { position: absolute; right: 2px; top: 2px; padding: 0 4px; border-radius: 3px; font-size: 11px; background: var(--note); color: #fff; }
+.vignette.service img { opacity: .45; }
+#message {
+  position: fixed; bottom: 148px; left: 50%; transform: translateX(-50%);
+  padding: 6px 12px; border-radius: 4px; background: var(--texte); color: var(--fond);
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+#message.visible { opacity: .92; }
+.proprietes { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 8px; }
+.proprietes dt { color: var(--discret); }
+.proprietes dd { margin: 0; }
+label.ligne { display: grid; gap: 2px; margin-bottom: 8px; }
+.cases { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; }
+.cases label { display: flex; gap: 4px; align-items: center; }
+.constats { margin: 0 0 8px; padding-left: 18px; }
+.constats li { margin: 2px 0; }
+.constats .rien { list-style: none; margin-left: -18px; color: var(--discret); }
+.vignette .alerte { position: absolute; left: 2px; top: 2px; padding: 0 4px; border-radius: 3px; font-size: 11px; background: var(--revoir); color: #000; }
+.source { font-size: 12px; padding: 0 6px; border-radius: 8px; background: var(--fond); color: var(--discret); margin-left: 4px; }
+.source.verifie { background: var(--vue); color: var(--surface); }
+.cases .detecte { font-size: 11px; color: var(--revoir); }
+#panneau-notes textarea { width: 100%; resize: vertical; }
+.calque .ligne-ocr { fill: transparent; stroke: var(--vue); stroke-width: 1px; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
+.calque .ligne-ocr:hover { fill: color-mix(in srgb, var(--vue) 18%, transparent); }
+#accepter { width: 100%; margin-top: 8px; }
