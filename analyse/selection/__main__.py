@@ -32,7 +32,7 @@ import pymupdf
 from annotation.carnet import Carnet
 from anonymisation.__main__ import PERSONNELLES
 from anonymisation.masquage import CHAMPS, a_masquer, fusionner
-from selection.contribution import doublons, hors_contribution, tiree
+from selection.contribution import Sens, doublons, hors_contribution, tiree
 
 TACHE = "selection"
 DEBUT = "début de contribution"
@@ -42,8 +42,11 @@ NOIR = (0, 0, 0)
 GRIS = (0.82, 0.82, 0.82)
 
 
-def ordonnee(n: dict) -> float:
-    return min(n["y0"], n["y1"])
+def point(n: dict, sens: Sens) -> tuple[int, float, float]:
+    """(page, y, x) du coin haut gauche d'une note, dans le sens de lecture."""
+    a = sens.vers_lecture(n["x0"], n["y0"])
+    b = sens.vers_lecture(n["x1"], n["y1"])
+    return n["page"], min(a[1], b[1]), min(a[0], b[0])
 
 
 def cadre(n: dict) -> pymupdf.Rect:
@@ -56,7 +59,12 @@ def cadre(n: dict) -> pymupdf.Rect:
 
 
 def caviarder(
-    chemin: Path, sortie: Path, t, noirs: dict[int, list], fichier: str
+    chemin: Path,
+    sortie: Path,
+    t,
+    noirs: dict[int, list],
+    sens: dict[int, Sens],
+    fichier: str,
 ) -> int:
     """Écrit le PDF de la contribution `t` ; rend le nombre de cadres noirs."""
     total = 0
@@ -65,9 +73,11 @@ def caviarder(
             page = doc[n - 1]
             # les cadres sont dans le repère de la page affichée (rotation comprise)
             vers_pdf = page.derotation_matrix
-            gris = hors_contribution(t, n, page.rect.width, page.rect.height)
+            # au-dessus et en dessous de la contribution, dans le sens de lecture
+            gris = hors_contribution(t, n, *sens[n].dimensions)
             for r in gris:
-                page.add_redact_annot(pymupdf.Rect(r) * vers_pdf, fill=GRIS)
+                cadre_pdf = pymupdf.Rect(sens[n].cadre_pdf(*r))
+                page.add_redact_annot(cadre_pdf * vers_pdf, fill=GRIS)
             for r in noirs.get(n, []):
                 # une donnée sur un pixel de bord reste cachée : marge d'un point
                 page.add_redact_annot((r + (-1, -1, 1, 1)) * vers_pdf, fill=NOIR)
@@ -115,6 +125,7 @@ def main() -> None:
             if r["fichier"] in vus
         ]
     retablis = list(carnet.retablis().values())
+    qualifications = carnet.qualifications(remarques=False)
 
     dossier = args.sortie / "pdf"
     dossier.mkdir(parents=True, exist_ok=True)
@@ -140,13 +151,21 @@ def main() -> None:
             continue
         ns = par_cahier[fichier]
         with pymupdf.open(chemins[fichier]) as doc:
-            derniere = doc.page_count
-        debuts = [(n["page"], ordonnee(n)) for n in ns if n["etiquette"] == DEBUT]
-        fins = [(n["page"], ordonnee(n)) for n in ns if n["etiquette"] == FIN]
+            sens = {
+                n: Sens(
+                    qualifications.get((fichier, n), {}).get("rotation", 0),
+                    doc[n - 1].rect.width,
+                    doc[n - 1].rect.height,
+                )
+                for n in range(1, doc.page_count + 1)
+            }
+        derniere = len(sens)
+        debuts = [point(n, sens[n["page"]]) for n in ns if n["etiquette"] == DEBUT]
+        fins = [point(n, sens[n["page"]]) for n in ns if n["etiquette"] == FIN]
         repetes = doublons(debuts)[1]
         if repetes:
             # un début posé deux fois : un double clic manqué (une fin) ou non
-            pages = ", ".join(str(p) for p, _ in repetes)
+            pages = ", ".join(str(p[0]) for p in repetes)
             ligne["statut"] = f"à vérifier : débuts en double p. {pages}"
             continue
         contribution = tiree(float(t["position"]), debuts, fins, derniere)
@@ -170,7 +189,9 @@ def main() -> None:
         for m in masques:
             noirs[m["page"]].append(cadre(m))
         nom = f"{Path(fichier).stem}.pdf"
-        total = caviarder(chemins[fichier], dossier / nom, contribution, noirs, fichier)
+        total = caviarder(
+            chemins[fichier], dossier / nom, contribution, noirs, sens, fichier
+        )
         ligne |= {
             "statut": "exporté",
             "rang": contribution.rang,

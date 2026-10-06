@@ -6,7 +6,13 @@ fins ; la contribution tirée est la ⌈position × n⌉-ième dans l'ordre de
 lecture. Elle s'arrête à sa fin notée, sinon juste avant le début suivant,
 sinon à la dernière page du cahier.
 
-Des pages et des ordonnées en points PDF, jamais de texte.
+L'ordre de lecture se prend dans le sens où la page se lit : une page
+numérisée de travers a été tournée à l'affichage, rotation gardée dans le
+carnet d'annotation. Les points (page, y, x) sont dans ce sens-là
+(`Sens.vers_lecture`) ; les cadres repartent dans le repère du PDF
+(`Sens.vers_pdf`).
+
+Des pages et des positions en points PDF, jamais de texte.
 """
 
 import math
@@ -14,6 +20,40 @@ from dataclasses import dataclass
 
 MARGE = 6  # points : le début est un point posé sur la première ligne
 DOUBLON = 10  # points : deux débuts si proches sont le même, posé deux fois
+
+
+@dataclass(frozen=True)
+class Sens:
+    """Le sens de lecture d'une page : sa rotation à l'affichage (quart de
+    tour horaire) et ses dimensions dans le repère du PDF."""
+
+    rotation: int
+    largeur: float
+    hauteur: float
+
+    @property
+    def dimensions(self) -> tuple[float, float]:
+        """Largeur et hauteur de la page lue."""
+        if self.rotation % 180:
+            return self.hauteur, self.largeur
+        return self.largeur, self.hauteur
+
+    def vers_lecture(self, x: float, y: float) -> tuple[float, float]:
+        w, h = self.largeur, self.hauteur
+        return {90: (h - y, x), 180: (w - x, h - y), 270: (y, w - x)}.get(
+            self.rotation, (x, y)
+        )
+
+    def vers_pdf(self, u: float, v: float) -> tuple[float, float]:
+        w, h = self.largeur, self.hauteur
+        return {90: (v, h - u), 180: (w - u, h - v), 270: (w - v, u)}.get(
+            self.rotation, (u, v)
+        )
+
+    def cadre_pdf(self, x0, y0, x1, y1) -> tuple[float, float, float, float]:
+        """Un cadre de la page lue, dans le repère du PDF."""
+        (a, b), (c, d) = self.vers_pdf(x0, y0), self.vers_pdf(x1, y1)
+        return min(a, c), min(b, d), max(a, c), max(b, d)
 
 
 @dataclass(frozen=True)
@@ -31,30 +71,39 @@ class Tiree:
         return list(range(self.page_debut, self.page_fin + 1))
 
 
-def doublons(
-    debuts: list[tuple[int, float]],
-) -> tuple[list[tuple[int, float]], list[tuple[int, float]]]:
-    """Sépare les débuts posés plusieurs fois au même endroit d'une page. Un
+Point = tuple[int, float, float]  # page, y, x dans le sens de lecture
+
+
+def doublons(debuts: list[Point]) -> tuple[list[Point], list[Point]]:
+    """Sépare les débuts posés plusieurs fois au même point d'une page. Un
     seul compte ; l'intention reste à vérifier (deux clics trop lents pour un
-    double clic voulaient une fin). Rend (débuts, endroits répétés)."""
-    seuls: list[tuple[int, float]] = []
-    repetes: list[tuple[int, float]] = []
+    double clic voulaient une fin). Des débuts proches mais distincts, comme
+    les cases d'une grille, restent tous. Rend (débuts, points répétés)."""
+    seuls: list[Point] = []
+    repetes: list[Point] = []
     for p in sorted(debuts):
-        if seuls and seuls[-1][0] == p[0] and p[1] - seuls[-1][1] < DOUBLON:
-            if not repetes or repetes[-1] != seuls[-1]:
-                repetes.append(seuls[-1])
-        else:
+        meme = next(
+            (
+                s
+                for s in seuls
+                if s[0] == p[0] and math.hypot(p[1] - s[1], p[2] - s[2]) < DOUBLON
+            ),
+            None,
+        )
+        if meme is None:
             seuls.append(p)
+        elif meme not in repetes:
+            repetes.append(meme)
     return seuls, repetes
 
 
 def tiree(
     position: float,
-    debuts: list[tuple[int, float]],
-    fins: list[tuple[int, float]],
+    debuts: list[Point],
+    fins: list[Point],
     derniere_page: int,
 ) -> Tiree | None:
-    """La contribution tirée parmi les débuts et fins (page, ordonnée)."""
+    """La contribution tirée parmi les débuts et fins (page, y, x)."""
     if not debuts:
         return None
     debuts, fins = doublons(debuts)[0], sorted(fins)
@@ -66,9 +115,9 @@ def tiree(
         (f for f in fins if f >= debut and (suivant is None or f <= suivant)), None
     )
     if fin is not None:
-        page_fin, y_fin = fin
+        page_fin, y_fin = fin[:2]
     elif suivant is not None:
-        page_fin, y_fin = suivant
+        page_fin, y_fin = suivant[:2]
     else:
         page_fin, y_fin = derniere_page, None
     return Tiree(rang, n, debut[0], debut[1], page_fin, y_fin, fin is not None)
@@ -77,9 +126,9 @@ def tiree(
 def hors_contribution(
     t: Tiree, page: int, largeur: float, hauteur: float
 ) -> list[tuple[float, float, float, float]]:
-    """Cadres (x0, y0, x1, y1) d'une page qui n'appartiennent pas à la
-    contribution tirée : au-dessus de son début, en dessous de sa fin. Une
-    fin notée garde sa ligne ; un début suivant, non."""
+    """Cadres (x0, y0, x1, y1) de la page lue, de `largeur` × `hauteur`, qui
+    n'appartiennent pas à la contribution tirée : au-dessus de son début, en
+    dessous de sa fin. Une fin notée garde sa ligne ; un début suivant, non."""
     cadres = []
     if page == t.page_debut and t.y_debut - MARGE > 0:
         cadres.append((0.0, 0.0, largeur, t.y_debut - MARGE))
