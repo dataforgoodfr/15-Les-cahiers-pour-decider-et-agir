@@ -544,7 +544,7 @@ $("feuilles").addEventListener("pointerup", (ev) => {
 
 const DEBUT = "début de contribution";
 const FIN = "fin de contribution";
-const DOUBLE_CLIC = 300; // ms
+const DOUBLE_CLIC = 500; // ms, le délai par défaut des systèmes
 let clic = null; // clic simple en attente : un second clic en fait une fin
 
 function cliquer(point) {
