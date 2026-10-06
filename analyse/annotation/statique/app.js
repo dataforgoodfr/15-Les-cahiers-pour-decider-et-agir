@@ -190,6 +190,7 @@ function allerPage(n, defilerVers) {
   image.onload = () => {
     planifier();
     if (defilerVers === undefined) { $("vue").scrollTop = 0; $("vue").scrollLeft = 0; return; }
+    if (defilerVers === BAS) { $("vue").scrollTop = $("vue").scrollHeight; $("vue").scrollLeft = 0; return; }
     const [u, v] = versVue(0, defilerVers);
     $("vue").scrollTop = Math.max(0, v * s - 120);
     $("vue").scrollLeft = rotation() % 180 ? Math.max(0, u * s - 120) : 0;
@@ -208,6 +209,32 @@ function allerPage(n, defilerVers) {
   marquerVignette();
   ecrireAdresse();
 }
+
+// La molette défile la page ; arrivée au bord, elle passe à la page voisine,
+// montrée par le haut (suivante) ou par le bas (précédente).
+const BAS = Infinity;
+const POUSSEE = 150; // px de molette au-delà du bord avant de changer de page
+const REPOS = 400; // ms sans changer de page : l'inertie du pavé tactile ne saute pas de page
+let poussee = 0;
+let dernierChangement = 0;
+$("vue").addEventListener("wheel", (ev) => {
+  if (!etat.cahier || ev.ctrlKey || Math.abs(ev.deltaY) < Math.abs(ev.deltaX)) return;
+  const vue = $("vue");
+  const enBas = vue.scrollTop + vue.clientHeight >= vue.scrollHeight - 2;
+  const enHaut = vue.scrollTop <= 0;
+  const sens = ev.deltaY > 0 ? 1 : -1;
+  if (!(sens > 0 ? enBas : enHaut)) { poussee = 0; return; }
+  ev.preventDefault();
+  if (Date.now() - dernierChangement < REPOS) return;
+  const voisine = etat.page + sens;
+  if (voisine < 1 || voisine > etat.cahier.pages.length) return;
+  // l'unité de deltaY est le pixel, la ligne ou la page selon le périphérique
+  poussee += Math.abs(ev.deltaY) * [1, 16, vue.clientHeight][ev.deltaMode];
+  if (poussee < POUSSEE) return;
+  poussee = 0;
+  dernierChangement = Date.now();
+  allerPage(voisine, sens > 0 ? undefined : BAS);
+}, { passive: false });
 
 // ---------- calque : repérages et notes ----------
 

@@ -31,6 +31,8 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   rectangle : ce sera la référence de l'anonymisation (#7). Ne pas recopier
   la donnée dans le texte de la note. Une note ouverte se déplace en la glissant, et
   se redimensionne par les poignées de ses coins.
+- **Passer d'une page à l'autre à la molette** : arrivée en bas de la page,
+  la molette continue sur la suivante (en haut, sur la précédente).
 - **Pivoter l'affichage** d'un quart de tour (`t`), page par page, pour lire
   une page numérisée de travers. Les notes restent justes : elles sont
   gardées dans le repère du PDF.
