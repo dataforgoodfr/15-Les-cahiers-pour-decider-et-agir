@@ -36,6 +36,8 @@ def test_departement_outre_mer_sur_trois_chiffres():
     assert departement("23096") == "23"
     assert departement("2A004") == "2A"
     assert departement("97209") == "972"
+    assert departement("97801") == "978"
+    assert departement("98817") == "988"
 
 
 def test_dans_panel_par_departement_ou_par_commune():

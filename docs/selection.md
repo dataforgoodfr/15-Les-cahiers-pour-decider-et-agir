@@ -11,7 +11,7 @@ le changer et refaire le tirage en quelques minutes.
 |---|---|---|
 | Unité | La contribution | 100 textes d'auteurs différents, plutôt que 100 cahiers de longueur très inégale. |
 | Objectif | Ressembler aux habitants de la France | Une commune a d'autant plus de chances de sortir qu'elle est peuplée. Paris pèse plus qu'un village, même si le village a écrit davantage. |
-| Territoire | France entière | Toutes les régions, outre-mer compris. |
+| Territoire | France entière | Toutes les régions, outre-mer compris. Le tirage pèse les communes par leur population légale de 2017 : Mayotte, qui n'en avait pas, et les collectivités d'outre-mer (Saint-Martin, Wallis-et-Futuna, Nouvelle-Calédonie ; Saint-Pierre-et-Miquelon n'a pas de cahier) ne peuvent pas sortir. |
 | Taille de commune et région | Chacune reçoit sa part de la population, à une unité près | Pas de région ni de taille de commune surreprésentée par hasard. |
 | Outre-mer | Au moins une contribution garantie | Avec 100 contributions, l'outre-mer en reçoit 3 (Guadeloupe, Martinique, La Réunion), selon sa part de la population. |
 | Écriture | Dactylographié seulement, pour commencer | Les cahiers entièrement manuscrits ne peuvent pas sortir tant que la lecture automatique des manuscrits n'est pas prête. |
