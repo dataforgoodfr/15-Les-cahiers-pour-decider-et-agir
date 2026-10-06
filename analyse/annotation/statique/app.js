@@ -431,23 +431,50 @@ $("calque").addEventListener("pointerup", (ev) => {
   etat.brouillon = bouge ? { x0, y0, x1, y1 } : { x0: trace.x0, y0: trace.y0, x1: trace.x0, y1: trace.y0 };
   trace = null;
   if (aMasquer()) {
-    // saisie rapide : le rectangle devient une note de l'étiquette courante,
-    // sans formulaire ; un simple clic ne fait que désélectionner
-    if (bouge) poserNoteRapide(); else { fermerFormulaire(); rafraichirPage(); }
+    // le rectangle devient une note de l'étiquette courante ; un simple clic
+    // ne fait que désélectionner
+    if (bouge) poserNoteRapide(etat.brouillon, $("etiquette").value);
+    else { fermerFormulaire(); rafraichirPage(); }
     return;
   }
-  dessinerCalque();
-  ouvrirFormulaire();
+  // saisie rapide : un glisser caviarde, un clic pose un début de
+  // contribution, un double clic une fin
+  if (bouge) poserNoteRapide(etat.brouillon, etiquetteMasque());
+  else cliquer(etat.brouillon);
 });
 
-async function poserNoteRapide() {
-  const etiquette = $("etiquette").value;
+const DEBUT = "début de contribution";
+const FIN = "fin de contribution";
+const DOUBLE_CLIC = 300; // ms
+let clic = null; // clic simple en attente : un second clic en fait une fin
+
+function cliquer(point) {
+  if (clic && Math.hypot(point.x0 - clic.point.x0, point.y0 - clic.point.y0) < 10) {
+    clearTimeout(clic.minuterie);
+    clic = null;
+    poserNoteRapide(point, FIN);
+    return;
+  }
+  if (clic) { clearTimeout(clic.minuterie); poserNoteRapide(clic.point, DEBUT); }
+  clic = { point, minuterie: setTimeout(() => { clic = null; poserNoteRapide(point, DEBUT); }, DOUBLE_CLIC) };
+}
+
+function etiquetteMasque() {
+  // l'étiquette courante si c'est une donnée personnelle, sinon la dernière
+  // du groupe (bloc de coordonnées)
+  const courante = $("etiquette").value;
+  return etat.groupes[PERSONNELLES].includes(courante) ? courante : etat.groupes[PERSONNELLES].at(-1);
+}
+
+async function poserNoteRapide(cadre, etiquette) {
   try {
     const note = await api("/api/notes", {
-      fichier: etat.cahier.fichier, page: etat.page, ...etat.brouillon, etiquette, texte: "",
+      fichier: etat.cahier.fichier, page: etat.page, ...cadre, etiquette, texte: "",
     });
     etat.cahier.notes.push(note);
-    message(`${etiquette} : encadré`);
+    // la note posée reste choisie : Suppr l'annule
+    etat.note = note.id;
+    message(`${etiquette} (Suppr pour annuler)`);
   } catch (e) {
     message(`Échec : ${e.message}`);
   }
