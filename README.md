@@ -43,15 +43,20 @@ Au 7 octobre 2026 :
   délimitées ; il en reste 63
   ([#5](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/5),
   [#7](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/7)).
-- **Les transcriptions de Marie-Anne Chabin** (134 cahiers de
-  Charente-Maritime, 1 693 contributions déjà séparées) arrivent dans
-  [`extraction/`](extraction/). Elles serviront de référence de découpage.
-- **Le Campus Condorcet sert de juge indépendant.** Le projet ne repose pas
-  sur son travail ; un petit panel aligné sur son échantillon
-  ([`analyse/`](analyse/), module `panel`) sert d'échantillon de travail.
 
 Le POC de l'été 2026 a porté sur trois départements (Ain, Eure-et-Loir,
 Mayenne). Son code est dans [dataforgoodfr/cahier_doleances](https://github.com/dataforgoodfr/cahier_doleances).
+
+## Travaux extérieurs
+
+- **Marie-Anne Chabin** nous a donné le droit de réutiliser ses
+  [transcriptions](https://www.marieannechabin.fr/edition-de-cahiers-doleances-2019/)
+  des cahiers de Charente-Maritime (134 communes, 1 693 contributions déjà
+  séparées). Elles nous servent d'étalon pour le découpage et l'exploitation
+  des contributions ([`extraction/`](extraction/)).
+- **Le Campus Condorcet** a publié ses méthodes pour la représentativité d'un
+  échantillon de contributions (5 % du corpus). Nous comparons nos résultats
+  aux siens pour nous assurer de la cohérence de nos travaux.
 
 ## Avant la diffusion sur la plateforme
 
