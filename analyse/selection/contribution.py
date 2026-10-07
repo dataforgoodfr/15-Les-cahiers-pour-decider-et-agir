@@ -20,6 +20,9 @@ from dataclasses import dataclass
 
 MARGE = 6  # points : le début est un point posé sur la première ligne
 DOUBLON = 10  # points : deux débuts si proches sont le même, posé deux fois
+# points : une fin si près sous un début est sur sa ligne, celle de la
+# contribution d'avant (fin cliquée un peu bas, début un peu haut)
+MEME_LIGNE = 12
 
 
 @dataclass(frozen=True)
@@ -111,8 +114,17 @@ def tiree(
     rang = min(n, max(1, math.ceil(position * n)))
     debut = debuts[rang - 1]
     suivant = debuts[rang] if rang < n else None
+
+    def apres(f: Point, d: Point) -> bool:
+        return (f[0], f[1]) > (d[0], d[1] + MEME_LIGNE)
+
     fin = next(
-        (f for f in fins if f >= debut and (suivant is None or f <= suivant)), None
+        (
+            f
+            for f in fins
+            if apres(f, debut) and (suivant is None or not apres(f, suivant))
+        ),
+        None,
     )
     if fin is not None:
         page_fin, y_fin = fin[:2]
