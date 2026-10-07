@@ -12,6 +12,10 @@
   --revoir: #b26a00;
   --danger: #b3261e;
   --courant: #fff4c2;
+  --debut: #1a7f37;
+  --fin: #c2185b;
+  --caviarde: #1d1d1b;
+  --selection: #ffb300;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -28,6 +32,10 @@
     --revoir: #fdd663;
     --danger: #f28b82;
     --courant: #4a4320;
+    --debut: #57c47a;
+    --fin: #f48fb1;
+    --caviarde: #000000;
+    --selection: #ffd54f;
   }
 }
 * { box-sizing: border-box; }
@@ -97,7 +105,17 @@ main#vue { grid-area: vue; overflow: auto; position: relative; padding: 12px; }
 .feuille .image { position: absolute; left: 0; top: 0; transform-origin: 0 0; user-select: none; background: #fff; }
 .calque { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
 .calque .note { fill: color-mix(in srgb, var(--note) 15%, transparent); stroke: var(--note); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: pointer; }
-.calque .note.courant { stroke-width: 4px; cursor: move; }
+.calque .note.courant { stroke-width: 4px; cursor: move; filter: drop-shadow(0 0 2px var(--selection)) drop-shadow(0 0 4px var(--selection)); }
+/* début, fin de contribution et zone caviardée : chacun sa couleur */
+.calque .note.debut { --note: var(--debut); }
+.calque .note.fin { --note: var(--fin); }
+.calque .note.caviarde { --note: var(--caviarde); fill: color-mix(in srgb, var(--caviarde) 40%, transparent); }
+.calque .numero-note.note-debut { fill: var(--debut); }
+.calque .numero-note.note-fin { fill: var(--fin); }
+.calque .numero-note.note-caviarde { fill: var(--caviarde); }
+#notes .numero.debut { color: var(--debut); }
+#notes .numero.fin { color: var(--fin); }
+#notes .numero.caviarde { color: var(--texte); }
 .calque .poignee { fill: var(--surface); stroke: var(--note); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: nwse-resize; }
 .calque .numero-note { fill: var(--note); font-weight: 700; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
 .calque .marque { stroke: var(--marque); stroke-width: 2px; stroke-dasharray: 8 5; vector-effect: non-scaling-stroke; fill: color-mix(in srgb, var(--marque) 10%, transparent); pointer-events: none; }

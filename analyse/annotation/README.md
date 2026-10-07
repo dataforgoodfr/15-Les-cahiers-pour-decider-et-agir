@@ -22,7 +22,9 @@ la machine : les pages, les notes et les listes ne la quittent pas.
 - **Noter sur la page**, sans formulaire : un clic pose un début de
   contribution, un clic droit une fin, un glisser caviarde la zone (note de
   l'étiquette de donnée personnelle choisie, bloc de coordonnées sinon).
-  La note s'enregistre aussitôt et reste choisie : Suppr l'annule. Un clic
+  La note s'enregistre aussitôt et reste choisie (halo jaune) : Suppr l'annule.
+  Couleurs : vert pour un début, rose pour une fin, noir pour une zone
+  caviardée à l'export (données personnelles et signature). Un clic
   sur une note l'ouvre pour changer son étiquette ou son texte. Chaque note a
   une étiquette et un texte libre ; la position est gardée en points PDF. Étiquettes de structure (début et fin de
   contribution, date, signature) et de données personnelles (nom, prénom,

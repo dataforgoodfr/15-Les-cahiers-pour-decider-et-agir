@@ -64,6 +64,13 @@ const PERSONNELLES = "Données personnelles";
 // étiquettes des touches 1 à 9 : les données personnelles dans une liste à
 // masquer, toutes les étiquettes sinon
 const raccourcis = () => (aMasquer() ? etat.groupes[PERSONNELLES] : etat.etiquettes).slice(0, 9);
+// classe de couleur d'une note : début, fin, ou zone caviardée à l'export
+// (données personnelles et signature)
+const genre = (n) =>
+  n.etiquette === DEBUT ? "debut"
+  : n.etiquette === FIN ? "fin"
+  : n.etiquette === "signature" || etat.groupes[PERSONNELLES]?.includes(n.etiquette) ? "caviarde"
+  : "";
 const pageCourante = () => etat.cahier.pages[etat.page - 1];
 const nomCourt = (fichier) => fichier.replace(/\.pdf$/i, "");
 
@@ -415,7 +422,7 @@ function dessinerCalque() {
     calque.append(r);
   }
   notesDeLaPage().forEach((n, i) => {
-    const f = forme(n.x0, n.y0, n.x1, n.y1, "note" + (n.id === etat.note ? " courant" : ""));
+    const f = forme(n.x0, n.y0, n.x1, n.y1, `note ${genre(n)}` + (n.id === etat.note ? " courant" : ""));
     f.dataset.id = n.id;
     // une note ouverte se déplace en la glissant ; sinon, un clic l'ouvre
     f.addEventListener("pointerdown", (ev) => {
@@ -424,7 +431,7 @@ function dessinerCalque() {
     });
     const [, v0, u1] = cadreVue(n.x0, n.y0, n.x1, n.y1);
     calque.append(f, element("text", {
-      x: u1 + 6 * echelle(), y: v0 + taille / 2, class: "numero-note", "font-size": taille,
+      x: u1 + 6 * echelle(), y: v0 + taille / 2, class: `numero-note note-${genre(n)}`, "font-size": taille,
     }, String(i + 1)));
     if (n.id === etat.note && (n.x0 !== n.x1 || n.y0 !== n.y1)) calque.append(...poignees(n));
   });
@@ -701,7 +708,7 @@ function dessinerNotes() {
   notesDeLaPage().forEach((n, i) => {
     const li = element("li", { class: n.id === etat.note ? "courant" : "" });
     li.append(
-      element("span", { class: "numero" }, String(i + 1)),
+      element("span", { class: `numero ${genre(n)}` }, String(i + 1)),
       element("span", {}, n.etiquette),
     );
     if (n.texte) li.append(element("span", { class: "texte" }, n.texte));
