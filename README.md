@@ -19,10 +19,11 @@ contributions anonymisées, voter, s'informer. Les administrateurs de
 l'association accèdent à la base, cahiers non anonymisés compris.
 
 La plateforme montre un panel représentatif, pas tout le corpus. L'association
-a besoin d'une sélection « gold » de moins d'une centaine de cahiers pour ses
-médias. Cette sélection doit sortir d'une méthode de tirage automatique, dont
-les critères restent à définir avec l'association
-([#21](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/21)).
+a besoin d'une sélection « gold » d'une centaine de contributions pour ses
+médias. Elle sort d'un tirage automatique : un premier tirage de 100
+contributions, représentatif des habitants de la France entière, est fait
+([#21](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/21)) ;
+les réactions de l'association en fixeront les critères définitifs.
 Les chantiers de données visent la qualité nécessaire pour ce panel, pas
 l'exhaustivité.
 
@@ -32,14 +33,48 @@ livraison au premier trimestre 2027. Le détail est dans l'issue
 
 ## Où on en est
 
-- **Le contenu est encore mal balisé.** Il faut le structurer avant de pouvoir
-  l'exploiter.
-- **Une analyse des cahiers est en cours** pour dégager un panel représentatif.
-- **De nombreux cahiers sont au format texte.** Leur exploitation demande un
-  travail particulier, mené par le Campus Condorcet.
+Au 7 octobre 2026 :
+
+- **Le corpus est mesuré** : type de chaque page, communes, panel
+  ([`analyse/`](analyse/)).
+- **100 contributions sont tirées.** Pour chacune, il faut délimiter à la main
+  toutes les contributions de son cahier, puis caviarder la contribution
+  tirée. 37 sont faites et exportées en PDF caviardés, soit 1 300 contributions
+  délimitées ; il en reste 63
+  ([#5](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/5),
+  [#7](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/7)).
 
 Le POC de l'été 2026 a porté sur trois départements (Ain, Eure-et-Loir,
 Mayenne). Son code est dans [dataforgoodfr/cahier_doleances](https://github.com/dataforgoodfr/cahier_doleances).
+
+## Travaux extérieurs
+
+- **Marie-Anne Chabin** nous a donné le droit de réutiliser ses
+  [transcriptions](https://www.marieannechabin.fr/edition-de-cahiers-doleances-2019/)
+  des cahiers de Charente-Maritime (134 communes, 1 693 contributions déjà
+  séparées). Elles nous servent d'étalon pour le découpage et l'exploitation
+  des contributions ([`extraction/`](extraction/)).
+- **Le Campus Condorcet** a publié ses méthodes pour la représentativité d'un
+  échantillon de contributions (5 % du corpus). Nous comparons nos résultats
+  aux siens pour nous assurer de la cohérence de nos travaux.
+
+## Avant la diffusion sur la plateforme
+
+On est encore loin de diffuser massivement les cahiers :
+
+- **Contenu prêt** : les 37 contributions délimitées et caviardées à la main
+  de la première sélection. C'est le rythme d'un lecteur, pas d'une diffusion
+  massive.
+- **Découper et anonymiser automatiquement** est le préalable au reste du
+  corpus. Aujourd'hui, les règles ne découpent que les courriels et les
+  formulaires dactylographiés, et l'anonymisation automatique doit être relue
+  à la main.
+- **La moitié des pages écrites sont manuscrites** (142 000 sur 276 000) et
+  ne sont pas encore lues
+  ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)).
+- **La plateforme n'est pas choisie**
+  ([#34](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/34)) :
+  produit décidé en novembre 2026, livraison au premier trimestre 2027.
 
 ## Les données
 
@@ -57,10 +92,14 @@ Pour commencer, voir [CONTRIBUTING.md](CONTRIBUTING.md).
 ## Organisation du dépôt
 
 - [`analyse/`](analyse/) : mesures sur le corpus (typage des pages, communes,
-  panel). Sous-projet autonome, avec son `pyproject.toml`.
+  panel, tirage), outil d'annotation, découpage et caviardage des
+  contributions. Sous-projet autonome, avec son `pyproject.toml`.
+- [`backend/`](backend/) : extraction des fichiers des cahiers, base de données
+  et interface d'administration.
+- [`extraction/`](extraction/) : transcriptions extérieures (édition Chabin).
 - [`docs/`](docs/) : règles sur les données.
 
-Chaque sous-projet utilise [uv](https://docs.astral.sh/uv/) : `cd analyse && uv sync`,
+Chaque sous-projet utilise [uv](https://docs.astral.sh/uv/) : par exemple `cd analyse && uv sync`,
 puis `uv run ...`.
 
 ## Licence
