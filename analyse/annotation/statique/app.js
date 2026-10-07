@@ -41,12 +41,12 @@ async function api(url, corps) {
 }
 
 let minuterieMessage;
-function message(texte) {
+function message(texte, duree = 1800) {
   const m = $("message");
   m.textContent = texte;
   m.classList.add("visible");
   clearTimeout(minuterieMessage);
-  minuterieMessage = setTimeout(() => m.classList.remove("visible"), 1800);
+  minuterieMessage = setTimeout(() => m.classList.remove("visible"), duree);
 }
 
 function element(nom, attributs = {}, texte) {
@@ -326,7 +326,11 @@ function activerPage(n) {
   $("pivoter").classList.toggle("actif", rotation() !== 0);
   dessinerCalque();
   dessinerNotes();
-  dessinerStatut();
+  if (dessinerStatut() && ancienne !== n) {
+    message(etat.liste?.tache === "selection"
+      ? "Dernière page : v pour la marquer vue, le cahier sera délimité"
+      : "Dernière page : v pour la marquer vue", 5000);
+  }
   dessinerInfos();
   marquerVignette();
   ecrireAdresse();
@@ -784,10 +788,15 @@ async function marquerVue(page) {
 }
 
 function dessinerStatut() {
+  // rend vrai sur la dernière page montrée sans statut : le défilement ne la
+  // marque jamais, il faut le rappeler
   const s = etat.statuts.get(cle(etat.cahier.fichier, etat.page));
   for (const b of document.querySelectorAll("button.statut")) {
     b.classList.toggle("actif", b.dataset.statut === s);
   }
+  const rappel = !s && etat.cahier.pages.length > 1 && pageVoisine(1) === etat.page;
+  $("statut-vue").classList.toggle("rappel", rappel);
+  return rappel;
 }
 
 $("statut-vue").addEventListener("click", () => poserStatut("vue"));
