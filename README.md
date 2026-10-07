@@ -49,26 +49,26 @@ Au 7 octobre 2026 :
 - **De nombreux cahiers sont au format texte.** Leur exploitation demande un
   travail particulier, mené par le Campus Condorcet.
 
-## Ce qu'il reste à faire
-
-- **Délimiter les 63 cahiers restants.** À la main, c'est trop long : des
-  règles et un petit modèle local proposeront les débuts et les fins, que le
-  lecteur corrigera. Ils seront mesurés sur les 1 300 contributions délimitées
-  et sur l'édition Chabin.
-- **Comparer le découpage de l'édition Chabin au nôtre**, sur un échantillon
-  relu à la main, puis télécharger toute l'édition
-  ([#35](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/35)).
-- **Lire les manuscrits** : feuilles de suite des formulaires
-  ([#64](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/64)),
-  reconnaissance d'écriture
-  ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)).
-- **Situer une contribution dans sa page** dans la base : elle n'a aujourd'hui
-  qu'une page de début et de fin.
-- **Décider du produit** en novembre 2026
-  ([#29](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/29)).
-
 Le POC de l'été 2026 a porté sur trois départements (Ain, Eure-et-Loir,
 Mayenne). Son code est dans [dataforgoodfr/cahier_doleances](https://github.com/dataforgoodfr/cahier_doleances).
+
+## Avant la diffusion sur la plateforme
+
+On est encore loin de diffuser massivement les cahiers :
+
+- **Contenu prêt** : les 37 contributions délimitées et caviardées à la main
+  de la première sélection. C'est le rythme d'un lecteur, pas d'une diffusion
+  massive.
+- **Découper et anonymiser automatiquement** est le préalable au reste du
+  corpus. Aujourd'hui, les règles ne découpent que les courriels et les
+  formulaires dactylographiés, et l'anonymisation automatique doit être relue
+  à la main.
+- **La moitié des pages écrites sont manuscrites** (142 000 sur 276 000) et
+  ne sont pas encore lues
+  ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)).
+- **La plateforme n'est pas choisie**
+  ([#34](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/34)) :
+  produit décidé en novembre 2026, livraison au premier trimestre 2027.
 
 ## Les données
 
