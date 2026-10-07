@@ -352,7 +352,12 @@ $("vue").addEventListener("scroll", () => {
   cancelAnimationFrame(imageDefilement);
   imageDefilement = requestAnimationFrame(() => {
     const n = pageEnVue();
-    if (n !== etat.page) activerPage(n);
+    if (n === etat.page) return;
+    // une page dépassée en défilant vers le bas est vue ; la dernière, qu'on
+    // ne dépasse jamais, se marque à la main (pour « selection », le cahier
+    // est alors délimité)
+    if (n > etat.page && $("vue-auto").checked) marquerVue(etat.page);
+    activerPage(n);
   });
 });
 
@@ -761,6 +766,23 @@ async function poserStatut(statut, basculer = true) {
   dessinerElements();
 }
 
+async function marquerVue(page) {
+  // sans écraser un statut déjà posé (à revoir, notamment)
+  const c = cle(etat.cahier.fichier, page);
+  if (etat.statuts.has(c)) return;
+  etat.statuts.set(c, "vue");
+  try {
+    await api("/api/statut", {
+      fichier: etat.cahier.fichier, page, statut: "vue", tache: etat.liste?.tache || null,
+    });
+  } catch (e) {
+    etat.statuts.delete(c);
+    message(`Échec : ${e.message}`);
+  }
+  marquerVignette();
+  dessinerElements();
+}
+
 function dessinerStatut() {
   const s = etat.statuts.get(cle(etat.cahier.fichier, etat.page));
   for (const b of document.querySelectorAll("button.statut")) {
@@ -1050,6 +1072,9 @@ $("recherche").addEventListener("submit", async (ev) => {
 
 $("page-prec").addEventListener("click", () => allerPage(pageVoisine(-1)));
 $("page-suiv").addEventListener("click", () => allerPage(pageVoisine(1)));
+$("vue-auto").addEventListener("change", (ev) => {
+  try { localStorage.setItem("vueAuto", ev.target.checked ? "1" : "0"); } catch { /* sans stockage */ }
+});
 $("voir-vierges").addEventListener("change", (ev) => {
   try { localStorage.setItem("voirVierges", ev.target.checked ? "1" : ""); } catch { /* sans stockage */ }
   if (!etat.cahier) return;
@@ -1143,6 +1168,7 @@ document.addEventListener("keydown", async (ev) => {
   try {
     preferee = localStorage.getItem("etiquette");
     $("voir-vierges").checked = localStorage.getItem("voirVierges") === "1";
+    $("vue-auto").checked = localStorage.getItem("vueAuto") !== "0";
   } catch { /* sans stockage */ }
   remplirEtiquettes($("etiquette"), etat.etiquettes.includes(preferee) ? preferee : undefined);
   await verserRotationsLocales();

@@ -1,14 +1,17 @@
 """Export des contributions tirées, caviardées (issues #21 et #7).
 
     uv run python -m selection [--cahiers data/tirage/contributions.csv]
-        [--versement data/versement] [--annotation data/annotation]
+        [--versement data/versement] [--typage data/typage/departements]
+        [--annotation data/annotation]
         [--reperes data/anonymisation/reperes.csv] [--sortie data/selection]
 
-Lit la liste « selection » de l'outil d'annotation : un cahier marqué vu a
-tous ses débuts de contributions notés. La contribution tirée s'en déduit
+Lit la liste « selection » de l'outil d'annotation : un cahier dont la
+dernière page (hors pages vierges, que l'outil ne montre pas) est marquée vue
+a tous ses débuts de contributions notés. La contribution tirée s'en déduit
 (`selection.contribution`). Écrit dans la sortie :
 
-- `pdf/` : un PDF par contribution tirée, réduit à ses pages. Ce qui n'est pas
+- `pdf/` : un PDF par contribution tirée, réduit à ses pages (les PDF des
+  cahiers qui ne sont plus délimités sont retirés). Ce qui n'est pas
   la contribution (au-dessus de son début, en dessous de sa fin) est couvert
   de gris ; les données personnelles de noir. Le caviardage est une vraie
   rédaction : le texte et les pixels dessous disparaissent, et les
@@ -30,9 +33,16 @@ from pathlib import Path
 import pymupdf
 
 from annotation.carnet import Carnet
+from annotation.corpus import Corpus
 from anonymisation.__main__ import PERSONNELLES
 from anonymisation.masquage import CHAMPS, a_masquer, fusionner
-from selection.contribution import Sens, doublons, hors_contribution, tiree
+from selection.contribution import (
+    Sens,
+    derniere_page,
+    doublons,
+    hors_contribution,
+    tiree,
+)
 
 TACHE = "selection"
 DEBUT = "début de contribution"
@@ -96,6 +106,7 @@ def main() -> None:
         "--cahiers", type=Path, default=Path("data/tirage/contributions.csv")
     )
     parser.add_argument("--versement", type=Path, default=Path("data/versement"))
+    parser.add_argument("--typage", type=Path, default=Path("data/typage/departements"))
     parser.add_argument("--annotation", type=Path, default=Path("data/annotation"))
     parser.add_argument(
         "--reperes", type=Path, default=Path("data/anonymisation/reperes.csv")
@@ -108,10 +119,14 @@ def main() -> None:
     fichiers = {t["fichier"] for t in tirage}
     chemins = {p.name: p for p in args.versement.rglob("*.pdf") if p.name in fichiers}
     carnet = Carnet(args.annotation / "notes.jsonl")
+    qualifications = carnet.qualifications(remarques=False)
+    vues = {cle for cle, s in carnet.statuts(TACHE, exacte=True).items() if s == "vue"}
+    corpus = Corpus(args.versement, args.typage)
     vus = {
         f
-        for (f, _), s in carnet.statuts(TACHE, exacte=True).items()
-        if s == "vue" and f in fichiers
+        for f in fichiers
+        if f in chemins
+        and (f, derniere_page(corpus.pages(f), f, qualifications)) in vues
     }
     notes, _ = carnet.etat()
     par_cahier = defaultdict(list)
@@ -125,7 +140,6 @@ def main() -> None:
             if r["fichier"] in vus
         ]
     retablis = list(carnet.retablis().values())
-    qualifications = carnet.qualifications(remarques=False)
 
     dossier = args.sortie / "pdf"
     dossier.mkdir(parents=True, exist_ok=True)
@@ -208,6 +222,11 @@ def main() -> None:
         ecrivain.writeheader()
         ecrivain.writerows(lignes)
     exportes = [x for x in lignes if x["statut"] == "exporté"]
+    # un cahier qui n'est plus délimité ne garde pas son ancien PDF
+    gardes = {Path(x["pdf"]).name for x in exportes}
+    for ancien in dossier.glob("*.pdf"):
+        if ancien.name not in gardes:
+            ancien.unlink()
     print(f"{len(exportes)} contributions exportées sur {len(lignes)} cahiers tirés")
     print(f"  pages : {sum(x['page_fin'] - x['page_debut'] + 1 for x in exportes)}")
     print(f"  cadres caviardés : {sum(x['caviardages'] for x in exportes)}")

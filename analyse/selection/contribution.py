@@ -137,3 +137,15 @@ def hors_contribution(
         if bas < hauteur:
             cadres.append((0.0, max(0.0, bas), largeur, hauteur))
     return cadres
+
+
+def derniere_page(pages: list[dict], fichier: str, qualifications: dict) -> int:
+    """La dernière page que l'outil d'annotation montre : il cache les pages
+    vierges (type vérifié s'il y en a un, sinon type du typage)."""
+    montrees = [
+        p["page"]
+        for p in pages
+        if (qualifications.get((fichier, p["page"]), {}).get("type") or p["type"])
+        != "vierge"
+    ]
+    return max(montrees, default=len(pages))
