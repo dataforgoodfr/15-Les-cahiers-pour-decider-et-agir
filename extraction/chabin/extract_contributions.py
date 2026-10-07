@@ -98,12 +98,15 @@ def process_cahiers(cahiers_json, chabin_pdf_dir, raw_pdf_list_file_17, output):
             results.append(None)
             continue
 
+        # Stocké en relatif (nom de fichier dans chabin_pdf_dir), comme pdf_files.
+        pdf_files = [os.path.basename(pdf_url) for pdf_url in cahier["pdf_links"]]
+        # échantillon : seuls certains cahiers sont téléchargés
+        if not all(os.path.exists(os.path.join(chabin_pdf_dir, f)) for f in pdf_files):
+            results.append(None)
+            continue
+
         contributions = []
-        pdf_files = []
-        for pdf_url in cahier["pdf_links"]:
-            # Stocké en relatif (nom de fichier dans chabin_pdf_dir), comme pdf_files.
-            pdf_file = os.path.basename(pdf_url)
-            pdf_files.append(pdf_file)
+        for pdf_file in pdf_files:
             contributions.extend(
                 extract_contributions(os.path.join(chabin_pdf_dir, pdf_file)))
 
@@ -126,8 +129,14 @@ def process_cahiers(cahiers_json, chabin_pdf_dir, raw_pdf_list_file_17, output):
     except OSError as e:
         print(f"\nErreur lors de l'écriture : {e}")
 
-    total = sum(r["found_nb_contrib"] for r in results if r)
-    print(f"\nExported {total} contributions for {len(results)} cahiers to {output}")
+    extraits = [r for r in results if r]
+    total = sum(r["found_nb_contrib"] for r in extraits)
+    attendus = sum(r["nb_contrib"] for r in extraits)
+    print(f"\nExported {total} contributions (attendu {attendus}) for "
+          f"{len(extraits)} cahiers to {output}")
+    manquants = sum(1 for c, r in zip(cahiers_list, results) if c["pdf_links"] and not r)
+    if manquants:
+        print(f"{manquants} cahiers non téléchargés, ignorés (null dans la sortie)")
 
 
 def find_pdf_files(insee_num, raw_pdf_list):

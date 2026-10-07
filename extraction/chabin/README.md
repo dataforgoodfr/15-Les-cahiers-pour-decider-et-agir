@@ -18,8 +18,14 @@ Récupère la liste des cahiers et les PDF de transcription depuis le site.
    ignorés, 5 s d'attente entre deux téléchargements).
 
 ```bash
-python download_chabin_pdfs.py
+python download_chabin_pdfs.py                     # tous les cahiers
+python download_chabin_pdfs.py --echantillon 5     # 5 cahiers tirés au hasard (--graine 0)
+python download_chabin_pdfs.py --insee 17300 17306 # ces communes seulement
 ```
+
+La liste `cahiers-chabin.json` est toujours complète ; seuls les PDF téléchargés
+changent. Un échantillon se complète ensuite sans tout reprendre : les PDF déjà
+présents sont ignorés.
 
 Les chemins de sortie sont les constantes `DEFAULT_CAHIERS_JSON` et
 `DEFAULT_CHABIN_PDF_DIR` en tête de fichier. Par défaut elles pointent dans `data/` à la
@@ -100,7 +106,9 @@ même ordre, avec `null` pour les communes sans PDF de transcription.
 ```
 
 Les contributions d'un cahier réparti sur plusieurs PDF sont concaténées dans l'ordre
-des fichiers. Les blocs sans texte sont écartés.
+des fichiers. Un cahier dont les PDF ne sont pas (tous) téléchargés est mis à
+`null`, comme une commune sans transcription : l'extraction marche sur un
+échantillon. Les blocs sans texte sont écartés.
 
 Points de contrôle sur la sortie standard :
 

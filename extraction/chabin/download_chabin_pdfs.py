@@ -1,7 +1,9 @@
 """Extract cahiers de doléances table data and PDF links, export as JSON."""
 
+import argparse
 import json
 import os
+import random
 import re
 import time
 import urllib.request
@@ -98,12 +100,28 @@ def correct_results(results):
     return results
 
 
-def download_cahiers(json_list, data_dir):
+def choisir(entries, echantillon=None, insee=None, graine=0):
+    """Les cahiers à télécharger : tous, ceux des codes INSEE donnés, ou un
+    échantillon tiré au hasard (reproductible avec la même graine)."""
+    entries = [e for e in entries if e["pdf_links"]]
+    if insee:
+        return [e for e in entries if e["insee"] in insee]
+    if echantillon:
+        tires = random.Random(graine).sample(entries, min(echantillon, len(entries)))
+        # dans l'ordre de la page, comme le JSON
+        return [e for e in entries if e in tires]
+    return entries
+
+
+def download_cahiers(json_list, data_dir, echantillon=None, insee=None, graine=0):
     os.makedirs(data_dir, exist_ok=True)
 
     with open(json_list, encoding="utf-8") as f:
         entries = json.load(f)
 
+    entries = choisir(entries, echantillon, insee, graine)
+    if echantillon or insee:
+        print(f"{len(entries)} cahiers : {', '.join(e['insee'] for e in entries)}")
     all_links = [link for entry in entries for link in entry["pdf_links"]]
 
     for i, pdf_url in enumerate(all_links):
@@ -124,6 +142,18 @@ def download_cahiers(json_list, data_dir):
 if __name__ == "__main__":
     URL = "https://www.marieannechabin.fr/edition-de-cahiers-doleances-2019/"
 
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--echantillon", type=int,
+                        help="Ne télécharger que N cahiers tirés au hasard")
+    parser.add_argument("--graine", type=int, default=0,
+                        help="Graine du tirage de l'échantillon")
+    parser.add_argument("--insee", nargs="+",
+                        help="Ne télécharger que les cahiers de ces codes INSEE")
+    args = parser.parse_args()
+
+    # la liste complète est toujours écrite : elle est petite, et l'extraction
+    # s'y aligne
     get_urls(URL, DEFAULT_CAHIERS_JSON)
 
-    download_cahiers(DEFAULT_CAHIERS_JSON, DEFAULT_CHABIN_PDF_DIR)
+    download_cahiers(DEFAULT_CAHIERS_JSON, DEFAULT_CHABIN_PDF_DIR,
+                     args.echantillon, args.insee, args.graine)
