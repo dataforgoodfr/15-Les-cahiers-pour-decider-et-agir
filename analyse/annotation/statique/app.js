@@ -953,6 +953,15 @@ function dessinerVignettes() {
   }
 }
 
+// la molette fait défiler la bande des vignettes de côté
+$("vignettes").addEventListener("wheel", (ev) => {
+  if (Math.abs(ev.deltaY) <= Math.abs(ev.deltaX)) return; // déjà horizontal (pavé tactile)
+  ev.preventDefault();
+  // deltaMode 1 : en lignes (Firefox), 2 : en pages
+  const pas = ev.deltaMode === 1 ? 40 : ev.deltaMode === 2 ? $("vignettes").clientWidth : 1;
+  $("vignettes").scrollLeft += ev.deltaY * pas;
+}, { passive: false });
+
 function marquerVignette() {
   const compte = new Map();
   for (const n of etat.cahier.notes) compte.set(n.page, (compte.get(n.page) || 0) + 1);
