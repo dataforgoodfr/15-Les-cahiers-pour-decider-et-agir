@@ -112,7 +112,15 @@ async function lireAdresse() {
 
 // ---------- cahier et pages ----------
 
+// quitter un cahier depuis sa dernière page montrée : on l'a lue jusqu'au
+// bout, elle est vue (le défilement ne la dépasse jamais)
+function surDernierePage() {
+  return etat.cahier && $("vue-auto").checked && etat.cahier.pages.length > 1
+    && pageVoisine(1) === etat.page && !etat.statuts.has(cle(etat.cahier.fichier, etat.page));
+}
+
 async function ouvrirCahier(fichier, page = 1, defilerVers) {
+  if (etat.cahier?.fichier !== fichier && surDernierePage()) await marquerVue(etat.page);
   try {
     etat.cahier = await api(`/api/cahier?fichier=${encodeURIComponent(fichier)}&tache=${tache()}`);
   } catch (e) {
@@ -769,6 +777,14 @@ async function poserStatut(statut, basculer = true) {
   marquerVignette();
   dessinerElements();
 }
+
+// fermer l'onglet : fetch ne survit pas au déchargement, sendBeacon si
+window.addEventListener("pagehide", () => {
+  if (!surDernierePage()) return;
+  navigator.sendBeacon("/api/statut", new Blob([JSON.stringify({
+    fichier: etat.cahier.fichier, page: etat.page, statut: "vue", tache: etat.liste?.tache || null,
+  })], { type: "application/json" }));
+});
 
 async function marquerVue(page) {
   // sans écraser un statut déjà posé (à revoir, notamment)

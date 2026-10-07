@@ -61,9 +61,10 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   « anonymisation » ou « masquage ») : une page relue pour les données personnelles reste
   à relire pour les débuts de contribution. Hors liste, il vaut pour toutes.
   Par défaut (case « Vue au défilement »), une page dépassée en défilant vers
-  le bas est marquée vue, sauf si elle a déjà un statut ; la dernière page se
-  marque à la main (un rappel s'affiche en y arrivant, et le bouton « Vue »
-  clignote). Dans la liste « selection », c'est elle qui dit que le
+  le bas est marquée vue, sauf si elle a déjà un statut. La dernière page,
+  qu'on ne dépasse jamais, l'est quand on quitte le cahier (autre cahier,
+  onglet fermé) alors qu'elle est affichée ; sinon, un rappel s'affiche en y
+  arrivant et le bouton « Vue » clignote. Dans la liste « selection », c'est elle qui dit que le
   cahier est délimité.
 - **Revoir une liste** : les modules d'analyse écrivent des listes de pages,
   avec leurs repérages en pointillés orange. On les parcourt une à une ; `a`
