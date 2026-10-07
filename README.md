@@ -46,8 +46,9 @@ Au 7 octobre 2026 :
 - **Les transcriptions de Marie-Anne Chabin** (134 cahiers de
   Charente-Maritime, 1 693 contributions déjà séparées) arrivent dans
   [`extraction/`](extraction/). Elles serviront de référence de découpage.
-- **De nombreux cahiers sont au format texte.** Leur exploitation demande un
-  travail particulier, mené par le Campus Condorcet.
+- **Le Campus Condorcet sert de juge indépendant.** Le projet ne repose pas
+  sur son travail ; un petit panel aligné sur son échantillon
+  ([`analyse/`](analyse/), module `panel`) sert d'échantillon de travail.
 
 Le POC de l'été 2026 a porté sur trois départements (Ain, Eure-et-Loir,
 Mayenne). Son code est dans [dataforgoodfr/cahier_doleances](https://github.com/dataforgoodfr/cahier_doleances).
