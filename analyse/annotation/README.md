@@ -20,7 +20,7 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   dactylographiée, M manuscrite, MD mixte, V vierge ; les pages de service
   sont pâlies).
 - **Noter sur la page**, sans formulaire : un clic pose un début de
-  contribution, un double clic une fin, un glisser caviarde la zone (note de
+  contribution, un clic droit une fin, un glisser caviarde la zone (note de
   l'étiquette de donnée personnelle choisie, bloc de coordonnées sinon).
   La note s'enregistre aussitôt et reste choisie : Suppr l'annule. Un clic
   sur une note l'ouvre pour changer son étiquette ou son texte. Chaque note a

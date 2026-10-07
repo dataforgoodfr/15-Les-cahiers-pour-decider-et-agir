@@ -588,28 +588,21 @@ $("feuilles").addEventListener("pointerup", (ev) => {
     return;
   }
   // saisie rapide : un glisser caviarde, un clic pose un début de
-  // contribution, un double clic une fin
+  // contribution (un clic droit une fin)
   if (bouge) poserNoteRapide(etat.brouillon, etiquetteMasque());
-  else cliquer(etat.brouillon);
+  else poserNoteRapide(etat.brouillon, DEBUT);
+});
+// clic droit : une fin de contribution, à la place du menu du navigateur
+$("feuilles").addEventListener("contextmenu", (ev) => {
+  if (!etat.cahier || !ev.target.closest(".calque")) return;
+  ev.preventDefault();
+  if (aMasquer()) return;
+  const d = pointPdf(ev);
+  poserNoteRapide({ x0: d.x, y0: d.y, x1: d.x, y1: d.y }, FIN);
 });
 
 const DEBUT = "début de contribution";
 const FIN = "fin de contribution";
-const DOUBLE_CLIC = 500; // ms, le délai par défaut des systèmes
-let clic = null; // clic simple en attente : un second clic en fait une fin
-
-function cliquer(point) {
-  // la page est retenue au clic : on a pu défiler avant la fin du délai
-  const page = etat.page;
-  if (clic && clic.page === page && Math.hypot(point.x0 - clic.point.x0, point.y0 - clic.point.y0) < 10) {
-    clearTimeout(clic.minuterie);
-    clic = null;
-    poserNoteRapide(point, FIN, page);
-    return;
-  }
-  if (clic) { clearTimeout(clic.minuterie); poserNoteRapide(clic.point, DEBUT, clic.page); }
-  clic = { point, page, minuterie: setTimeout(() => { clic = null; poserNoteRapide(point, DEBUT, page); }, DOUBLE_CLIC) };
-}
 
 function etiquetteMasque() {
   // l'étiquette courante si c'est une donnée personnelle, sinon la dernière
