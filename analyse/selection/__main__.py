@@ -6,8 +6,8 @@
         [--reperes data/anonymisation/reperes.csv] [--sortie data/selection]
 
 Lit la liste « selection » de l'outil d'annotation : un cahier dont la
-dernière page (hors pages vierges, que l'outil ne montre pas) est marquée vue
-a tous ses débuts de contributions notés. La contribution tirée s'en déduit
+dernière page (hors pages vierges, que l'outil ne montre pas), ou une page
+vierge après elle, est marquée vue a tous ses débuts de contributions notés. La contribution tirée s'en déduit
 (`selection.contribution`). Écrit dans la sortie :
 
 - `pdf/` : un PDF par contribution tirée, réduit à ses pages (les PDF des
@@ -122,11 +122,16 @@ def main() -> None:
     qualifications = carnet.qualifications(remarques=False)
     vues = {cle for cle, s in carnet.statuts(TACHE, exacte=True).items() if s == "vue"}
     corpus = Corpus(args.versement, args.typage)
+    # la dernière page montrée, ou une page vierge après elle (ouverte
+    # depuis les vignettes)
+    plus_loin = defaultdict(int)
+    for f, page in vues:
+        plus_loin[f] = max(plus_loin[f], page)
     vus = {
         f
         for f in fichiers
         if f in chemins
-        and (f, derniere_page(corpus.pages(f), f, qualifications)) in vues
+        and plus_loin[f] >= derniere_page(corpus.pages(f), f, qualifications)
     }
     notes, _ = carnet.etat()
     par_cahier = defaultdict(list)
