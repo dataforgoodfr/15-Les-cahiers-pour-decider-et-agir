@@ -20,9 +20,11 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   dactylographiée, M manuscrite, MD mixte, V vierge ; les pages de service
   sont pâlies).
 - **Noter sur la page**, sans formulaire : un clic pose un début de
-  contribution, un double clic une fin, un glisser caviarde la zone (note de
+  contribution, un clic droit une fin, un glisser caviarde la zone (note de
   l'étiquette de donnée personnelle choisie, bloc de coordonnées sinon).
-  La note s'enregistre aussitôt et reste choisie : Suppr l'annule. Un clic
+  La note s'enregistre aussitôt et reste choisie (halo jaune) : Suppr l'annule.
+  Couleurs : vert pour un début, rose pour une fin, noir pour une zone
+  caviardée à l'export (données personnelles et signature). Un clic
   sur une note l'ouvre pour changer son étiquette ou son texte. Chaque note a
   une étiquette et un texte libre ; la position est gardée en points PDF. Étiquettes de structure (début et fin de
   contribution, date, signature) et de données personnelles (nom, prénom,
@@ -58,6 +60,11 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   mesures. Le statut vaut pour la tâche de la liste ouverte (« contributions »,
   « anonymisation » ou « masquage ») : une page relue pour les données personnelles reste
   à relire pour les débuts de contribution. Hors liste, il vaut pour toutes.
+  Par défaut (case « Vue au défilement »), une page dépassée en défilant vers
+  le bas est marquée vue, sauf si elle a déjà un statut ; la dernière page se
+  marque à la main (un rappel s'affiche en y arrivant, et le bouton « Vue »
+  clignote). Dans la liste « selection », c'est elle qui dit que le
+  cahier est délimité.
 - **Revoir une liste** : les modules d'analyse écrivent des listes de pages,
   avec leurs repérages en pointillés orange. On les parcourt une à une ; `a`
   accepte les repérages de la page comme notes.

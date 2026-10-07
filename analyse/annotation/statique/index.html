@@ -34,6 +34,7 @@
   </label>
   <label class="groupe" title="Montrer ou cacher les repérages (m)"><input id="voir-marques" type="checkbox" checked> Repérages</label>
   <label class="groupe" title="Cadres des lignes de la couche texte (OCR du versement) ; survoler pour lire"><input id="voir-ocr" type="checkbox"> Texte OCR</label>
+  <label class="groupe" title="Marquer vue chaque page dépassée en défilant vers le bas (sans toucher aux pages déjà marquées)"><input id="vue-auto" type="checkbox" checked> Vue au défilement</label>
   <label class="groupe" title="Montrer les pages typées vierges dans le défilement (les vignettes les montrent toujours)"><input id="voir-vierges" type="checkbox"> Pages vierges <span id="compte-vierges" class="discret"></span></label>
 </header>
 
@@ -76,7 +77,7 @@
     </label>
   </section>
   <h2>Notes de la page</h2>
-  <p class="discret aide">Clic : début de contribution. Double clic : fin. Glisser : caviarder. Enregistré aussitôt, Suppr annule.</p>
+  <p class="discret aide">Clic : début de contribution. Clic droit : fin. Glisser : caviarder. Enregistré aussitôt, Suppr annule.</p>
   <form id="formulaire-note" hidden>
     <label>Étiquette <select id="note-etiquette"></select></label>
     <label>Texte <textarea id="note-texte" rows="4"></textarea></label>

@@ -2,7 +2,14 @@
 
 import pytest
 
-from selection.contribution import MARGE, Sens, doublons, hors_contribution, tiree
+from selection.contribution import (
+    MARGE,
+    Sens,
+    derniere_page,
+    doublons,
+    hors_contribution,
+    tiree,
+)
 
 
 def test_tiree_prend_le_rang_de_la_position():
@@ -88,3 +95,14 @@ def test_hors_contribution_couvre_le_dessus_du_debut_et_le_dessous_de_la_fin():
     # une contribution en haut de page, jusqu'à la fin du cahier : rien à couvrir
     t = tiree(1.0, [(2, 3.0, 0.0)], [], 8)
     assert hors_contribution(t, 2, 600, 800) == []
+
+
+def test_derniere_page_saute_les_vierges():
+    pages = [
+        {"page": n, "type": t}
+        for n, t in enumerate(["manuscrite", "mixte", "vierge", "vierge"], 1)
+    ]
+    assert derniere_page(pages, "f.pdf", {}) == 2
+    # un type vérifié l'emporte sur le typage
+    assert derniere_page(pages, "f.pdf", {("f.pdf", 4): {"type": "manuscrite"}}) == 4
+    assert derniere_page([{"page": 1, "type": "vierge"}], "f.pdf", {}) == 1

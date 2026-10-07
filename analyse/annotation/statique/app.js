@@ -41,12 +41,12 @@ async function api(url, corps) {
 }
 
 let minuterieMessage;
-function message(texte) {
+function message(texte, duree = 1800) {
   const m = $("message");
   m.textContent = texte;
   m.classList.add("visible");
   clearTimeout(minuterieMessage);
-  minuterieMessage = setTimeout(() => m.classList.remove("visible"), 1800);
+  minuterieMessage = setTimeout(() => m.classList.remove("visible"), duree);
 }
 
 function element(nom, attributs = {}, texte) {
@@ -64,6 +64,13 @@ const PERSONNELLES = "Données personnelles";
 // étiquettes des touches 1 à 9 : les données personnelles dans une liste à
 // masquer, toutes les étiquettes sinon
 const raccourcis = () => (aMasquer() ? etat.groupes[PERSONNELLES] : etat.etiquettes).slice(0, 9);
+// classe de couleur d'une note : début, fin, ou zone caviardée à l'export
+// (données personnelles et signature)
+const genre = (n) =>
+  n.etiquette === DEBUT ? "debut"
+  : n.etiquette === FIN ? "fin"
+  : n.etiquette === "signature" || etat.groupes[PERSONNELLES]?.includes(n.etiquette) ? "caviarde"
+  : "";
 const pageCourante = () => etat.cahier.pages[etat.page - 1];
 const nomCourt = (fichier) => fichier.replace(/\.pdf$/i, "");
 
@@ -319,7 +326,11 @@ function activerPage(n) {
   $("pivoter").classList.toggle("actif", rotation() !== 0);
   dessinerCalque();
   dessinerNotes();
-  dessinerStatut();
+  if (dessinerStatut() && ancienne !== n) {
+    message(etat.liste?.tache === "selection"
+      ? "Dernière page : v pour la marquer vue, le cahier sera délimité"
+      : "Dernière page : v pour la marquer vue", 5000);
+  }
   dessinerInfos();
   marquerVignette();
   ecrireAdresse();
@@ -345,7 +356,12 @@ $("vue").addEventListener("scroll", () => {
   cancelAnimationFrame(imageDefilement);
   imageDefilement = requestAnimationFrame(() => {
     const n = pageEnVue();
-    if (n !== etat.page) activerPage(n);
+    if (n === etat.page) return;
+    // une page dépassée en défilant vers le bas est vue ; la dernière, qu'on
+    // ne dépasse jamais, se marque à la main (pour « selection », le cahier
+    // est alors délimité)
+    if (n > etat.page && $("vue-auto").checked) marquerVue(etat.page);
+    activerPage(n);
   });
 });
 
@@ -415,7 +431,7 @@ function dessinerCalque() {
     calque.append(r);
   }
   notesDeLaPage().forEach((n, i) => {
-    const f = forme(n.x0, n.y0, n.x1, n.y1, "note" + (n.id === etat.note ? " courant" : ""));
+    const f = forme(n.x0, n.y0, n.x1, n.y1, `note ${genre(n)}` + (n.id === etat.note ? " courant" : ""));
     f.dataset.id = n.id;
     // une note ouverte se déplace en la glissant ; sinon, un clic l'ouvre
     f.addEventListener("pointerdown", (ev) => {
@@ -424,7 +440,7 @@ function dessinerCalque() {
     });
     const [, v0, u1] = cadreVue(n.x0, n.y0, n.x1, n.y1);
     calque.append(f, element("text", {
-      x: u1 + 6 * echelle(), y: v0 + taille / 2, class: "numero-note", "font-size": taille,
+      x: u1 + 6 * echelle(), y: v0 + taille / 2, class: `numero-note note-${genre(n)}`, "font-size": taille,
     }, String(i + 1)));
     if (n.id === etat.note && (n.x0 !== n.x1 || n.y0 !== n.y1)) calque.append(...poignees(n));
   });
@@ -588,28 +604,21 @@ $("feuilles").addEventListener("pointerup", (ev) => {
     return;
   }
   // saisie rapide : un glisser caviarde, un clic pose un début de
-  // contribution, un double clic une fin
+  // contribution (un clic droit une fin)
   if (bouge) poserNoteRapide(etat.brouillon, etiquetteMasque());
-  else cliquer(etat.brouillon);
+  else poserNoteRapide(etat.brouillon, DEBUT);
+});
+// clic droit : une fin de contribution, à la place du menu du navigateur
+$("feuilles").addEventListener("contextmenu", (ev) => {
+  if (!etat.cahier || !ev.target.closest(".calque")) return;
+  ev.preventDefault();
+  if (aMasquer()) return;
+  const d = pointPdf(ev);
+  poserNoteRapide({ x0: d.x, y0: d.y, x1: d.x, y1: d.y }, FIN);
 });
 
 const DEBUT = "début de contribution";
 const FIN = "fin de contribution";
-const DOUBLE_CLIC = 500; // ms, le délai par défaut des systèmes
-let clic = null; // clic simple en attente : un second clic en fait une fin
-
-function cliquer(point) {
-  // la page est retenue au clic : on a pu défiler avant la fin du délai
-  const page = etat.page;
-  if (clic && clic.page === page && Math.hypot(point.x0 - clic.point.x0, point.y0 - clic.point.y0) < 10) {
-    clearTimeout(clic.minuterie);
-    clic = null;
-    poserNoteRapide(point, FIN, page);
-    return;
-  }
-  if (clic) { clearTimeout(clic.minuterie); poserNoteRapide(clic.point, DEBUT, clic.page); }
-  clic = { point, page, minuterie: setTimeout(() => { clic = null; poserNoteRapide(point, DEBUT, page); }, DOUBLE_CLIC) };
-}
 
 function etiquetteMasque() {
   // l'étiquette courante si c'est une donnée personnelle, sinon la dernière
@@ -708,7 +717,7 @@ function dessinerNotes() {
   notesDeLaPage().forEach((n, i) => {
     const li = element("li", { class: n.id === etat.note ? "courant" : "" });
     li.append(
-      element("span", { class: "numero" }, String(i + 1)),
+      element("span", { class: `numero ${genre(n)}` }, String(i + 1)),
       element("span", {}, n.etiquette),
     );
     if (n.texte) li.append(element("span", { class: "texte" }, n.texte));
@@ -761,11 +770,33 @@ async function poserStatut(statut, basculer = true) {
   dessinerElements();
 }
 
+async function marquerVue(page) {
+  // sans écraser un statut déjà posé (à revoir, notamment)
+  const c = cle(etat.cahier.fichier, page);
+  if (etat.statuts.has(c)) return;
+  etat.statuts.set(c, "vue");
+  try {
+    await api("/api/statut", {
+      fichier: etat.cahier.fichier, page, statut: "vue", tache: etat.liste?.tache || null,
+    });
+  } catch (e) {
+    etat.statuts.delete(c);
+    message(`Échec : ${e.message}`);
+  }
+  marquerVignette();
+  dessinerElements();
+}
+
 function dessinerStatut() {
+  // rend vrai sur la dernière page montrée sans statut : le défilement ne la
+  // marque jamais, il faut le rappeler
   const s = etat.statuts.get(cle(etat.cahier.fichier, etat.page));
   for (const b of document.querySelectorAll("button.statut")) {
     b.classList.toggle("actif", b.dataset.statut === s);
   }
+  const rappel = !s && etat.cahier.pages.length > 1 && pageVoisine(1) === etat.page;
+  $("statut-vue").classList.toggle("rappel", rappel);
+  return rappel;
 }
 
 $("statut-vue").addEventListener("click", () => poserStatut("vue"));
@@ -931,6 +962,15 @@ function dessinerVignettes() {
   }
 }
 
+// la molette fait défiler la bande des vignettes de côté
+$("vignettes").addEventListener("wheel", (ev) => {
+  if (Math.abs(ev.deltaY) <= Math.abs(ev.deltaX)) return; // déjà horizontal (pavé tactile)
+  ev.preventDefault();
+  // deltaMode 1 : en lignes (Firefox), 2 : en pages
+  const pas = ev.deltaMode === 1 ? 40 : ev.deltaMode === 2 ? $("vignettes").clientWidth : 1;
+  $("vignettes").scrollLeft += ev.deltaY * pas;
+}, { passive: false });
+
 function marquerVignette() {
   const compte = new Map();
   for (const n of etat.cahier.notes) compte.set(n.page, (compte.get(n.page) || 0) + 1);
@@ -1050,6 +1090,9 @@ $("recherche").addEventListener("submit", async (ev) => {
 
 $("page-prec").addEventListener("click", () => allerPage(pageVoisine(-1)));
 $("page-suiv").addEventListener("click", () => allerPage(pageVoisine(1)));
+$("vue-auto").addEventListener("change", (ev) => {
+  try { localStorage.setItem("vueAuto", ev.target.checked ? "1" : "0"); } catch { /* sans stockage */ }
+});
 $("voir-vierges").addEventListener("change", (ev) => {
   try { localStorage.setItem("voirVierges", ev.target.checked ? "1" : ""); } catch { /* sans stockage */ }
   if (!etat.cahier) return;
@@ -1143,6 +1186,7 @@ document.addEventListener("keydown", async (ev) => {
   try {
     preferee = localStorage.getItem("etiquette");
     $("voir-vierges").checked = localStorage.getItem("voirVierges") === "1";
+    $("vue-auto").checked = localStorage.getItem("vueAuto") !== "0";
   } catch { /* sans stockage */ }
   remplirEtiquettes($("etiquette"), etat.etiquettes.includes(preferee) ? preferee : undefined);
   await verserRotationsLocales();
