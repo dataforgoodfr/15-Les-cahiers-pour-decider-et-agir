@@ -2,8 +2,16 @@
 
 L'application de production, en Django, hébergée sur Clever Cloud
 ([#34](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/34)).
-Pour l'instant, c'est un squelette : l'interface d'administration, sans modèle.
-Les modèles du POC (`backend/`) y seront repris un à un.
+Les modèles du POC y sont repris un à un. Pour l'instant :
+
+- `territoires` : régions, départements et communes **au 1er janvier 2019**,
+  le millésime des codes INSEE des cahiers. Communes déléguées, associées et
+  arrondissements y sont rattachés à leur commune parente ; le découpage actuel
+  n'est qu'une annotation (`code_courant`, `nom_courant`). Chargés par
+  `uv run python manage.py charger_communes`, depuis l'INSEE (COG 2019,
+  populations municipales 2017) et geo.api.gouv.fr (centres actuels). Sources
+  sous Licence Ouverte : toute publication porte « Source : Insee » et
+  « Source : IGN ». Mayotte n'a pas de population légale 2017.
 
 ## En local
 
@@ -19,6 +27,7 @@ Puis :
 export DATABASE_URL=postgres://postgres:cahiers@localhost/cahiers DJANGO_DEBUG=1
 uv sync
 uv run python manage.py migrate
+uv run python manage.py charger_communes
 uv run python manage.py createsuperuser
 uv run python manage.py runserver
 ```
@@ -47,6 +56,8 @@ Variables d'environnement à définir :
 | `CELLAR_BUCKET` | le nom du bucket des PDF, privé |
 
 `POSTGRESQL_ADDON_URI` et `CELLAR_ADDON_*` sont fournies par les add-ons.
+Après le premier déploiement, charger les communes une fois avec
+`clever ssh`, puis `uv run python manage.py charger_communes`.
 Sans Cellar, les fichiers déposés restent sur le disque de l'instance, qui
 n'est pas conservé entre deux déploiements.
 

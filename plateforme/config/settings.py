@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "territoires",
 ]
 
 MIDDLEWARE = [
@@ -93,6 +94,9 @@ LANGUAGE_CODE = "fr-fr"
 TIME_ZONE = "Europe/Paris"
 USE_I18N = True
 USE_TZ = True
+
+# Fichiers téléchargés de l'INSEE, gardés pour ne pas les retélécharger.
+SOURCES_DIR = Path(os.environ.get("SOURCES_DIR", BASE_DIR / "sources"))
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
