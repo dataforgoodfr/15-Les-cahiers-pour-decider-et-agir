@@ -98,6 +98,9 @@ Pour commencer, voir [CONTRIBUTING.md](CONTRIBUTING.md).
 - [`backend/`](backend/) : extraction des fichiers des cahiers, base de données
   et interface d'administration.
 - [`extraction/`](extraction/) : transcriptions extérieures (édition Chabin).
+- [`plateforme/`](plateforme/) : l'application de production, en Django sur
+  Clever Cloud. Pour l'instant un squelette, qui reprendra les modèles de
+  `backend/`.
 - [`docs/`](docs/) : règles sur les données.
 
 Chaque sous-projet utilise [uv](https://docs.astral.sh/uv/) : par exemple `cd analyse && uv sync`,
