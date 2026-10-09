@@ -110,14 +110,27 @@ def test_debuts_ajoute_le_debut_du_cahier():
     # un vrai texte avant le premier courriel reste une contribution
     texte = [f"ligne {k}" for k in range(8)]
     assert debuts([[*texte, *COURRIEL]])[0] == (0, 0, "début du cahier")
+    # une page manuscrite précède : la première page lue n'ouvre rien
+    assert debuts(pages, debut_du_cahier=False) == [(1, 1, "courriel")]
 
 
 def test_evaluer_apparie_les_debuts_proches():
     reference = [("a", 1, 100.0), ("a", 1, 400.0), ("a", 2, 50.0)]
-    predits = [("a", 1, 110.0), ("a", 1, 115.0), ("a", 2, 300.0)]
+    predits = [("a", 1, 110.0), ("a", 1, 115.0), ("a", 2, 400.0)]
     # 110 apparié à 100 ; 115 n'a plus de début libre assez proche
     assert evaluer(predits, reference) == (1 / 3, 1 / 3)
     assert evaluer([], reference) == (0.0, 0.0)
+
+
+def test_evaluer_admet_l_ecart_d_un_en_tete():
+    # le lecteur ouvre le formulaire en haut de son en-tête, la règle plus bas
+    assert evaluer([("a", 1, 200.0)], [("a", 1, 80.0)]) == (1.0, 1.0)
+    assert evaluer([("a", 1, 80.0)], [("a", 1, 200.0)]) == (1.0, 1.0)
+    # mais pas au-delà d'un début trouvé voisin
+    predits = [("a", 1, 80.0), ("a", 1, 150.0)]
+    assert evaluer(predits, [("a", 1, 200.0)]) == (0.5, 1.0)
+    # ni plus loin que la hauteur d'un en-tête
+    assert evaluer([("a", 1, 80.0)], [("a", 1, 400.0)]) == (0.0, 0.0)
 
 
 def test_public_juge_le_domaine_d_une_adresse():

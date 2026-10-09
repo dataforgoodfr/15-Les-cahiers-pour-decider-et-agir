@@ -35,7 +35,7 @@ from annotation.carnet import Carnet
 from annotation.corpus import Corpus
 from chabin.alignement import IMPRIMEES, genre, localiser
 from chabin.reference import cahiers, comparer, elements
-from contributions.__main__ import lignes, pages_lues
+from contributions.__main__ import lignes, pages_lues, premieres_ecrites
 from contributions.regles import debuts, evaluer
 from ouvertures.__main__ import lire as lire_ouvertures
 from selection.contribution import derniere_page
@@ -132,11 +132,15 @@ def mesurer_regles(
         f for i in perimetres["cahiers à imprimés"] for f in scans_par_cahier[i]
     }
     lues = pages_lues([typage], fichiers, ouvertures)
+    premieres = premieres_ecrites([typage], fichiers, ouvertures)
     trouves = []
     for fichier, numeros in sorted(lues.items()):
         with pymupdf.open(corpus.chemin(fichier)) as doc:
             pages = [lignes(doc[n - 1]) for n in numeros]
-        for p, i, regle in debuts([[t for t, _ in page] for page in pages]):
+        for p, i, regle in debuts(
+            [[t for t, _ in page] for page in pages],
+            debut_du_cahier=numeros[0] == premieres.get(fichier),
+        ):
             trouves.append((fichier, numeros[p], pages[p][i][1].y0, regle))
     mesures = []
     for nom, cahiers_ in perimetres.items():

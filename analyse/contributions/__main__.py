@@ -18,8 +18,10 @@ lues, hors pages de service et pages d'ouverture imprimées (sortie de
   ouvrir avec `python -m annotation`.
 
 La référence est le carnet de l'outil d'annotation : les notes « début de
-contribution » des pages marquées vues. Affiche la précision et le rappel des
-débuts sur ces pages. Des positions et des comptes, jamais de texte.
+contribution » des cahiers délimités en entier pour le tirage (tâche
+« selection », dernière page vue). Affiche la précision et le rappel des
+débuts sur leurs pages dactylographiées. Des positions et des comptes,
+jamais de texte.
 """
 
 import argparse
@@ -31,13 +33,17 @@ import pymupdf
 
 from annotation import listes
 from annotation.carnet import Carnet
+from annotation.corpus import Corpus
 from contributions.regles import debuts, evaluer
 from ouvertures.__main__ import lire as lire_ouvertures
 from panel.panel import lire_typage
+from selection.contribution import derniere_page
 
 DACTYLOGRAPHIEE = "dactylographiée"
+VIERGE = "vierge"
 DEBUT = "début de contribution"
 TACHE = "contributions"
+SELECTION = "selection"
 REGLES = {
     "courriel": "Courriels repérés",
     "gabarit": "Formulaires (gabarits) repérés",
@@ -78,6 +84,26 @@ def pages_lues(
         ):
             pages[ligne["fichier"]].append(int(ligne["page"]))
     return {f: sorted(p) for f, p in pages.items()}
+
+
+def premieres_ecrites(
+    typage: list[Path],
+    fichiers: set[str],
+    ouvertures: set[tuple[str, int]] = frozenset(),
+) -> dict[str, int]:
+    """Première page écrite de chaque cahier, quel qu'en soit le type : ni
+    vierge, ni de service, ni page d'ouverture."""
+    premieres = {}
+    for ligne in lire_typage(typage):
+        f, n = ligne["fichier"], int(ligne["page"])
+        if (
+            f in fichiers
+            and ligne["type_page"] != VIERGE
+            and ligne["page_de_service"] != "1"
+            and (f, n) not in ouvertures
+        ):
+            premieres[f] = min(n, premieres.get(f, n))
+    return premieres
 
 
 def lignes(page: pymupdf.Page) -> list[tuple[str, pymupdf.Rect]]:
@@ -148,14 +174,19 @@ def main() -> None:
     with args.cahiers.open(encoding="utf-8", newline="") as f:
         fichiers = {ligne["fichier"] for ligne in csv.DictReader(f)}
     chemins = {p.name: p for p in args.versement.rglob("*.pdf") if p.name in fichiers}
-    lues = pages_lues(args.typage, fichiers, lire_ouvertures(args.ouvertures))
+    ouvertures = lire_ouvertures(args.ouvertures)
+    lues = pages_lues(args.typage, fichiers, ouvertures)
+    premieres = premieres_ecrites(args.typage, fichiers, ouvertures)
 
     trouves, resume = [], []
     for fichier in sorted(lues):
         numeros = lues[fichier]
         with pymupdf.open(chemins[fichier]) as doc:
             pages = [lignes(doc[n - 1]) for n in numeros]
-        cahier = debuts([[texte for texte, _ in page] for page in pages])
+        cahier = debuts(
+            [[texte for texte, _ in page] for page in pages],
+            debut_du_cahier=numeros[0] == premieres.get(fichier),
+        )
         for p, i, regle in cahier:
             cadre = pages[p][i][1]
             trouves.append(
@@ -203,32 +234,51 @@ def main() -> None:
     print(f"  non découpés (aucune règle) : {len(resume) - len(decoupes)} cahiers")
     print(f"Listes à revoir écrites dans {args.annotation / 'listes'}")
 
+    # la référence : les cahiers délimités en entier pour le tirage (tâche
+    # « selection », dernière page vue), sur les pages que les règles lisent
     carnet = Carnet(args.annotation / "notes.jsonl")
-    statuts = carnet.statuts(TACHE)
-    vues = {cle for cle, statut in statuts.items() if statut == "vue"}
-    if not vues:
-        print("Aucune page vue dans l'outil d'annotation : pas encore de référence.")
+    qualifications = carnet.qualifications(remarques=False)
+    vues = {
+        cle for cle, s in carnet.statuts(SELECTION, exacte=True).items() if s == "vue"
+    }
+    corpus = Corpus(args.versement, args.typage[0])
+    delimites = {
+        f
+        for f in lues
+        if (f, derniere_page(corpus.pages(f), f, qualifications)) in vues
+    }
+    if not delimites:
+        print("Aucun cahier délimité dans l'outil d'annotation : pas de référence.")
         return
+    lues_delimitees = {(f, n) for f in delimites for n in lues[f]}
     reference = [
         (n["fichier"], n["page"], min(n["y0"], n["y1"]))
         for n in carnet.positions()
-        if n["etiquette"] == DEBUT and (n["fichier"], n["page"]) in vues
+        if n["etiquette"] == DEBUT and (n["fichier"], n["page"]) in lues_delimitees
     ]
-    vus = [d for d in trouves if (d["fichier"], d["page"]) in vues]
+    print(
+        f"Référence : {len(delimites)} cahiers délimités, {len(reference)} débuts "
+        f"sur {len(lues_delimitees)} pages dactylographiées"
+    )
+    vus = [d for d in trouves if (d["fichier"], d["page"]) in lues_delimitees]
     for titre, regle in (("toutes règles", None), *((r, r) for r in REGLES)):
         retenus = [d for d in vus if regle is None or d["regle"].startswith(regle)]
         # une règle se mesure sur les pages où elle a trouvé des débuts
-        pages = vues if regle is None else {(d["fichier"], d["page"]) for d in retenus}
+        pages = (
+            lues_delimitees
+            if regle is None
+            else {(d["fichier"], d["page"]) for d in retenus}
+        )
         if not pages:
-            print(f"  {titre} : pas encore de page vue")
+            print(f"  {titre} : aucun début trouvé dans les cahiers délimités")
             continue
         precision, rappel = evaluer(
             [(d["fichier"], d["page"], d["y0"]) for d in retenus],
             [r for r in reference if (r[0], r[1]) in pages],
         )
         print(
-            f"  {titre} : précision {precision:.0%}, rappel {rappel:.0%} "
-            f"(sur {len(pages)} pages vues)"
+            f"  {titre} : {len(retenus)} débuts, précision {precision:.0%}, "
+            f"rappel {rappel:.0%} (sur {len(pages)} pages)"
         )
 
 
