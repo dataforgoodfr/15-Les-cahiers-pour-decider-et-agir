@@ -23,7 +23,7 @@ uv run pytest
 | `inventaires` | #43 | Documents inventoriés sans fichier, fichiers sans inventaire |
 | `manquantes` | #43 | Pages manquantes des courriers et formulaires types |
 | `contributions` | #5 | Débuts des contributions (courriels, formulaires), mesurés sur les notes de l'outil d'annotation |
-| `chabin` | #5 | Référence de découpage : les cahiers de l'édition Chabin, délimités à la main et comparés à ses comptes |
+| `chabin` | #5 | Référence de découpage : les cahiers de l'édition Chabin, délimités à la main et comparés à ses comptes ; ses contributions imprimées retrouvées dans l'OCR, pour mesurer les règles |
 | `annotation` | #5, #7 | Outil local d'annotation : vérités terrain sur les pages, listes à revoir |
 | `anonymisation` | #7 | Données personnelles (règles, zones de formulaire, modèles locaux), à vérifier dans l'outil d'annotation |
 
