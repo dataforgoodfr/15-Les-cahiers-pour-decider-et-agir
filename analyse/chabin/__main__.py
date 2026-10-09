@@ -204,8 +204,9 @@ def main() -> None:
             "découpage au nôtre. Pour chaque cahier : cliquer chaque début de "
             "contribution, clic droit sur chaque fin, dans l'ordre de lecture "
             "(une contribution : un texte d'un même auteur, ou d'un même groupe, "
-            "d'un seul tenant). Pas de caviardage. À la fin, marquer la "
-            "dernière page vue (v) : le cahier est alors délimité."
+            "d'un seul tenant). Pas de caviardage. À la fin, le bouton « Cahier "
+            "vu » sous la dernière page la marque vue : le cahier est alors "
+            "délimité."
         ),
         elements(liste, {f: len(p) for f, p in pages.items()}),
         tache=TACHE,
