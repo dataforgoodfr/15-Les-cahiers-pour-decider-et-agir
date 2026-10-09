@@ -52,13 +52,16 @@ sur 134 cahiers :
 - 269 contributions dactylographiées sur 340 et 17 courriels sur 22 sont
   retrouvés. Les autres sont surtout des textes collés que l'OCR du versement
   n'a presque pas lus (une vingtaine de mots par page).
-- Les règles trouvent 6 % des débuts, avec une précision de 12 % : la plupart
+- Les règles trouvent 12 % des débuts, avec une précision de 22 % (47 % sur
+  les cahiers dont toutes les contributions sont retrouvées) : la plupart
   des contributions dactylographiées sont des lettres, qu'aucune règle ne
   découpe.
-- Le « début du cahier » tombe presque toujours en page 3 : une page
-  d'ouverture imprimée, commune à la plupart des cahiers du département, que
-  le typage ne marque pas comme page de service. La première contribution
-  commence en page 4 dans 23 cas sur 38.
+- Le « début du cahier » tombait d'abord presque toujours en page 3 : la
+  couverture imprimée de l'association des maires, que le typage ne marque
+  pas comme page de service. `python -m ouvertures` repère ces pages dans
+  tout le versement (3 115, dont 312 en Gironde et 180 en
+  Charente-Maritime) ; les règles les sautent, ce qui double leur
+  précision sur l'édition Chabin.
 - Les formulaires repérés (3 cahiers, 44 débuts) sont des formulaires remplis
   à la main : l'édition les classe en manuscrits, sans position dans l'OCR.
   La référence ne peut pas les juger.

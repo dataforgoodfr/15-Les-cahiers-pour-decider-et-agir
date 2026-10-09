@@ -22,6 +22,7 @@ uv run pytest
 | `orientation` | #43 | Pages tournées d'un quart de tour |
 | `inventaires` | #43 | Documents inventoriés sans fichier, fichiers sans inventaire |
 | `manquantes` | #43 | Pages manquantes des courriers et formulaires types |
+| `ouvertures` | #5 | Pages d'ouverture imprimées (couverture de l'association des maires…), qui ne sont pas des contributions |
 | `contributions` | #5 | Débuts des contributions (courriels, formulaires), mesurés sur les notes de l'outil d'annotation |
 | `chabin` | #5 | Référence de découpage : les cahiers de l'édition Chabin, délimités à la main et comparés à ses comptes ; ses contributions imprimées retrouvées dans l'OCR, pour mesurer les règles |
 | `annotation` | #5, #7 | Outil local d'annotation : vérités terrain sur les pages, listes à revoir |
