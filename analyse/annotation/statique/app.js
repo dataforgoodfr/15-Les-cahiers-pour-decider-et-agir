@@ -236,7 +236,14 @@ function construireFeuilles() {
     observateur.observe(feuille);
     return { feuille, image, calque };
   });
-  $("feuilles").replaceChildren(...etat.feuilles.map((f) => f.feuille));
+  // sous la dernière page : clore le cahier sans chercher la touche v
+  const bouton = element("button", { class: "cahier-vu", type: "button" },
+    etat.liste ? "✓ Cahier vu, cahier suivant" : "✓ Cahier vu");
+  bouton.addEventListener("click", () => cahierVu());
+  $("feuilles").replaceChildren(
+    ...etat.feuilles.map((f) => f.feuille), element("div", { class: "fin-cahier" }),
+  );
+  $("feuilles").lastChild.append(bouton);
   $("vide").hidden = true;
   masquerVierges();
   dimensionner();
@@ -785,6 +792,22 @@ async function marquerVue(page) {
   }
   marquerVignette();
   dessinerElements();
+}
+
+async function cahierVu() {
+  // marque vues les pages montrées encore sans statut, dont la dernière
+  // (pour « selection » et « chabin », le cahier est alors délimité), puis
+  // passe au premier élément de la liste pris dans un autre cahier
+  const fichier = etat.cahier.fichier;
+  for (const { feuille } of etat.feuilles) {
+    if (!feuille.hidden) await marquerVue(Number(feuille.dataset.page));
+  }
+  dessinerStatut();
+  const suivant = etat.liste?.elements.findIndex(
+    (e, i) => i > etat.index && e.fichier !== fichier,
+  ) ?? -1;
+  if (suivant >= 0) await allerElement(suivant);
+  else message(etat.liste ? "Cahier vu : c'était le dernier de la liste" : "Cahier vu");
 }
 
 function dessinerStatut() {
