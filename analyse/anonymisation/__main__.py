@@ -15,6 +15,11 @@ cahiers, et les en-têtes de formulaire trouvés par `contributions`. Écrit :
   repérages, fusionnés, en relecture inversée (`anonymisation.masquage`) :
   masqués par défaut, le relecteur rétablit les fausses alertes et encadre
   les oublis ;
+- les zones de formulaire : les blocs posés à la main sur au moins deux
+  exemplaires d'un formulaire, reportés sur les autres. Les exemplaires se
+  reconnaissent à l'en-tête trouvé par `contributions`, ou à leurs lignes
+  imprimées apprises sur les pages annotées (`detection.modele_appris`),
+  y compris sur les pages remplies à la main ;
 - `masques.csv` dans la sortie : ce qu'il faut masquer après relecture
   (repérages non rétablis, et oublis encadrés), l'entrée du caviardage.
 
@@ -43,7 +48,9 @@ from annotation import listes
 from annotation.carnet import Carnet
 from anonymisation.detection import (
     CHEVAUCHEMENT,
+    EXEMPLAIRES,
     charger_prenoms,
+    modele_appris,
     mots_personnels,
     recouvrement,
     retirer_repandues,
@@ -53,8 +60,10 @@ from anonymisation.masquage import a_masquer, fusionner, mesurer_relecture
 from anonymisation.modeles import Cache, charger, localiser, texte_de_la_page
 from communes import sources
 from contributions.__main__ import pages_lues
+from ouvertures.ouvertures import LONGUEUR_LIGNE, normaliser
 from panel.panel import code_insee
 
+COUVERTE = 0.9  # part d'une note recouverte par une zone pour être couverte
 TACHE = "anonymisation"  # relecture à l'ancienne : accepter les repérages
 RELECTURE = "masquage"  # relecture inversée : rétablir les fausses alertes
 LISTE = "anonymisation-a-masquer"
@@ -80,6 +89,69 @@ def mots_de_la_page(page: pymupdf.Page) -> list[tuple]:
         r = pymupdf.Rect(x0, y0, x1, y1) * page.rotation_matrix
         sortie.append((r.x0, r.y0, r.x1, r.y1, *reste))
     return sortie
+
+
+def lignes_placees(page: pymupdf.Page) -> dict[str, tuple[float, float]]:
+    """Les lignes de la page, normalisées, et leur coin haut gauche dans le
+    repère de la page affichée (la première, si une ligne revient)."""
+    sortie = {}
+    for bloc in page.get_text("dict")["blocks"]:
+        for ligne in bloc.get("lines", []):
+            x = normaliser("".join(s["text"] for s in ligne["spans"]))
+            if len(x) > LONGUEUR_LIGNE and x not in sortie:
+                r = pymupdf.Rect(ligne["bbox"]) * page.rotation_matrix
+                sortie[x] = (r.x0, r.y0)
+    return sortie
+
+
+def modeles_appris(
+    chemins: dict[str, Path], notes: list[dict], relues: set
+) -> tuple[list[dict], dict[str, tuple[int, int, int]]]:
+    """Zones des cahiers dont au moins deux pages portent des notes de
+    données personnelles, reportées sur les exemplaires de leur formulaire.
+
+    Le report ne touche que les pages sans note ni relecture : sur une page
+    annotée ou relue, le lecteur a déjà dit ce qu'il fallait cacher. Rend
+    aussi, par cahier où le report touche des pages, la validation croisée :
+    (pages reportées, notes couvertes par les zones apprises sans leur page,
+    notes)."""
+    par_cahier = defaultdict(list)
+    for n in notes:
+        if n["fichier"] in chemins:
+            par_cahier[n["fichier"]].append(n)
+    reperes, validation = [], {}
+    for fichier, annotees in sorted(par_cahier.items()):
+        annotees_pages = {n["page"] for n in annotees}
+        if len(annotees_pages) < EXEMPLAIRES:
+            continue
+        with pymupdf.open(chemins[fichier]) as doc:
+            pages = {n + 1: lignes_placees(doc[n]) for n in range(doc.page_count)}
+        reportes = modele_appris(pages, annotees)
+        if not reportes:
+            continue
+        nouveaux = [
+            {"fichier": fichier, **r}
+            for r in reportes
+            if r["page"] not in annotees_pages and (fichier, r["page"]) not in relues
+        ]
+        if not nouveaux:
+            continue
+        reperes += nouveaux
+        couvertes = 0
+        for p in annotees_pages:
+            zones_p = [
+                z
+                for z in modele_appris(pages, [n for n in annotees if n["page"] != p])
+                if z["page"] == p
+            ]
+            couvertes += sum(
+                any(recouvrement(n, z) >= COUVERTE for z in zones_p)
+                for n in annotees
+                if n["page"] == p
+            )
+        pages_reportees = len({r["page"] for r in nouveaux})
+        validation[fichier] = (pages_reportees, couvertes, len(annotees))
+    return reperes, validation
 
 
 def zones_reportees(debuts: list[dict], notes: list[dict]) -> list[dict]:
@@ -264,12 +336,13 @@ def main() -> None:
     ]
     with args.debuts.open(encoding="utf-8", newline="") as f:
         debuts = list(csv.DictReader(f))
-    reportees = zones_reportees(debuts, notes)
-    fusionnes = fusionner(tous + reportees)
-    retablis = list(carnet.retablis().values())
     relues = {
         cle for cle, s in carnet.statuts(RELECTURE, exacte=True).items() if s == "vue"
     }
+    apprises, validation = modeles_appris(chemins, notes, relues)
+    reportees = zones_reportees(debuts, notes) + apprises
+    fusionnes = fusionner(tous + reportees)
+    retablis = list(carnet.retablis().values())
 
     dossier = args.annotation / "listes"
     # sur les seules pages vues, on mesure sans écraser les sorties complètes
@@ -308,6 +381,11 @@ def main() -> None:
     mesurer(
         "zones reportées", [r for r in reportees if r["source"] == "zone"], notes, vues
     )
+    for fichier, (pages, couvertes, total) in sorted(validation.items()):
+        print(
+            f"  modèle appris, {fichier} : {pages} pages reportées ; "
+            f"{couvertes} notes sur {total} couvertes, apprises sans leur page"
+        )
     print(f"Relecture inversée : {len(fusionnes)} repérages fusionnés à masquer")
     mesure = mesurer_relecture(fusionnes, retablis, notes, relues)
     if mesure is None:
