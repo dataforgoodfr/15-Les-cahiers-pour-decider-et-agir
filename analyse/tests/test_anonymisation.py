@@ -4,6 +4,7 @@ import pytest
 
 from anonymisation.__main__ import zones_reportees
 from anonymisation.detection import (
+    modele_appris,
     mots_personnels,
     recouvrement,
     retirer_repandues,
@@ -210,3 +211,30 @@ def test_morceaux_coupent_une_ligne_trop_longue_avec_chevauchement():
     ]
     # aucun morceau ne dépasse la fenêtre
     assert all(len(m.split()) <= 4 for m in morceaux)
+
+
+def test_modele_appris_reporte_sur_les_exemplaires_remplis_a_la_main():
+    imprime = {
+        "vos coordonnees facultatif": (50, 100),
+        "vos propositions ici": (50, 400),
+    }
+    pages = {
+        # exemplaires annotés, puis un exemplaire numérisé 30 points plus bas
+        1: {**imprime, "jean dupont rue x": (60, 130)},
+        2: dict(imprime),
+        3: {x: (a, b + 30) for x, (a, b) in imprime.items()},
+        4: {"une lettre sans formulaire": (50, 100)},
+    }
+    bloc = {"x0": 50, "y0": 110, "x1": 500, "y1": 200, "etiquette": "bloc"}
+    annotees = [{**bloc, "page": 1}, {**bloc, "page": 2, "y1": 210}]
+    reperes = modele_appris(pages, annotees)
+    assert [r["page"] for r in reperes] == [1, 2, 3]
+    assert [r["source"] for r in reperes] == ["modèle appris"] * 2 + ["modèle"]
+    trois = reperes[2]
+    assert (trois["y0"], trois["y1"]) == (110 - 4 + 30, 210 + 4 + 30)
+
+
+def test_modele_appris_demande_deux_exemplaires():
+    pages = {1: {"vos coordonnees facultatif": (50, 100), "autre ligne longue": (0, 0)}}
+    bloc = {"x0": 0, "y0": 0, "x1": 10, "y1": 10, "etiquette": "bloc", "page": 1}
+    assert modele_appris(pages, [bloc]) == []

@@ -17,7 +17,10 @@ Deux sources de repérages, que l'annotation fait vérifier à la main :
 - **les zones de formulaire** : un formulaire type place les coordonnées
   toujours au même endroit. Les rectangles de données personnelles posés à
   la main sur quelques exemplaires, rapportés à l'en-tête du formulaire, se
-  reportent sur tous les exemplaires du cahier.
+  reportent sur tous les exemplaires du cahier. L'en-tête vient des règles
+  de `contributions`, qui ne lisent que les pages dactylographiées ; un
+  formulaire rempli à la main se reconnaît plutôt à ses lignes imprimées,
+  apprises sur les pages annotées (`modele_appris`).
 
 Mieux vaut masquer une donnée de trop que laisser passer celle d'un
 citoyen : dans le doute, une adresse est personnelle. Une adresse n'est
@@ -31,7 +34,9 @@ import io
 import re
 import unicodedata
 import zipfile
+from collections import Counter
 from difflib import SequenceMatcher
+from statistics import median
 
 from contributions.regles import PUBLIC
 
@@ -106,6 +111,7 @@ NAISSANCES = 200  # naissances au moins (depuis 1900) pour qu'un prénom compte
 MARGE = 4  # points ajoutés autour d'une zone reportée
 CHEVAUCHEMENT = 0.3  # recouvrement minimal de deux rectangles d'une même zone
 EXEMPLAIRES = 2  # exemplaires annotés au moins pour reporter une zone
+LIGNES_MODELE = 2  # lignes imprimées du modèle au moins sur un exemplaire
 
 
 def charger_prenoms(contenu: bytes) -> set[str]:
@@ -321,3 +327,82 @@ def zones(annotees: list[dict]) -> list[dict]:
             }
         )
     return sortie
+
+
+Lignes = dict[str, tuple[float, float]]  # ligne normalisée -> coin haut gauche
+
+
+def modele_appris(pages: dict[int, Lignes], annotees: list[dict]) -> list[dict]:
+    """Zones de données personnelles d'un cahier, reportées sur chaque
+    exemplaire de leur formulaire, appris sur les pages annotées.
+
+    `pages` : lignes de chaque page du cahier, normalisées, avec leur
+    position ; `annotees` : rectangles de données personnelles posés à la
+    main (page, cadre, étiquette). Les rectangles de même étiquette posés au
+    même endroit d'au moins EXEMPLAIRES pages forment un groupe ; un cahier
+    peut mêler plusieurs formulaires, et des lettres, chaque groupe apprend
+    donc son propre modèle (`_reporter`)."""
+    reperes = []
+    for brute in zones(annotees):
+        groupe = [
+            r
+            for r in annotees
+            if r["etiquette"] == brute["etiquette"]
+            and recouvrement(r, brute) >= CHEVAUCHEMENT
+        ]
+        reperes += _reporter(pages, groupe)
+    return reperes
+
+
+def _reporter(pages: dict[int, Lignes], groupe: list[dict]) -> list[dict]:
+    """Le modèle d'un groupe est fait des lignes qui reviennent sur au moins
+    EXEMPLAIRES de ses pages ; une page qui en porte au moins LIGNES_MODELE
+    est un exemplaire, qu'elle soit typée dactylographiée ou manuscrite. Son
+    décalage (numérisation) est le décalage médian de ces lignes. Les
+    rectangles du groupe, ramenés au même repère, forment la zone reportée."""
+    exemplaires = {r["page"] for r in groupe}
+    presences = Counter(x for p in exemplaires for x in pages.get(p, {}))
+    modele = {x for x, n in presences.items() if n >= EXEMPLAIRES}
+    if len(modele) < LIGNES_MODELE:
+        return []
+    reference = {
+        x: tuple(
+            median(pages[p][x][i] for p in exemplaires if x in pages.get(p, {}))
+            for i in (0, 1)
+        )
+        for x in modele
+    }
+    decalages = {}
+    for p, lignes in pages.items():
+        communes = [x for x in lignes if x in modele]
+        if len(communes) >= LIGNES_MODELE:
+            decalages[p] = tuple(
+                median(lignes[x][i] - reference[x][i] for x in communes) for i in (0, 1)
+            )
+    relatifs = [
+        {
+            **r,
+            "x0": r["x0"] - decalages[r["page"]][0],
+            "y0": r["y0"] - decalages[r["page"]][1],
+            "x1": r["x1"] - decalages[r["page"]][0],
+            "y1": r["y1"] - decalages[r["page"]][1],
+        }
+        for r in groupe
+        if r["page"] in decalages
+    ]
+    reperes = []
+    for zone in zones(relatifs):
+        appris = {r["page"] for r in relatifs if recouvrement(r, zone) > 0}
+        for p, (dx, dy) in sorted(decalages.items()):
+            reperes.append(
+                {
+                    "page": p,
+                    "x0": round(max(0.0, zone["x0"] + dx), 1),
+                    "y0": round(max(0.0, zone["y0"] + dy), 1),
+                    "x1": round(zone["x1"] + dx, 1),
+                    "y1": round(zone["y1"] + dy, 1),
+                    "etiquette": zone["etiquette"],
+                    "source": "modèle appris" if p in appris else "modèle",
+                }
+            )
+    return reperes
