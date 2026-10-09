@@ -3,7 +3,7 @@
     uv run python -m recueil [--selection data/selection]
         [--tirage data/tirage/contributions.csv]
         [--typage data/typage/departements] [--cache data/sources]
-        [--sortie data/recueil]
+        [--qualite 80] [--sortie data/recueil]
 
 Mise en page dans `recueil.recueil`. Lit l'export de `python -m selection`
 (contributions délimitées et caviardées) et écrit dans la sortie :
@@ -11,7 +11,9 @@ Mise en page dans `recueil.recueil`. Lit l'export de `python -m selection`
 - `recueil.pdf` : une page de présentation, la représentativité (tailles de
   communes et régions contre la population), un sommaire, puis chaque
   contribution précédée d'une page de titre. Les pages des contributions
-  sont celles de l'export, déjà caviardées ;
+  sont celles de l'export, déjà caviardées, recompressées en JPEG
+  (`--qualite`) : le caviardage les réécrit sans perte, cinq fois plus
+  lourdes ;
 - `index.csv` : une ligne par contribution, dans l'ordre du recueil.
 
 Des noms de communes, des codes et des comptes, jamais de texte des cahiers.
@@ -69,6 +71,9 @@ def main() -> None:
     )
     parser.add_argument("--typage", type=Path, default=Path("data/typage/departements"))
     parser.add_argument("--cache", type=Path, default=Path("data/sources"))
+    parser.add_argument(
+        "--qualite", type=int, default=80, help="qualité JPEG des pages (1 à 100)"
+    )
     parser.add_argument("--sortie", type=Path, default=Path("data/recueil"))
     args = parser.parse_args()
 
@@ -116,14 +121,16 @@ def main() -> None:
 
     args.sortie.mkdir(parents=True, exist_ok=True)
     doc.set_metadata({"title": "Cahiers citoyens : échantillon de contributions"})
+    doc.rewrite_images(quality=args.qualite)
     doc.save(args.sortie / "recueil.pdf", garbage=4, deflate=True)
     with (args.sortie / "index.csv").open("w", encoding="utf-8", newline="") as f:
         ecrivain = csv.DictWriter(f, list(lignes[0]))
         ecrivain.writeheader()
         ecrivain.writerows(lignes)
+    taille = (args.sortie / "recueil.pdf").stat().st_size / 1e6
     print(
-        f"{len(lignes)} contributions, {doc.page_count} pages : "
-        f"{args.sortie / 'recueil.pdf'}"
+        f"{len(lignes)} contributions, {doc.page_count} pages, "
+        f"{taille:.0f} Mo : {args.sortie / 'recueil.pdf'}"
     )
     sans = [x["commune"] for x in lignes if not x["caviardages"]]
     if sans:
