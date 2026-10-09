@@ -1,7 +1,7 @@
 [project]
-name = "15-les-cahiers-pour-decider-et-agir_extraction"
+name = "cahiers-extraction"
 version = "0.1.0"
-description = "extraction-contributions"
+description = "Transcriptions extérieures des cahiers (édition Chabin)"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [

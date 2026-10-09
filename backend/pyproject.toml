@@ -1,7 +1,7 @@
 [project]
-name = "13_pollution_eau"
+name = "cahiers-backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "Extraction des fichiers des cahiers, base de données et interface d'administration"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
