@@ -321,3 +321,26 @@ def test_une_liste_a_masquer_identifie_ses_marques(tmp_path):
     element["marques"][0]["id"] = "x"
     listes.ecrire(tmp_path, "l", "L", "", [element], mode="masquer")
     assert listes.lire(tmp_path, "l")["mode"] == "masquer"
+
+
+def test_les_pages_detectees_tournees_s_affichent_tournees(tmp_path):
+    from annotation.__main__ import ROTATION_DETECTEE, tourner_les_pages_detectees
+
+    (tmp_path / "orientation").mkdir()
+    (tmp_path / "orientation/pages_tournees.csv").write_text(
+        "fichier,pages,tournees,pages_tournees\na.pdf,9,4,p2 p3 p4 p5\n"
+    )
+    m = Metadonnees(tmp_path)
+    carnet = Carnet(tmp_path / "notes.jsonl")
+    carnet.qualifier("a.pdf", 3, "rotation", 0)  # remise droite à la main
+    carnet.qualifier("a.pdf", 4, "rotation", 270)
+    carnet.noter({"fichier": "a.pdf", "page": 5, "x0": 1, "y0": 1, "x1": 1, "y1": 1})
+    tourner_les_pages_detectees(carnet, "a.pdf", m)
+    tourner_les_pages_detectees(carnet, "a.pdf", m)  # une seule fois
+    rotations = {
+        page: q["rotation"]
+        for (f, page), q in carnet.qualifications().items()
+        if "rotation" in q
+    }
+    assert rotations == {2: ROTATION_DETECTEE, 3: 0, 4: 270}
+    assert sum(1 for e in carnet.evenements() if e.get("page") == 2) == 1

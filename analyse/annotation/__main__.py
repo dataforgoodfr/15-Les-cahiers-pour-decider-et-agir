@@ -15,6 +15,11 @@ Dans le dossier (hors git, comme tout `data/`) :
 
 Le panneau de chaque page montre son typage et ce que les analyses y ont
 détecté (`annotation.metadonnees`, lu dans `--donnees`).
+
+Une page qu'`orientation` détecte tournée d'un quart de tour s'affiche
+tournée de ROTATION_DETECTEE : à l'ouverture du cahier, la rotation entre au
+carnet (l'ordre de lecture des notes en dépend, `selection` la relit), sauf
+si la page a déjà une rotation, même remise à 0, ou des notes.
 """
 
 import argparse
@@ -48,6 +53,27 @@ ETIQUETTES = {
     ],
     "Autre": ["remarque"],
 }
+
+
+# `orientation` ne dit pas le sens du quart de tour ; à la main, 36 des 38
+# pages détectées tournées l'ont été de 90° (sens horaire)
+ROTATION_DETECTEE = 90
+
+
+def tourner_les_pages_detectees(
+    carnet: Carnet, fichier: str, metadonnees: Metadonnees
+) -> None:
+    """Pose ROTATION_DETECTEE sur les pages du fichier détectées tournées qui
+    n'ont ni rotation au carnet ni note."""
+    detectees = metadonnees.tournees.get(fichier, set())
+    if not detectees:
+        return
+    qualifications = carnet.qualifications(remarques=False)
+    notes, _ = carnet.etat()
+    annotees = {n["page"] for n in notes.values() if n["fichier"] == fichier}
+    for page in sorted(detectees - annotees):
+        if "rotation" not in qualifications.get((fichier, page), {}):
+            carnet.qualifier(fichier, page, "rotation", ROTATION_DETECTEE)
 
 
 def application(
@@ -103,6 +129,7 @@ def application(
                 self.json(corpus.chercher(q.get("q", "")))
             elif chemin == "/api/cahier":
                 fichier = q["fichier"]
+                tourner_les_pages_detectees(carnet, fichier, metadonnees)
                 notes, _ = carnet.etat()
                 statuts = carnet.statuts(q.get("tache") or None)
                 qualifications = carnet.qualifications()
