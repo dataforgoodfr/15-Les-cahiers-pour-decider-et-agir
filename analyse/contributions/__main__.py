@@ -2,10 +2,12 @@
 
     uv run python -m contributions [--cahiers data/tirage/contributions.csv]
         [--versement data/versement] [--typage data/typage/departements]
-        [--annotation data/annotation] [--sortie data/contributions]
+        [--annotation data/annotation] [--ouvertures data/ouvertures/ouvertures.csv]
+        [--sortie data/contributions]
 
 Règles dans `contributions.regles`. Seules les pages dactylographiées sont
-lues, hors pages de service. Écrit :
+lues, hors pages de service et pages d'ouverture imprimées (sortie de
+`python -m ouvertures`, si elle existe). Écrit :
 
 - `debuts.csv` dans la sortie : une ligne par début de contribution (fichier,
   page, rang de la ligne dans la couche texte, cadre de la ligne en points
@@ -30,6 +32,7 @@ import pymupdf
 from annotation import listes
 from annotation.carnet import Carnet
 from contributions.regles import debuts, evaluer
+from ouvertures.__main__ import lire as lire_ouvertures
 from panel.panel import lire_typage
 
 DACTYLOGRAPHIEE = "dactylographiée"
@@ -58,14 +61,20 @@ SUITE = (
 )
 
 
-def pages_lues(typage: list[Path], fichiers: set[str]) -> dict[str, list[int]]:
-    """Numéros des pages dactylographiées de chaque cahier, hors service."""
+def pages_lues(
+    typage: list[Path],
+    fichiers: set[str],
+    ouvertures: set[tuple[str, int]] = frozenset(),
+) -> dict[str, list[int]]:
+    """Numéros des pages dactylographiées de chaque cahier, hors service et
+    hors pages d'ouverture imprimées (`python -m ouvertures`)."""
     pages = defaultdict(list)
     for ligne in lire_typage(typage):
         if (
             ligne["fichier"] in fichiers
             and ligne["type_page"] == DACTYLOGRAPHIEE
             and ligne["page_de_service"] != "1"
+            and (ligne["fichier"], int(ligne["page"])) not in ouvertures
         ):
             pages[ligne["fichier"]].append(int(ligne["page"]))
     return {f: sorted(p) for f, p in pages.items()}
@@ -130,13 +139,16 @@ def main() -> None:
         "--typage", type=Path, nargs="+", default=[Path("data/typage/departements")]
     )
     parser.add_argument("--annotation", type=Path, default=Path("data/annotation"))
+    parser.add_argument(
+        "--ouvertures", type=Path, default=Path("data/ouvertures/ouvertures.csv")
+    )
     parser.add_argument("--sortie", type=Path, default=Path("data/contributions"))
     args = parser.parse_args()
 
     with args.cahiers.open(encoding="utf-8", newline="") as f:
         fichiers = {ligne["fichier"] for ligne in csv.DictReader(f)}
     chemins = {p.name: p for p in args.versement.rglob("*.pdf") if p.name in fichiers}
-    lues = pages_lues(args.typage, fichiers)
+    lues = pages_lues(args.typage, fichiers, lire_ouvertures(args.ouvertures))
 
     trouves, resume = [], []
     for fichier in sorted(lues):

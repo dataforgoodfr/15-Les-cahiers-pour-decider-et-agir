@@ -4,6 +4,7 @@
         [--extraction ../data/cahiers_chabin-extraction.json]
         [--versement data/versement] [--typage data/typage/departements]
         [--annotation data/annotation] [--sortie data/chabin]
+        [--ouvertures data/ouvertures/ouvertures.csv]
 
 L'extraction vient de `extraction/chabin` (échantillon ou édition complète).
 Écrit la liste « chabin » de l'outil d'annotation : un élément par scan BnF
@@ -36,6 +37,7 @@ from chabin.alignement import IMPRIMEES, genre, localiser
 from chabin.reference import cahiers, comparer, elements
 from contributions.__main__ import lignes, pages_lues
 from contributions.regles import debuts, evaluer
+from ouvertures.__main__ import lire as lire_ouvertures
 from selection.contribution import derniere_page
 
 TACHE = "chabin"
@@ -102,6 +104,7 @@ def mesurer_regles(
     scans_par_cahier: dict[str, list[str]],
     corpus: Corpus,
     typage: Path,
+    ouvertures: set[tuple[str, int]],
 ) -> list[tuple[str, str, float, float, int, int]]:
     """Précision et rappel des règles sur les pages dactylographiées, par
     règle et sur deux périmètres : (périmètre, règle, précision, rappel,
@@ -128,7 +131,7 @@ def mesurer_regles(
     fichiers = {
         f for i in perimetres["cahiers à imprimés"] for f in scans_par_cahier[i]
     }
-    lues = pages_lues([typage], fichiers)
+    lues = pages_lues([typage], fichiers, ouvertures)
     trouves = []
     for fichier, numeros in sorted(lues.items()):
         with pymupdf.open(corpus.chemin(fichier)) as doc:
@@ -180,6 +183,9 @@ def main() -> None:
     parser.add_argument("--typage", type=Path, default=Path("data/typage/departements"))
     parser.add_argument("--annotation", type=Path, default=Path("data/annotation"))
     parser.add_argument("--sortie", type=Path, default=Path("data/chabin"))
+    parser.add_argument(
+        "--ouvertures", type=Path, default=Path("data/ouvertures/ouvertures.csv")
+    )
     args = parser.parse_args()
 
     extraction = json.loads(args.extraction.read_text(encoding="utf-8"))
@@ -226,7 +232,11 @@ def main() -> None:
         print("Règles de découpage, sur les pages dactylographiées :")
         scans_par_cahier = {e["city"]["insee"]: scans(e) for e in extraction if e}
         for perimetre, regle, precision, rappel, n, ref in mesurer_regles(
-            alignement, scans_par_cahier, corpus, args.typage
+            alignement,
+            scans_par_cahier,
+            corpus,
+            args.typage,
+            lire_ouvertures(args.ouvertures),
         ):
             print(
                 f"  {perimetre}, {regle} : {n} débuts trouvés pour {ref}, "
