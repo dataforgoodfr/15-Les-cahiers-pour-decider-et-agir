@@ -14,51 +14,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "13-pollution-eau"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "aiodns" },
-    { name = "aiohttp" },
-    { name = "alembic" },
-    { name = "asyncpg" },
-    { name = "colorlog" },
-    { name = "dependency-injector" },
-    { name = "gradio" },
-    { name = "gradio-pdf" },
-    { name = "networkx" },
-    { name = "plotly" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "pymupdf" },
-    { name = "sqlalchemy", extra = ["asyncio"] },
-    { name = "tqdm" },
-    { name = "uuid7" },
-    { name = "wordfreq" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiodns", specifier = ">=4.0.4" },
-    { name = "aiohttp", specifier = ">=3.14.3" },
-    { name = "alembic", specifier = ">=1.20.0" },
-    { name = "asyncpg", specifier = ">=0.31.0" },
-    { name = "colorlog", specifier = ">=6.12.0" },
-    { name = "dependency-injector", specifier = ">=4.49.1" },
-    { name = "gradio", specifier = ">=6.28.0" },
-    { name = "gradio-pdf", specifier = ">=0.0.24" },
-    { name = "networkx", specifier = ">=3.7" },
-    { name = "plotly", specifier = ">=7.1.0" },
-    { name = "pydantic", specifier = ">=2.13.5" },
-    { name = "pydantic-settings", specifier = ">=2.15.0" },
-    { name = "pymupdf", specifier = ">=1.28.2" },
-    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.54" },
-    { name = "tqdm", specifier = ">=4.70.1" },
-    { name = "uuid7", specifier = ">=0.1.0" },
-    { name = "wordfreq", specifier = ">=3.1.1" },
-]
-
-[[package]]
 name = "aiodns"
 version = "4.0.4"
 source = { registry = "https://pypi.org/simple" }
@@ -378,6 +333,51 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/73/3183c9e41ca755713bdf2cc1d0810df742c09484e2e1ddd693bee53877c1/brotli-1.2.0-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:d2d085ded05278d1c7f65560aae97b3160aeb2ea2c0b3e26204856beccb60888", size = 1488164, upload-time = "2025-11-05T18:38:53.079Z" },
     { url = "https://files.pythonhosted.org/packages/64/6a/0c78d8f3a582859236482fd9fa86a65a60328a00983006bcf6d83b7b2253/brotli-1.2.0-cp314-cp314-win32.whl", hash = "sha256:832c115a020e463c2f67664560449a7bea26b0c1fdd690352addad6d0a08714d", size = 339280, upload-time = "2025-11-05T18:38:54.02Z" },
     { url = "https://files.pythonhosted.org/packages/f5/10/56978295c14794b2c12007b07f3e41ba26acda9257457d7085b0bb3bb90c/brotli-1.2.0-cp314-cp314-win_amd64.whl", hash = "sha256:e7c0af964e0b4e3412a0ebf341ea26ec767fa0b4cf81abb5e897c9338b5ad6a3", size = 375639, upload-time = "2025-11-05T18:38:55.67Z" },
+]
+
+[[package]]
+name = "cahiers-backend"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "aiodns" },
+    { name = "aiohttp" },
+    { name = "alembic" },
+    { name = "asyncpg" },
+    { name = "colorlog" },
+    { name = "dependency-injector" },
+    { name = "gradio" },
+    { name = "gradio-pdf" },
+    { name = "networkx" },
+    { name = "plotly" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "pymupdf" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "tqdm" },
+    { name = "uuid7" },
+    { name = "wordfreq" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiodns", specifier = ">=4.0.4" },
+    { name = "aiohttp", specifier = ">=3.14.3" },
+    { name = "alembic", specifier = ">=1.20.0" },
+    { name = "asyncpg", specifier = ">=0.31.0" },
+    { name = "colorlog", specifier = ">=6.12.0" },
+    { name = "dependency-injector", specifier = ">=4.49.1" },
+    { name = "gradio", specifier = ">=6.28.0" },
+    { name = "gradio-pdf", specifier = ">=0.0.24" },
+    { name = "networkx", specifier = ">=3.7" },
+    { name = "plotly", specifier = ">=7.1.0" },
+    { name = "pydantic", specifier = ">=2.13.5" },
+    { name = "pydantic-settings", specifier = ">=2.15.0" },
+    { name = "pymupdf", specifier = ">=1.28.2" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.54" },
+    { name = "tqdm", specifier = ">=4.70.1" },
+    { name = "uuid7", specifier = ">=0.1.0" },
+    { name = "wordfreq", specifier = ">=3.1.1" },
 ]
 
 [[package]]
