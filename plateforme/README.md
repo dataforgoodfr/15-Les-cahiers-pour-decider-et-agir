@@ -2,8 +2,13 @@
 
 L'application de production, en Django, hébergée sur Clever Cloud
 ([#34](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/34)).
-Pour l'instant, c'est un squelette : l'interface d'administration, sans modèle.
-Les modèles du POC (`backend/`) y seront repris un à un.
+Les modèles du POC (`backend/`) y sont repris un à un. Pour l'instant :
+
+- `territoires` : régions, départements et communes, arrondissements de Paris,
+  Lyon et Marseille et collectivités d'outre-mer compris, chargés depuis
+  [geo.api.gouv.fr](https://geo.api.gouv.fr/) par
+  `uv run python manage.py charger_communes`. Les cahiers dont la commune est
+  inconnue, ou qui viennent de l'étranger, vont à la commune `99999`.
 
 ## En local
 
@@ -19,6 +24,7 @@ Puis :
 export DATABASE_URL=postgres://postgres:cahiers@localhost/cahiers DJANGO_DEBUG=1
 uv sync
 uv run python manage.py migrate
+uv run python manage.py charger_communes
 uv run python manage.py createsuperuser
 uv run python manage.py runserver
 ```
@@ -47,6 +53,8 @@ Variables d'environnement à définir :
 | `CELLAR_BUCKET` | le nom du bucket des PDF, privé |
 
 `POSTGRESQL_ADDON_URI` et `CELLAR_ADDON_*` sont fournies par les add-ons.
+Après le premier déploiement, charger les communes une fois avec
+`clever ssh`, puis `uv run python manage.py charger_communes`.
 Sans Cellar, les fichiers déposés restent sur le disque de l'instance, qui
 n'est pas conservé entre deux déploiements.
 
