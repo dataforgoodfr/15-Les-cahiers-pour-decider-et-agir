@@ -41,3 +41,24 @@ choisir la leur : il suffit de noter en plus où chacune commence.
    des débuts trouvés qui sont justes) et le rappel (part des vrais débuts
    trouvés) sur les pages vues. Un début trouvé est juste s'il tombe à moins
    de 30 points (environ deux lignes) d'une note.
+
+## Mesure sur l'édition Chabin
+
+`uv run python -m chabin` retrouve dans l'OCR les contributions que
+Marie-Anne Chabin dit dactylographiées ou imprimées d'une messagerie
+(Charente-Maritime) et y mesure les règles, sans relecture. Au 9 octobre 2026,
+sur 134 cahiers :
+
+- 269 contributions dactylographiées sur 340 et 17 courriels sur 22 sont
+  retrouvés. Les autres sont surtout des textes collés que l'OCR du versement
+  n'a presque pas lus (une vingtaine de mots par page).
+- Les règles trouvent 6 % des débuts, avec une précision de 12 % : la plupart
+  des contributions dactylographiées sont des lettres, qu'aucune règle ne
+  découpe.
+- Le « début du cahier » tombe presque toujours en page 3 : une page
+  d'ouverture imprimée, commune à la plupart des cahiers du département, que
+  le typage ne marque pas comme page de service. La première contribution
+  commence en page 4 dans 23 cas sur 38.
+- Les formulaires repérés (3 cahiers, 44 débuts) sont des formulaires remplis
+  à la main : l'édition les classe en manuscrits, sans position dans l'OCR.
+  La référence ne peut pas les juger.

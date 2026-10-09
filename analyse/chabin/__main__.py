@@ -10,9 +10,15 @@ L'extraction vient de `extraction/chabin` (échantillon ou édition complète).
 des cahiers extraits. Le lecteur y délimite toutes les contributions, puis
 marque la dernière page vue, comme pour la sélection.
 
-Compare ensuite, pour chaque cahier délimité, ses débuts notés aux
+Retrouve aussi, dans l'OCR des scans, le début de chaque contribution
+dactylographiée ou imprimée d'une messagerie (`alignement.csv` dans la
+sortie, voir `chabin.alignement`), et mesure sur cette référence les règles
+de découpage (`contributions.regles`) : précision et rappel des débuts sur
+les pages dactylographiées.
+
+Compare enfin, pour chaque cahier délimité, ses débuts notés aux
 contributions de l'édition (`comparaison.csv` dans la sortie). Des codes, des
-noms de fichiers et des comptes, jamais de texte.
+noms de fichiers, des positions et des comptes, jamais de texte.
 """
 
 import argparse
@@ -21,14 +27,146 @@ import json
 from collections import Counter
 from pathlib import Path
 
+import pymupdf
+
 from annotation import listes
 from annotation.carnet import Carnet
 from annotation.corpus import Corpus
+from chabin.alignement import IMPRIMEES, genre, localiser
 from chabin.reference import cahiers, comparer, elements
+from contributions.__main__ import lignes, pages_lues
+from contributions.regles import debuts, evaluer
 from selection.contribution import derniere_page
 
 TACHE = "chabin"
 DEBUT = "début de contribution"
+
+
+def scans(e: dict) -> list[str]:
+    return [Path(f).name for f in e["pdf_files"]]
+
+
+def aligner(extraction: list[dict | None], corpus: Corpus) -> list[dict]:
+    """Une ligne par contribution des cahiers dont tous les scans sont au
+    versement : pour une contribution imprimée, où elle commence dans l'OCR
+    si on l'y retrouve ; un manuscrit reste sans position."""
+    sortie = []
+    for e in extraction:
+        if not e or not scans(e) or not all(f in corpus.chemins for f in scans(e)):
+            continue
+        positions = []  # (fichier, page, ligne dans la page, texte, cadre)
+        for f in scans(e):
+            with pymupdf.open(corpus.chemin(f)) as doc:
+                for n, page in enumerate(doc, 1):
+                    positions += [
+                        (f, n, i, texte, cadre)
+                        for i, (texte, cadre) in enumerate(lignes(page))
+                    ]
+        genres = [genre(c["title"]) for c in e["contributions"]]
+        imprimees = [k for k, g in enumerate(genres) if g in IMPRIMEES]
+        trouves = dict(
+            zip(
+                imprimees,
+                localiser(
+                    [e["contributions"][k]["text"] for k in imprimees],
+                    [p[3] for p in positions],
+                ),
+            )
+        )
+        for k, g in enumerate(genres):
+            ligne = {
+                "insee": e["city"]["insee"],
+                "rang": k + 1,
+                "genre": g,
+                "fichier": "",
+                "page": "",
+                "ligne": "",
+                "y0": "",
+                "ressemblance": "",
+            }
+            if trouves.get(k):
+                f, n, i, _, cadre = positions[trouves[k][0]]
+                ligne |= {
+                    "fichier": f,
+                    "page": n,
+                    "ligne": i,
+                    "y0": round(cadre.y0, 1),
+                    "ressemblance": trouves[k][1],
+                }
+            sortie.append(ligne)
+    return sortie
+
+
+def mesurer_regles(
+    alignement: list[dict],
+    scans_par_cahier: dict[str, list[str]],
+    corpus: Corpus,
+    typage: Path,
+) -> list[tuple[str, str, float, float, int, int]]:
+    """Précision et rappel des règles sur les pages dactylographiées, par
+    règle et sur deux périmètres : (périmètre, règle, précision, rappel,
+    débuts trouvés, débuts de la référence).
+
+    - « cahiers à imprimés » : ceux qui ont au moins une contribution
+      imprimée retrouvée. Les manuscrits n'ont pas de position : un début de
+      manuscrit trouvé par une règle y compte comme une erreur, la précision
+      est donc sous-estimée ;
+    - « référence complète » : les cahiers dont toutes les contributions sont
+      imprimées et retrouvées.
+    """
+    par_cahier: dict[str, list[dict]] = {}
+    for a in alignement:
+        par_cahier.setdefault(a["insee"], []).append(a)
+    perimetres = {
+        "cahiers à imprimés": {
+            i for i, lignes_ in par_cahier.items() if any(a["fichier"] for a in lignes_)
+        },
+        "référence complète": {
+            i for i, lignes_ in par_cahier.items() if all(a["fichier"] for a in lignes_)
+        },
+    }
+    fichiers = {
+        f for i in perimetres["cahiers à imprimés"] for f in scans_par_cahier[i]
+    }
+    lues = pages_lues([typage], fichiers)
+    trouves = []
+    for fichier, numeros in sorted(lues.items()):
+        with pymupdf.open(corpus.chemin(fichier)) as doc:
+            pages = [lignes(doc[n - 1]) for n in numeros]
+        for p, i, regle in debuts([[t for t, _ in page] for page in pages]):
+            trouves.append((fichier, numeros[p], pages[p][i][1].y0, regle))
+    mesures = []
+    for nom, cahiers_ in perimetres.items():
+        pages_vues = {
+            (f, n)
+            for i in cahiers_
+            for f in scans_par_cahier[i]
+            for n in lues.get(f, [])
+        }
+        reference = [
+            (a["fichier"], a["page"], a["y0"])
+            for i in cahiers_
+            for a in par_cahier[i]
+            if (a["fichier"], a["page"]) in pages_vues
+        ]
+        for regle in (None, "courriel", "gabarit", "début du cahier"):
+            retenus = [
+                (f, n, y)
+                for f, n, y, r in trouves
+                if (f, n) in pages_vues and (regle is None or r.startswith(regle))
+            ]
+            precision, rappel = evaluer(retenus, reference)
+            mesures.append(
+                (
+                    nom,
+                    regle or "toutes règles",
+                    precision,
+                    rappel,
+                    len(retenus),
+                    len(reference),
+                )
+            )
+    return mesures
 
 
 def main() -> None:
@@ -44,7 +182,8 @@ def main() -> None:
     parser.add_argument("--sortie", type=Path, default=Path("data/chabin"))
     args = parser.parse_args()
 
-    liste = cahiers(json.loads(args.extraction.read_text(encoding="utf-8")))
+    extraction = json.loads(args.extraction.read_text(encoding="utf-8"))
+    liste = cahiers(extraction)
     corpus = Corpus(args.versement, args.typage)
     fichiers = [f for c in liste for f in c.fichiers if f in corpus.chemins]
     pages = {f: corpus.pages(f) for f in fichiers}
@@ -69,6 +208,30 @@ def main() -> None:
         f"Liste « chabin » : {len(liste)} cahiers, {len(fichiers)} scans"
         + (f" ({manquants} absents du versement)" if manquants else "")
     )
+
+    alignement = aligner(extraction, corpus)
+    if alignement:
+        args.sortie.mkdir(parents=True, exist_ok=True)
+        with (args.sortie / "alignement.csv").open(
+            "w", encoding="utf-8", newline=""
+        ) as f:
+            ecrivain = csv.DictWriter(f, list(alignement[0]))
+            ecrivain.writeheader()
+            ecrivain.writerows(alignement)
+        print("Contributions imprimées retrouvées dans l'OCR :")
+        for g in sorted(IMPRIMEES):
+            du_genre = [a for a in alignement if a["genre"] == g]
+            n = sum(1 for a in du_genre if a["fichier"])
+            print(f"  {g} : {n} sur {len(du_genre)}")
+        print("Règles de découpage, sur les pages dactylographiées :")
+        scans_par_cahier = {e["city"]["insee"]: scans(e) for e in extraction if e}
+        for perimetre, regle, precision, rappel, n, ref in mesurer_regles(
+            alignement, scans_par_cahier, corpus, args.typage
+        ):
+            print(
+                f"  {perimetre}, {regle} : {n} débuts trouvés pour {ref}, "
+                f"précision {precision:.0%}, rappel {rappel:.0%}"
+            )
 
     carnet = Carnet(args.annotation / "notes.jsonl")
     qualifications = carnet.qualifications(remarques=False)
