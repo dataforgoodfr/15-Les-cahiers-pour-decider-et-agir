@@ -72,7 +72,8 @@ On est encore loin de diffuser massivement les cahiers :
 - **La moitié des pages écrites sont manuscrites** (142 000 sur 276 000) et
   ne sont pas encore lues
   ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)).
-- **La plateforme n'est pas choisie**
+- **La plateforme sera en Django** sur Clever Cloud (PostgreSQL, Cellar pour
+  les PDF), avec Wagtail s'il faut un CMS
   ([#34](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/34)) :
   produit décidé en novembre 2026, livraison au premier trimestre 2027.
 
