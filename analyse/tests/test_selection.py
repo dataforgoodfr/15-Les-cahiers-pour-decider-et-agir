@@ -5,6 +5,7 @@ import pytest
 from selection.contribution import (
     MARGE,
     Sens,
+    delimites,
     derniere_page,
     doublons,
     hors_contribution,
@@ -106,3 +107,18 @@ def test_derniere_page_saute_les_vierges():
     # un type vérifié l'emporte sur le typage
     assert derniere_page(pages, "f.pdf", {("f.pdf", 4): {"type": "manuscrite"}}) == 4
     assert derniere_page([{"page": 1, "type": "vierge"}], "f.pdf", {}) == 1
+
+
+def test_delimite_quand_une_page_vue_atteint_la_derniere_montree():
+    pages = {
+        "f.pdf": [
+            {"page": n, "type": t}
+            for n, t in enumerate(["manuscrite", "mixte", "vierge", "vierge"], 1)
+        ]
+    }
+    assert delimites({"f.pdf"}, pages, {("f.pdf", 1)}, {}) == set()
+    assert delimites({"f.pdf"}, pages, {("f.pdf", 2)}, {}) == {"f.pdf"}
+    # une page vue plus loin, devenue vierge depuis, compte aussi
+    assert delimites({"f.pdf"}, pages, {("f.pdf", 4)}, {}) == {"f.pdf"}
+    # un cahier hors du versement n'est jamais délimité
+    assert delimites({"g.pdf"}, pages, {("g.pdf", 9)}, {}) == set()
