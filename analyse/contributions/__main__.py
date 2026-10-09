@@ -37,7 +37,7 @@ from annotation.corpus import Corpus
 from contributions.regles import debuts, evaluer
 from ouvertures.__main__ import lire as lire_ouvertures
 from panel.panel import lire_typage
-from selection.contribution import derniere_page
+from selection.contribution import delimites as cahiers_delimites
 
 DACTYLOGRAPHIEE = "dactylographiée"
 VIERGE = "vierge"
@@ -242,11 +242,9 @@ def main() -> None:
         cle for cle, s in carnet.statuts(SELECTION, exacte=True).items() if s == "vue"
     }
     corpus = Corpus(args.versement, args.typage[0])
-    delimites = {
-        f
-        for f in lues
-        if (f, derniere_page(corpus.pages(f), f, qualifications)) in vues
-    }
+    delimites = cahiers_delimites(
+        lues, {f: corpus.pages(f) for f in lues}, vues, qualifications
+    )
     if not delimites:
         print("Aucun cahier délimité dans l'outil d'annotation : pas de référence.")
         return

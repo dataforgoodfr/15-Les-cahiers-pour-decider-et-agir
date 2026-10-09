@@ -38,7 +38,7 @@ from chabin.reference import cahiers, comparer, elements
 from contributions.__main__ import lignes, pages_lues, premieres_ecrites
 from contributions.regles import debuts, evaluer
 from ouvertures.__main__ import lire as lire_ouvertures
-from selection.contribution import derniere_page
+from selection.contribution import delimites as cahiers_delimites
 
 TACHE = "chabin"
 DEBUT = "début de contribution"
@@ -250,15 +250,8 @@ def main() -> None:
 
     carnet = Carnet(args.annotation / "notes.jsonl")
     qualifications = carnet.qualifications(remarques=False)
-    plus_loin = Counter()
-    for (f, page), s in carnet.statuts(TACHE, exacte=True).items():
-        if s == "vue":
-            plus_loin[f] = max(plus_loin[f], page)
-    delimites = {
-        f
-        for f in fichiers
-        if plus_loin[f] >= derniere_page(pages[f], f, qualifications)
-    }
+    vues = {cle for cle, s in carnet.statuts(TACHE, exacte=True).items() if s == "vue"}
+    delimites = cahiers_delimites(fichiers, pages, vues, qualifications)
     debuts = Counter(
         n["fichier"] for n in carnet.positions() if n["etiquette"] == DEBUT
     )

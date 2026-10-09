@@ -38,7 +38,7 @@ from anonymisation.__main__ import PERSONNELLES
 from anonymisation.masquage import CHAMPS, a_masquer, fusionner
 from selection.contribution import (
     Sens,
-    derniere_page,
+    delimites,
     doublons,
     hors_contribution,
     tiree,
@@ -122,12 +122,12 @@ def main() -> None:
     qualifications = carnet.qualifications(remarques=False)
     vues = {cle for cle, s in carnet.statuts(TACHE, exacte=True).items() if s == "vue"}
     corpus = Corpus(args.versement, args.typage)
-    vus = {
-        f
-        for f in fichiers
-        if f in chemins
-        and (f, derniere_page(corpus.pages(f), f, qualifications)) in vues
-    }
+    vus = delimites(
+        fichiers,
+        {f: corpus.pages(f) for f in fichiers if f in chemins},
+        vues,
+        qualifications,
+    )
     notes, _ = carnet.etat()
     par_cahier = defaultdict(list)
     for n in notes.values():

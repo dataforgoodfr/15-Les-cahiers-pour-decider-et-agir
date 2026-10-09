@@ -149,3 +149,21 @@ def derniere_page(pages: list[dict], fichier: str, qualifications: dict) -> int:
         != "vierge"
     ]
     return max(montrees, default=len(pages))
+
+
+def delimites(
+    fichiers, pages: dict[str, list[dict]], vues: set[tuple[str, int]], qualifications
+) -> set[str]:
+    """Les cahiers délimités : une page vue atteint leur dernière page montrée.
+
+    Une page vue plus loin compte aussi : le typage ou un type vérifié peut
+    rendre vierge, donc cachée, une page que le lecteur a vue et marquée."""
+    plus_loin: dict[str, int] = {}
+    for f, page in vues:
+        plus_loin[f] = max(page, plus_loin.get(f, 0))
+    return {
+        f
+        for f in fichiers
+        if f in pages
+        and plus_loin.get(f, 0) >= derniere_page(pages[f], f, qualifications)
+    }
