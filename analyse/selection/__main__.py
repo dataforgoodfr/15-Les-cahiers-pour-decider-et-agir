@@ -19,6 +19,11 @@ a tous ses débuts de contributions notés. La contribution tirée s'en déduit
 - `selection.csv` : une ligne par cahier tiré, sa commune, la contribution
   retenue (rang, pages) et le nombre de cadres caviardés, ou ce qui manque.
 
+Réordonne aussi la liste « selection » de l'outil d'annotation : d'abord les
+cahiers à délimiter dont la région et la taille de commune manquent le plus,
+pour que les cahiers délimités restent représentatifs (`selection.ordre`),
+puis les cahiers délimités.
+
 À caviarder : les notes de données personnelles et de signature de ces pages,
 et sur les pages dactylographiées les repérages de `anonymisation` que la
 relecture n'a pas rétablis (dans le doute, on cache). Des pages, des cadres et
@@ -32,6 +37,7 @@ from pathlib import Path
 
 import pymupdf
 
+from annotation import listes
 from annotation.carnet import Carnet
 from annotation.corpus import Corpus
 from anonymisation.__main__ import PERSONNELLES
@@ -43,6 +49,7 @@ from selection.contribution import (
     hors_contribution,
     tiree,
 )
+from selection.ordre import reordonner
 
 TACHE = "selection"
 DEBUT = "début de contribution"
@@ -236,6 +243,23 @@ def main() -> None:
     for statut in ("vu sans début noté", "à délimiter"):
         print(f"  {statut} : {sum(1 for x in lignes if x['statut'] == statut)}")
     print(f"PDF dans {dossier}")
+
+    try:
+        liste = listes.lire(args.annotation / "listes", TACHE)
+    except KeyError:
+        return
+    liste = reordonner(liste, tirage, vus)
+    listes.ecrire(
+        args.annotation / "listes",
+        TACHE,
+        liste["titre"],
+        liste["consigne"],
+        liste["elements"],
+        tache=liste.get("tache"),
+        mode=liste.get("mode", "accepter"),
+    )
+    suivants = ", ".join(e["fichier"] for e in liste["elements"][:3])
+    print(f"Liste {TACHE} réordonnée, à délimiter d'abord : {suivants}")
 
 
 if __name__ == "__main__":

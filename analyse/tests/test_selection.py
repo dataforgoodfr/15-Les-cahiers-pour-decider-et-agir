@@ -122,3 +122,35 @@ def test_delimite_quand_une_page_vue_atteint_la_derniere_montree():
     assert delimites({"f.pdf"}, pages, {("f.pdf", 4)}, {}) == {"f.pdf"}
     # un cahier hors du versement n'est jamais délimité
     assert delimites({"g.pdf"}, pages, {("g.pdf", 9)}, {}) == set()
+
+
+def test_ordre_commence_par_ce_qui_manque():
+    from selection.ordre import ordre
+
+    tirage = [
+        {"fichier": "a", "region": "Bretagne", "taille": "petite"},
+        {"fichier": "b", "region": "Bretagne", "taille": "petite"},
+        {"fichier": "c", "region": "Île-de-France", "taille": "grande"},
+        {"fichier": "d", "region": "Île-de-France", "taille": "grande"},
+    ]
+    # « a » fait : l'Île-de-France et les grandes communes manquent
+    assert [t["fichier"] for t in ordre(tirage, {"a"})] == ["c", "b", "d"]
+    # rien de fait : on alterne, à égalité dans l'ordre des fichiers
+    assert [t["fichier"] for t in ordre(tirage, set())] == ["a", "c", "b", "d"]
+
+
+def test_reordonner_garde_les_elements_et_met_les_faits_a_la_fin():
+    from selection.ordre import reordonner
+
+    tirage = [
+        {"fichier": f, "region": r, "taille": "t"}
+        for f, r in [("a", "X"), ("b", "X"), ("c", "Y")]
+    ]
+    liste = {
+        "titre": "T",
+        "elements": [{"fichier": f, "commentaire": f.upper()} for f in "abc"],
+    }
+    nouvelle = reordonner(liste, tirage, {"a"})
+    assert [e["fichier"] for e in nouvelle["elements"]] == ["c", "b", "a"]
+    assert nouvelle["elements"][0]["commentaire"] == "C"
+    assert nouvelle["titre"] == "T"
