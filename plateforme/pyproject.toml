@@ -10,3 +10,10 @@ dependencies = [
     "psycopg[binary]>=3.3.6",
     "whitenoise>=6.12.0",
 ]
+
+[tool.ruff]
+target-version = "py314"
+
+[tool.ruff.lint]
+# Django déclare ses réglages en listes de classe (admin, Meta, migrations).
+ignore = ["RUF012"]
