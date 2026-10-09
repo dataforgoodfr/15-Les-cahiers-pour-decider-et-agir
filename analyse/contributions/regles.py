@@ -46,6 +46,9 @@ LONGUEUR_GABARIT = 15  # caractères au moins d'une ligne de gabarit
 SIMILARITE = 0.75  # part de caractères communs pour reconnaître une ligne à l'OCR près
 ECART_DEBUT = 5  # lignes : un début trouvé si près du début du cahier le remplace
 TOLERANCE = 30  # points PDF, environ deux lignes : écart admis avec la référence
+# points PDF : la note du lecteur peut s'écarter d'un début trouvé de la
+# hauteur d'un en-tête imprimé (logo et titre d'un formulaire)
+ENTETE_MAX = 250
 
 
 def public(texte: str) -> bool:
@@ -239,13 +242,20 @@ def gabarit(pages: list[list[str]]) -> list[tuple[int, int, str]]:
     return debuts
 
 
-def debuts(pages: list[list[str]]) -> list[tuple[int, int, str]]:
+def debuts(
+    pages: list[list[str]], debut_du_cahier: bool = True
+) -> list[tuple[int, int, str]]:
     """(indice de page, ligne, règle) des débuts de contributions d'un cahier.
 
     Le début du cahier ouvre toujours une contribution, sauf si une règle en
     trouve une dans ses toutes premières lignes (un logo ou un titre
     précède souvent l'en-tête du formulaire). Sans autre début trouvé, le
     cahier n'est pas découpé : il n'a que ce début-là.
+
+    `debut_du_cahier` est faux quand une page écrite que les règles ne lisent
+    pas (manuscrite) précède la première page lue : le cahier commence
+    alors sur celle-là, et la première page lue continue peut-être sa
+    contribution.
     """
     trouves = {
         (p, i): "gabarit" if chemin == "exact" else f"gabarit {chemin}"
@@ -263,8 +273,12 @@ def debuts(pages: list[list[str]]) -> list[tuple[int, int, str]]:
         ),
         None,
     )
-    if premier and not any(
-        p == premier[0] and i - premier[1] <= ECART_DEBUT for p, i in trouves
+    if (
+        debut_du_cahier
+        and premier
+        and not any(
+            p == premier[0] and i - premier[1] <= ECART_DEBUT for p, i in trouves
+        )
     ):
         trouves[premier] = "début du cahier"
     return sorted((p, i, regle) for (p, i), regle in trouves.items())
@@ -277,19 +291,30 @@ def evaluer(
 ) -> tuple[float, float]:
     """Précision et rappel des débuts (fichier, page, ordonnée en points).
 
-    Un début trouvé est juste s'il tombe, sur la même page, à moins de
-    `tolerance` points d'un début de la référence encore libre.
+    Un début trouvé est juste s'il y a, sur la même page, un début de la
+    référence encore libre sur le même tronçon : à moins de `tolerance`
+    points, ou plus loin, jusqu'à `ENTETE_MAX` points, sans passer les débuts
+    trouvés voisins. Le lecteur ouvre un formulaire en haut de son en-tête
+    imprimé (logo, titre), la règle à sa ligne la plus fréquente, plus bas.
     """
     libres: dict[tuple[str, int], list[float]] = {}
     for fichier, page, y in reference:
         libres.setdefault((fichier, page), []).append(y)
+    par_page: dict[tuple[str, int], list[float]] = {}
+    for fichier, page, y in predits:
+        par_page.setdefault((fichier, page), []).append(y)
     justes = 0
-    for fichier, page, y in sorted(predits):
-        candidats = libres.get((fichier, page), [])
-        proche = min(candidats, key=lambda r: abs(r - y), default=None)
-        if proche is not None and abs(proche - y) <= tolerance:
-            candidats.remove(proche)
-            justes += 1
+    for (fichier, page), ys in sorted(par_page.items()):
+        ys.sort()
+        for k, y in enumerate(ys):
+            precedent = ys[k - 1] if k else float("-inf")
+            suivant = ys[k + 1] if k + 1 < len(ys) else float("inf")
+            bas = min(y - tolerance, max(y - ENTETE_MAX, precedent))
+            haut = max(y + tolerance, min(y + ENTETE_MAX, suivant))
+            candidats = [r for r in libres.get((fichier, page), []) if bas <= r <= haut]
+            if candidats:
+                libres[fichier, page].remove(min(candidats, key=lambda r: abs(r - y)))
+                justes += 1
     precision = justes / len(predits) if predits else 0.0
     rappel = justes / len(reference) if reference else 0.0
     return precision, rappel
