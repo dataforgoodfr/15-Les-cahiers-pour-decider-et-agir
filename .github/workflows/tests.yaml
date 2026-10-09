@@ -16,3 +16,29 @@ jobs:
     - uses: astral-sh/setup-uv@v10.2.0
     - run: uv sync --locked
     - run: uv run pytest
+
+  plateforme:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plateforme
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: cahiers
+          POSTGRES_DB: cahiers
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:cahiers@localhost/cahiers
+      DJANGO_SECRET_KEY: tests
+    steps:
+    - uses: actions/checkout@v7
+    - uses: astral-sh/setup-uv@v10.2.0
+    - run: uv sync --locked
+    - run: uv run python manage.py test
