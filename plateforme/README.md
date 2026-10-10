@@ -12,6 +12,11 @@ Les modèles du POC y sont repris un à un. Pour l'instant :
   populations municipales 2017) et geo.api.gouv.fr (centres actuels). Sources
   sous Licence Ouverte : toute publication porte « Source : Insee » et
   « Source : IGN ». Mayotte n'a pas de population légale 2017.
+- `cahiers` : les documents du versement (cahiers, courriers, comptes rendus),
+  leurs pages, et les contributions qu'on y délimite. Document et pages sont
+  la provenance, jamais réécrite ; une délimitation est une couche, rattachée
+  à un run, et plusieurs coexistent. Les contributions sont délimitées sur
+  l'image, en points PDF, comme dans l'outil d'annotation d'`analyse/`.
 
 ## En local
 
