@@ -24,7 +24,8 @@ function avant(a, b) {
 // pages : [{page, largeur, hauteur, double}] (largeur et hauteur lues ;
 // double : la qualification « double page », null si non tranchée)
 // notes : [{page, debut, x, y}] (debut : vrai pour un début, faux pour une fin)
-// Rend, par page, les cadres {contribution, x0, y0, x1, y1} des contributions.
+// Rend, par page, les cadres {contribution, x0, y0, x1, y1} des contributions
+// dont la fin est notée : tant qu'elle ne l'est pas, le contour distrairait.
 function decouper(pages, notes) {
   const parPage = new Map(pages.map((p) => [p.page, p]));
   const coupures = new Map(pages.map((p) => [
@@ -38,16 +39,14 @@ function decouper(pages, notes) {
   });
   const debuts = points.filter((n) => n.debut).sort(avant);
   const fins = points.filter((n) => !n.debut).sort(avant);
-  const derniere = Math.max(...pages.map((p) => p.page));
   const cadres = new Map(pages.map((p) => [p.page, []]));
 
   debuts.forEach((debut, i) => {
     const suivant = debuts[i + 1];
     const fin = fins.find((f) => avant(f, debut) >= 0 && (!suivant || avant(f, suivant) <= 0));
+    if (!fin) return;
     // bas : hauteur lue (dans l'ordre de lecture) où la contribution s'arrête
-    const arret = fin ? { page: fin.page, v: fin.v + MARGE, x: fin.x }
-      : suivant ? { page: suivant.page, v: suivant.v - MARGE, x: null }
-      : { page: derniere, v: Infinity, x: null };
+    const arret = { page: fin.page, v: fin.v + MARGE, x: fin.x };
     for (let n = debut.page; n <= arret.page; n += 1) {
       const p = parPage.get(n);
       if (!p) continue;
@@ -64,7 +63,7 @@ function decouper(pages, notes) {
         // le cadre colle à la page : une page pleine se voit d'un coup d'œil
         const ici = (pt) => pt.page === n && pt.v >= k * p.hauteur && pt.v < (k + 1) * p.hauteur + MARGE;
         if (ici(debut) && debut.x - g > BORD_X * (d - g)) x0 = debut.x;
-        if (arret.x !== null && ici(arret) && d - arret.x > BORD_X * (d - g)) x1 = arret.x;
+        if (ici(arret) && d - arret.x > BORD_X * (d - g)) x1 = arret.x;
         if (y0 < BORD_Y * p.hauteur) y0 = 0;
         if (y1 > (1 - BORD_Y) * p.hauteur) y1 = p.hauteur;
         if (x0 < x1) cadres.get(n).push({ contribution: i + 1, x0, y0, x1, y1 });

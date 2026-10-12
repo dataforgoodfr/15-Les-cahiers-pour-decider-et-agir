@@ -25,12 +25,10 @@ test("sur plusieurs pages, les pages du milieu sont pleines", () => {
   assert.deepEqual(cadres.get(3), [{ contribution: 1, x0: 0, y0: 0, x1: 600, y1: 800 }]);
 });
 
-test("sans fin, la contribution s'arrête au début suivant", () => {
-  const cadres = decouper([page(1)], [debut(1, 40, 200), debut(1, 40, 500)]);
-  assert.deepEqual(cadres.get(1), [
-    { contribution: 1, x0: 0, y0: 200 - MARGE, x1: 600, y1: 500 - MARGE },
-    { contribution: 2, x0: 0, y0: 500 - MARGE, x1: 600, y1: 800 },
-  ]);
+test("sans fin notée, pas de contour", () => {
+  const cadres = decouper([page(1)], [debut(1, 40, 200), debut(1, 40, 500), fin(1, 560, 600)]);
+  // la première s'arrêterait au début suivant : seule la seconde a sa fin
+  assert.deepEqual(cadres.get(1), [{ contribution: 2, x0: 0, y0: 500 - MARGE, x1: 600, y1: 600 + MARGE }]);
 });
 
 test("une double page se lit à gauche puis à droite", () => {
