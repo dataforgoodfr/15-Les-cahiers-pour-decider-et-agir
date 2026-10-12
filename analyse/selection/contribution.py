@@ -12,6 +12,14 @@ carnet d'annotation. Les points (page, y, x) sont dans ce sens-là
 (`Sens.vers_lecture`) ; les cadres repartent dans le repère du PDF
 (`Sens.vers_pdf`).
 
+Une double page (deux pages d'un cahier ouvert, numérisées ensemble) se lit
+page de gauche puis page de droite. Elle est qualifiée à la main dans l'outil
+d'annotation (« double page »), ou reconnue à ses notes : lue à
+l'horizontale, elle porte un début de contribution vers le milieu de sa
+largeur, le haut de la page de droite. Sur une page simple, les débuts sont au
+bord gauche. Les points de la page de droite passent alors sous ceux de la
+page de gauche, une hauteur de page plus bas (`en_colonnes`).
+
 Des pages et des positions en points PDF, jamais de texte.
 """
 
@@ -19,6 +27,7 @@ import math
 from dataclasses import dataclass
 
 MARGE = 6  # points : le début est un point posé sur la première ligne
+CENTRE = (0.35, 0.65)  # part de la largeur où un début ouvre la page de droite
 DOUBLON = 10  # points : deux débuts si proches sont le même, posé deux fois
 
 
@@ -56,6 +65,33 @@ class Sens:
         return min(a, c), min(b, d), max(a, c), max(b, d)
 
 
+Point = tuple[int, float, float]  # page, y, x dans le sens de lecture
+
+
+def coupure(sens: Sens, debuts: list[float], double: bool | None) -> float | None:
+    """L'abscisse, dans la page lue, entre les deux pages d'une double page ;
+    None pour une page simple.
+
+    `debuts` : les abscisses des débuts notés sur la page, dans le sens de
+    lecture. `double` : la qualification « double page », None si personne
+    ne l'a tranchée. La coupure passe juste avant le plus à gauche des débuts
+    du milieu, sinon au milieu de la page."""
+    largeur, hauteur = sens.dimensions
+    milieu = [x for x in debuts if CENTRE[0] * largeur < x < CENTRE[1] * largeur]
+    if double is False or (double is None and not (largeur > hauteur and milieu)):
+        return None
+    return min(milieu) - MARGE if milieu else largeur / 2
+
+
+def en_colonnes(point: Point, coupure: float | None, hauteur: float) -> Point:
+    """Le point dans l'ordre de lecture d'une double page : la page de
+    droite est lue sous la page de gauche, une hauteur de page plus bas."""
+    page, y, x = point
+    if coupure is not None and x >= coupure:
+        return page, y + hauteur, x
+    return point
+
+
 @dataclass(frozen=True)
 class Tiree:
     rang: int  # 1 à n
@@ -69,9 +105,6 @@ class Tiree:
     @property
     def pages(self) -> list[int]:
         return list(range(self.page_debut, self.page_fin + 1))
-
-
-Point = tuple[int, float, float]  # page, y, x dans le sens de lecture
 
 
 def doublons(debuts: list[Point]) -> tuple[list[Point], list[Point]]:
@@ -124,18 +157,33 @@ def tiree(
 
 
 def hors_contribution(
-    t: Tiree, page: int, largeur: float, hauteur: float
+    t: Tiree,
+    page: int,
+    largeur: float,
+    hauteur: float,
+    coupure: float | None = None,
 ) -> list[tuple[float, float, float, float]]:
     """Cadres (x0, y0, x1, y1) de la page lue, de `largeur` × `hauteur`, qui
     n'appartiennent pas à la contribution tirée : au-dessus de son début, en
-    dessous de sa fin. Une fin notée garde sa ligne ; un début suivant, non."""
-    cadres = []
+    dessous de sa fin. Une fin notée garde sa ligne ; un début suivant, non.
+    Sur une double page (`coupure`), chaque page est couverte à part."""
+    colonnes = (
+        [(0.0, largeur)] if coupure is None else [(0.0, coupure), (coupure, largeur)]
+    )
+    total = len(colonnes) * hauteur
+    hors = []  # intervalles de hauteur dans l'ordre de lecture (`en_colonnes`)
     if page == t.page_debut and t.y_debut - MARGE > 0:
-        cadres.append((0.0, 0.0, largeur, t.y_debut - MARGE))
+        hors.append((0.0, t.y_debut - MARGE))
     if page == t.page_fin and t.y_fin is not None:
         bas = t.y_fin + MARGE if t.fin_notee else t.y_fin - MARGE
-        if bas < hauteur:
-            cadres.append((0.0, max(0.0, bas), largeur, hauteur))
+        if bas < total:
+            hors.append((max(0.0, bas), total))
+    cadres = []
+    for haut, bas in hors:
+        for k, (x0, x1) in enumerate(colonnes):
+            y0, y1 = max(haut, k * hauteur), min(bas, (k + 1) * hauteur)
+            if y0 < y1:
+                cadres.append((x0, y0 - k * hauteur, x1, y1 - k * hauteur))
     return cadres
 
 

@@ -16,7 +16,8 @@ a tous ses débuts de contributions notés. La contribution tirée s'en déduit
   de gris ; les données personnelles de noir. Le caviardage est une vraie
   rédaction : le texte et les pixels dessous disparaissent, et les
   métadonnées du PDF sont effacées. Une page tournée dans l'outil
-  d'annotation sort tournée de même, dans le sens de lecture ;
+  d'annotation sort tournée de même, dans le sens de lecture ; une double
+  page se lit page de gauche puis page de droite (`selection.contribution`) ;
 - `selection.csv` : une ligne par cahier tiré, sa commune, la contribution
   retenue (rang, pages) et le nombre de cadres caviardés, ou ce qui manque.
   Une contribution dont une page est qualifiée « à écarter » (contenu qu'on
@@ -47,9 +48,11 @@ from anonymisation.__main__ import PERSONNELLES
 from anonymisation.masquage import CHAMPS, a_masquer, fusionner
 from selection.contribution import (
     Sens,
+    coupure,
     delimites,
     doublons,
     ecartee,
+    en_colonnes,
     hors_contribution,
     tiree,
 )
@@ -58,6 +61,7 @@ from selection.ordre import reordonner
 TACHE = "selection"
 DEBUT = "début de contribution"
 FIN = "fin de contribution"
+DOUBLE = "double page"
 A_CACHER = PERSONNELLES | {"signature"}
 NOIR = (0, 0, 0)
 GRIS = (0.82, 0.82, 0.82)
@@ -86,8 +90,10 @@ def caviarder(
     noirs: dict[int, list],
     sens: dict[int, Sens],
     fichier: str,
+    coupures: dict[int, float | None] | None = None,
 ) -> int:
-    """Écrit le PDF de la contribution `t` ; rend le nombre de cadres noirs."""
+    """Écrit le PDF de la contribution `t` ; rend le nombre de cadres noirs.
+    `coupures` : l'abscisse lue entre les deux pages des doubles pages."""
     total = 0
     with pymupdf.open(chemin) as doc:
         for n in t.pages:
@@ -95,7 +101,7 @@ def caviarder(
             # les cadres sont dans le repère de la page affichée (rotation comprise)
             vers_pdf = page.derotation_matrix
             # au-dessus et en dessous de la contribution, dans le sens de lecture
-            gris = hors_contribution(t, n, *sens[n].dimensions)
+            gris = hors_contribution(t, n, *sens[n].dimensions, (coupures or {}).get(n))
             for r in gris:
                 cadre_pdf = pymupdf.Rect(sens[n].cadre_pdf(*r))
                 page.add_redact_annot(cadre_pdf * vers_pdf, fill=GRIS)
@@ -189,6 +195,18 @@ def main() -> None:
         derniere = len(sens)
         debuts = [point(n, sens[n["page"]]) for n in ns if n["etiquette"] == DEBUT]
         fins = [point(n, sens[n["page"]]) for n in ns if n["etiquette"] == FIN]
+        coupures = {
+            n: coupure(
+                sens[n],
+                [x for p, _, x in debuts if p == n],
+                qualifications.get((fichier, n), {}).get("problemes", {}).get(DOUBLE),
+            )
+            for n in sens
+        }
+        debuts, fins = (
+            [en_colonnes(p, coupures[p[0]], sens[p[0]].dimensions[1]) for p in points]
+            for points in (debuts, fins)
+        )
         repetes = doublons(debuts)[1]
         if repetes:
             # un début posé deux fois : un double clic manqué (une fin) ou non
@@ -224,7 +242,13 @@ def main() -> None:
             noirs[m["page"]].append(cadre(m))
         nom = f"{Path(fichier).stem}.pdf"
         total = caviarder(
-            chemins[fichier], dossier / nom, contribution, noirs, sens, fichier
+            chemins[fichier],
+            dossier / nom,
+            contribution,
+            noirs,
+            sens,
+            fichier,
+            coupures,
         )
         ligne |= {
             "statut": "exporté",
