@@ -15,7 +15,8 @@ a tous ses débuts de contributions notés. La contribution tirée s'en déduit
   la contribution (au-dessus de son début, en dessous de sa fin) est couvert
   de gris ; les données personnelles de noir. Le caviardage est une vraie
   rédaction : le texte et les pixels dessous disparaissent, et les
-  métadonnées du PDF sont effacées ;
+  métadonnées du PDF sont effacées. Une page tournée dans l'outil
+  d'annotation sort tournée de même, dans le sens de lecture ;
 - `selection.csv` : une ligne par cahier tiré, sa commune, la contribution
   retenue (rang, pages) et le nombre de cadres caviardés, ou ce qui manque.
   Une contribution dont une page est qualifiée « à écarter » (contenu qu'on
@@ -103,6 +104,8 @@ def caviarder(
                 page.add_redact_annot((r + (-1, -1, 1, 1)) * vers_pdf, fill=NOIR)
                 total += 1
             page.apply_redactions(images=pymupdf.PDF_REDACT_IMAGE_PIXELS)
+            # la page sort dans le sens de lecture qualifié dans l'outil
+            page.set_rotation((page.rotation + sens[n].rotation) % 360)
         doc.select([n - 1 for n in t.pages])
         doc.scrub()
         doc.set_metadata({"title": f"Contribution tirée de {fichier}"})
