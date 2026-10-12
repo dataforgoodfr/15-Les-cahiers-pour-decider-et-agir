@@ -187,6 +187,60 @@ def hors_contribution(
     return cadres
 
 
+PAS = 2.0  # points : hauteur des bandes qui couvrent le dehors d'un polygone
+
+
+def _dedans(points: list, y: float) -> list[tuple[float, float]]:
+    """Les intervalles de x à l'intérieur du polygone, à la hauteur y."""
+    xs = sorted(
+        x0 + (y - y0) * (x1 - x0) / (y1 - y0)
+        for (x0, y0), (x1, y1) in zip(points, points[1:] + points[:1])
+        if min(y0, y1) <= y < max(y0, y1)
+    )
+    return list(zip(xs[::2], xs[1::2]))
+
+
+def _intersection(a: list, b: list) -> list[tuple[float, float]]:
+    return [
+        (max(a0, b0), min(a1, b1))
+        for a0, a1 in a
+        for b0, b1 in b
+        if max(a0, b0) < min(a1, b1)
+    ]
+
+
+def hors_polygone(
+    points: list, largeur: float, hauteur: float
+) -> list[tuple[float, float, float, float]]:
+    """Cadres (x0, y0, x1, y1) qui couvrent la page hors du polygone, dans son
+    repère. Par bandes de PAS points : n'est gardé d'une bande que ce qui est
+    dedans en haut et en bas, pour qu'un bord penché ne laisse rien passer."""
+    cadres: list[tuple[float, float, float, float]] = []
+    precedents: list[tuple[float, float]] | None = None
+    y = 0.0
+    while y < hauteur:
+        bas = min(y + PAS, hauteur)
+        # le bas de la bande pris juste au-dessus : un bord du polygone posé
+        # sur la limite de deux bandes appartient à celle du dessous
+        dedans = _intersection(_dedans(points, y), _dedans(points, bas - 1e-3))
+        bords = [0.0, *(x for i in dedans for x in i), largeur]
+        dehors = [
+            (max(0.0, x0), min(largeur, x1))
+            for x0, x1 in zip(bords[::2], bords[1::2])
+            if min(largeur, x1) > max(0.0, x0)
+        ]
+        if dehors == precedents:
+            # la même découpe que la bande d'avant : on prolonge ses cadres
+            for i in range(len(dehors)):
+                x0, y0, x1, _ = cadres[-len(dehors) + i]
+                cadres[-len(dehors) + i] = (x0, y0, x1, bas)
+        else:
+            cadres.extend((x0, y, x1, bas) for x0, x1 in dehors)
+        precedents = dehors
+        y = bas
+    return cadres
+
+
 def derniere_page(pages: list[dict], fichier: str, qualifications: dict) -> int:
     """La dernière page que l'outil d'annotation montre : il cache les pages
     vierges (type vérifié s'il y en a un, sinon type du typage)."""

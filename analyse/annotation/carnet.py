@@ -16,6 +16,11 @@ Un rétablissement lève le masque d'un repérage d'une liste à masquer
 personnelle. Il garde l'identifiant et le cadre du repérage, pour s'appliquer
 encore si l'analyse change ses identifiants.
 
+Un contour remplace, sur une page, le rectangle d'une contribution par un
+polygone : ses sommets en points PDF, dans le même repère que les notes. Il
+se rattache à la note de début de la contribution ; sans sommets, il est
+retiré et le rectangle revient.
+
 Une qualification porte sur toute la page (ou, page 0, sur le cahier) : un
 problème tranché à la main (page tournée, illisible…), le type de page
 vérifié, qui corrige ou confirme le typage, la rotation de l'affichage qui
@@ -149,6 +154,38 @@ class Carnet:
                 sortie[cle] = {
                     k: e[k] for k in ("fichier", "page", "x0", "y0", "x1", "y1")
                 } | {"id": e["marque"], "etiquette": e["etiquette"]}
+            else:
+                sortie.pop(cle, None)
+        return sortie
+
+    def contourner(
+        self, fichier: str, page: int, debut: str, points: list | None
+    ) -> dict:
+        """Le polygone de la contribution qui commence à la note `debut`, sur
+        cette page ; None le retire."""
+        if points is not None:
+            points = [[round(float(x), 1), round(float(y), 1)] for x, y in points]
+            if len(points) < 3:
+                raise ValueError("un polygone a au moins trois sommets")
+        return self._ecrire(
+            {
+                "type": "contour",
+                "fichier": fichier,
+                "page": int(page),
+                "debut": str(debut),
+                "points": points,
+            }
+        )
+
+    def contours(self) -> dict[tuple[str, int, str], list]:
+        """Polygones des contributions, par (fichier, page, note de début)."""
+        sortie = {}
+        for e in self.evenements():
+            if e["type"] != "contour":
+                continue
+            cle = (e["fichier"], e["page"], e["debut"])
+            if e["points"]:
+                sortie[cle] = e["points"]
             else:
                 sortie.pop(cle, None)
         return sortie

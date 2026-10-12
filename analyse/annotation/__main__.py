@@ -166,6 +166,11 @@ def application(
                         "statuts": {
                             p: s for (f, p), s in statuts.items() if f == fichier
                         },
+                        "contours": [
+                            {"page": p, "debut": d, "points": points}
+                            for (f, p, d), points in carnet.contours().items()
+                            if f == fichier
+                        ],
                     }
                 )
             elif chemin == "/api/statuts":
@@ -211,6 +216,16 @@ def application(
                             corps["page"],
                             corps["marque"],
                             corps.get("retabli", True),
+                        )
+                    )
+                elif chemin == "/api/contour":
+                    corpus.chemin(corps["fichier"])
+                    self.json(
+                        carnet.contourner(
+                            corps["fichier"],
+                            corps["page"],
+                            corps["debut"],
+                            corps.get("points"),
                         )
                     )
                 elif chemin == "/api/statut":

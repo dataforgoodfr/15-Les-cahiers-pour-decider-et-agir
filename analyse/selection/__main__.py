@@ -18,6 +18,8 @@ a tous ses débuts de contributions notés. La contribution tirée s'en déduit
   métadonnées du PDF sont effacées. Une page tournée dans l'outil
   d'annotation sort tournée de même, dans le sens de lecture ; une double
   page se lit page de gauche puis page de droite (`selection.contribution`) ;
+  sur une page où la contribution a un contour tracé dans l'outil
+  d'annotation, c'est le dehors du polygone qui est couvert de gris ;
 - `selection.csv` : une ligne par cahier tiré, sa commune, la contribution
   retenue (rang, pages) et le nombre de cadres caviardés, ou ce qui manque.
   Une contribution dont une page est qualifiée « à écarter » (contenu qu'on
@@ -54,6 +56,7 @@ from selection.contribution import (
     ecartee,
     en_colonnes,
     hors_contribution,
+    hors_polygone,
     tiree,
 )
 from selection.ordre import reordonner
@@ -91,20 +94,30 @@ def caviarder(
     sens: dict[int, Sens],
     fichier: str,
     coupures: dict[int, float | None] | None = None,
+    polygones: dict[int, list] | None = None,
 ) -> int:
     """Écrit le PDF de la contribution `t` ; rend le nombre de cadres noirs.
-    `coupures` : l'abscisse lue entre les deux pages des doubles pages."""
+    `coupures` : l'abscisse lue entre les deux pages des doubles pages.
+    `polygones` : les contours tracés dans l'outil d'annotation, par page ; le
+    dehors en est couvert de gris, à la place des bandes."""
     total = 0
     with pymupdf.open(chemin) as doc:
         for n in t.pages:
             page = doc[n - 1]
             # les cadres sont dans le repère de la page affichée (rotation comprise)
             vers_pdf = page.derotation_matrix
-            # au-dessus et en dessous de la contribution, dans le sens de lecture
-            gris = hors_contribution(t, n, *sens[n].dimensions, (coupures or {}).get(n))
-            for r in gris:
-                cadre_pdf = pymupdf.Rect(sens[n].cadre_pdf(*r))
-                page.add_redact_annot(cadre_pdf * vers_pdf, fill=GRIS)
+            if n in (polygones or {}):
+                # le polygone est dans le repère des notes
+                for r in hors_polygone(polygones[n], page.rect.width, page.rect.height):
+                    page.add_redact_annot(pymupdf.Rect(r) * vers_pdf, fill=GRIS)
+            else:
+                # au-dessus et en dessous de la contribution, dans le sens de lecture
+                gris = hors_contribution(
+                    t, n, *sens[n].dimensions, (coupures or {}).get(n)
+                )
+                for r in gris:
+                    cadre_pdf = pymupdf.Rect(sens[n].cadre_pdf(*r))
+                    page.add_redact_annot(cadre_pdf * vers_pdf, fill=GRIS)
             for r in noirs.get(n, []):
                 # une donnée sur un pixel de bord reste cachée : marge d'un point
                 page.add_redact_annot((r + (-1, -1, 1, 1)) * vers_pdf, fill=NOIR)
@@ -148,6 +161,7 @@ def main() -> None:
         qualifications,
     )
     notes, _ = carnet.etat()
+    contours = carnet.contours()
     par_cahier = defaultdict(list)
     for n in notes.values():
         if n.get("fichier") in fichiers:
@@ -193,7 +207,8 @@ def main() -> None:
                 for n in range(1, doc.page_count + 1)
             }
         derniere = len(sens)
-        debuts = [point(n, sens[n["page"]]) for n in ns if n["etiquette"] == DEBUT]
+        notes_debut = [n for n in ns if n["etiquette"] == DEBUT]
+        debuts = [point(n, sens[n["page"]]) for n in notes_debut]
         fins = [point(n, sens[n["page"]]) for n in ns if n["etiquette"] == FIN]
         coupures = {
             n: coupure(
@@ -207,6 +222,7 @@ def main() -> None:
             [en_colonnes(p, coupures[p[0]], sens[p[0]].dimensions[1]) for p in points]
             for points in (debuts, fins)
         )
+        ids = dict(zip(debuts, (n["id"] for n in notes_debut), strict=True))
         repetes = doublons(debuts)[1]
         if repetes:
             # un début posé deux fois : un double clic manqué (une fin) ou non
@@ -225,6 +241,13 @@ def main() -> None:
             }
             continue
         pages = set(contribution.pages)
+        # les contours tracés pour cette contribution, sur ses pages
+        debut = ids[doublons(debuts)[0][contribution.rang - 1]]
+        polygones = {
+            n: points
+            for (f, n, d), points in contours.items()
+            if f == fichier and d == debut and n in pages
+        }
         notes_a_cacher = [
             {**n, **{k: v for k, v in zip(CHAMPS, cadre(n))}}
             for n in ns
@@ -249,6 +272,7 @@ def main() -> None:
             sens,
             fichier,
             coupures,
+            polygones,
         )
         ligne |= {
             "statut": "exporté",

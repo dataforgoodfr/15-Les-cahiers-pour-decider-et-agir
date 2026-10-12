@@ -2,10 +2,15 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { decouper, MARGE } = require("../../annotation/statique/decoupage.js");
+const { decouper: decouperAvecIds, MARGE } = require("../../annotation/statique/decoupage.js");
+
+// les cadres sans l'identifiant du début, sauf où on le vérifie
+const decouper = (pages, notes) => new Map([...decouperAvecIds(pages, notes)].map(
+  ([n, cadres]) => [n, cadres.map(({ debut, ...cadre }) => cadre)],
+));
 
 const page = (n, largeur = 600, hauteur = 800, double = null) => ({ page: n, largeur, hauteur, double });
-const debut = (n, x, y) => ({ page: n, debut: true, x, y });
+const debut = (n, x, y) => ({ id: `d${n}-${y}`, page: n, debut: true, x, y });
 const fin = (n, x, y) => ({ page: n, debut: false, x, y });
 
 test("un début et une fin près des bords couvrent la largeur", () => {
@@ -40,4 +45,9 @@ test("une double page se lit à gauche puis à droite", () => {
     { contribution: 1, x0: 0, y0: 0, x1: 346, y1: 96 + MARGE },
     { contribution: 2, x0: coupure, y0: 72 - MARGE, x1: 840, y1: 210 + MARGE },
   ]);
+});
+
+test("un cadre connaît la note de début de sa contribution", () => {
+  const cadres = decouperAvecIds([page(1)], [debut(1, 40, 200), fin(1, 560, 400)]);
+  assert.equal(cadres.get(1)[0].debut, "d1-200");
 });

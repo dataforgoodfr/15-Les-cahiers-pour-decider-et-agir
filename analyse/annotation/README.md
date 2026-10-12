@@ -33,6 +33,12 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   rectangle : ce sera la référence de l'anonymisation (#7). Ne pas recopier
   la donnée dans le texte de la note. Une note ouverte se déplace en la glissant, et
   se redimensionne par les poignées de ses coins.
+- **Contours des contributions** : une fois sa fin notée, chaque contribution
+  est entourée de pointillés, comme `selection` la découpe ; un côté proche du
+  bord colle à la page. Un clic sur une arête y ajoute un sommet, qu'on glisse
+  aussitôt : le contour devient un polygone, gardé au carnet pour cette page,
+  et l'export grise tout ce qui en sort. Un sommet se glisse, un double-clic
+  le retire ; Alt+clic sur une arête rend le rectangle.
 - **Faire défiler le cahier** : les pages se suivent les unes sous les autres ;
   la page courante (panneau de droite, statut, vignette) est celle qui occupe
   le haut de la vue, ou la dernière cliquée.

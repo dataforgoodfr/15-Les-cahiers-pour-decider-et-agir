@@ -344,3 +344,27 @@ def test_les_pages_detectees_tournees_s_affichent_tournees(tmp_path):
     }
     assert rotations == {2: ROTATION_DETECTEE, 3: 0, 4: 270}
     assert sum(1 for e in carnet.evenements() if e.get("page") == 2) == 1
+
+
+def test_un_contour_remplace_puis_rend_le_rectangle(serveur):
+    base, carnet = serveur
+    points = [[10, 20], [300, 20], [300, 200], [150, 260], [10, 200]]
+    appeler(
+        f"{base}/api/contour",
+        {"fichier": FICHIER, "page": 1, "debut": "d1", "points": points},
+    )
+    _, corps = appeler(f"{base}/api/cahier?fichier={FICHIER}")
+    assert json.loads(corps)["contours"] == [
+        {"page": 1, "debut": "d1", "points": points}
+    ]
+    with pytest.raises(urllib.error.HTTPError) as e:
+        appeler(
+            f"{base}/api/contour",
+            {"fichier": FICHIER, "page": 1, "debut": "d1", "points": points[:2]},
+        )
+    assert e.value.code == 400
+    appeler(
+        f"{base}/api/contour",
+        {"fichier": FICHIER, "page": 1, "debut": "d1", "points": None},
+    )
+    assert carnet.contours() == {}

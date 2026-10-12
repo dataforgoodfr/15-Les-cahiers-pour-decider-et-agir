@@ -14,6 +14,7 @@ from selection.contribution import (
     ecartee,
     en_colonnes,
     hors_contribution,
+    hors_polygone,
     tiree,
 )
 
@@ -226,3 +227,34 @@ def test_une_page_tournee_sort_dans_le_sens_de_lecture(tmp_path):
         # le gris couvre le dessus du début, en haut de la page lue
         assert pix.pixel(200, 20) != (255, 255, 255)
         assert pix.pixel(200, 200) == (255, 255, 255)
+
+
+def test_hors_polygone_couvre_tout_le_dehors():
+    # un L : le bas-droit de la page est dehors
+    points = [[0, 0], [600, 0], [600, 400], [300, 400], [300, 800], [0, 800]]
+    cadres = hors_polygone(points, 600, 800)
+    assert cadres == [(300, 400.0, 600, 800.0)]
+    # un triangle : rien de dehors ne reste découvert, à la bande près
+    triangle = [[0, 0], [600, 0], [0, 800]]
+    cadres = hors_polygone(triangle, 600, 800)
+    for x, y in [(590, 20), (300, 420), (550, 700)]:
+        assert any(x0 <= x <= x1 and y0 <= y <= y1 for x0, y0, x1, y1 in cadres)
+    assert not any(x0 <= 100 <= x1 and y0 <= 100 <= y1 for x0, y0, x1, y1 in cadres)
+
+
+def test_un_contour_grise_le_dehors_du_polygone(tmp_path):
+    chemin, sortie = tmp_path / "cahier.pdf", tmp_path / "contribution.pdf"
+    with pymupdf.open() as doc:
+        doc.new_page(width=600, height=800)
+        doc.save(chemin)
+    t = tiree(0.1, [(1, 100.0, 0.0)], [], 1)
+    polygone = [[0, 0], [600, 0], [600, 400], [300, 400], [300, 800], [0, 800]]
+    caviarder(
+        chemin, sortie, t, {}, {1: Sens(0, 600, 800)}, "cahier.pdf", None, {1: polygone}
+    )
+    with pymupdf.open(sortie) as doc:
+        pix = doc[0].get_pixmap(dpi=36)
+        assert pix.pixel(200, 200) != (255, 255, 255)  # bas droit : dehors
+        assert pix.pixel(100, 300) == (255, 255, 255)  # bas gauche : dedans
+        # les bandes ne s'appliquent plus : le haut, au-dessus du début, reste
+        assert pix.pixel(100, 20) == (255, 255, 255)
