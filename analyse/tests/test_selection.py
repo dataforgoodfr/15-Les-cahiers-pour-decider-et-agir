@@ -7,10 +7,12 @@ from selection.__main__ import caviarder
 from selection.contribution import (
     MARGE,
     Sens,
+    coupure,
     delimites,
     derniere_page,
     doublons,
     ecartee,
+    en_colonnes,
     hors_contribution,
     tiree,
 )
@@ -83,6 +85,41 @@ def test_une_page_tournee_se_lit_de_gauche_a_droite_du_pdf():
     assert sens.dimensions == (800.0, 600.0)
     # le dessus de la page lue repart vers la gauche du PDF
     assert sens.cadre_pdf(0.0, 0.0, 800.0, 44.0) == (0.0, 0.0, 44.0, 800.0)
+
+
+def test_une_double_page_se_reconnait_a_un_debut_au_milieu():
+    couchee = Sens(90, 600.0, 840.0)  # lue en 840 × 600
+    # le haut de la page de droite : la coupure passe juste avant
+    assert coupure(couchee, [40.0, 421.0, 438.0], None) == 421.0 - MARGE
+    # débuts au bord gauche : une page simple à l'horizontale
+    assert coupure(couchee, [40.0, 45.0], None) is None
+    # une page en hauteur n'est pas une double page, sauf qualifiée
+    debout = Sens(0, 600.0, 840.0)
+    assert coupure(debout, [300.0], None) is None
+    assert coupure(debout, [300.0], True) == 300.0 - MARGE
+    # qualifiée sans début au milieu : coupée au milieu ; décochée : simple
+    assert coupure(couchee, [40.0], True) == 420.0
+    assert coupure(couchee, [40.0, 421.0], False) is None
+
+
+def test_une_double_page_se_lit_a_gauche_puis_a_droite():
+    # p. 43 : la fin de la contribution de la p. 42 est en haut de la page de
+    # gauche, plus bas que le début de la page de droite
+    c, h = 432.0, 600.0
+    debuts = [(42, 663.0, 50.0), (43, 72.0, 438.0)]
+    fins = [(43, 96.0, 346.0), (43, 210.0, 797.0)]
+    debuts = [en_colonnes(p, c if p[0] == 43 else None, h) for p in debuts]
+    fins = [en_colonnes(p, c if p[0] == 43 else None, h) for p in fins]
+    t = tiree(0.1, debuts, fins, 50)
+    assert (t.page_fin, t.y_fin, t.fin_notee) == (43, 96.0, True)
+    t = tiree(1.0, debuts, fins, 50)
+    assert (t.page_debut, t.y_debut, t.y_fin) == (43, 72.0 + h, 210.0 + h)
+    # gris : toute la page de gauche, le haut et le bas de celle de droite
+    assert hors_contribution(t, 43, 840.0, h, c) == [
+        (0.0, 0.0, c, h),
+        (c, 0.0, 840.0, 72.0 - MARGE),
+        (c, 210.0 + MARGE, 840.0, h),
+    ]
 
 
 def test_hors_contribution_couvre_le_dessus_du_debut_et_le_dessous_de_la_fin():

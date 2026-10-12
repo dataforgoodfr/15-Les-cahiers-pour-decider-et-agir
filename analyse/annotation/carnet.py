@@ -39,6 +39,8 @@ PROBLEMES = (
     "illisible",
     "coupée",
     "doublon",
+    # deux pages d'un cahier ouvert sur une image : gauche, puis droite
+    "double page",
     # contenu qu'on ne publie pas (propos haineux, illicites…) : mis de côté
     "à écarter",
 )
