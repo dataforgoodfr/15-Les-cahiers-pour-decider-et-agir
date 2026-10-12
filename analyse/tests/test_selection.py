@@ -1,7 +1,9 @@
 """Contribution tirée d'après les débuts notés, et ce qui l'entoure."""
 
+import pymupdf
 import pytest
 
+from selection.__main__ import caviarder
 from selection.contribution import (
     MARGE,
     Sens,
@@ -169,3 +171,21 @@ def test_une_page_a_ecarter_ecarte_la_contribution():
 def test_decocher_a_ecarter_rend_la_contribution():
     decoche = {("c.pdf", 3): {"problemes": {"à écarter": False}}}
     assert not ecartee("c.pdf", [3], decoche)
+
+
+def test_une_page_tournee_sort_dans_le_sens_de_lecture(tmp_path):
+    chemin, sortie = tmp_path / "cahier.pdf", tmp_path / "contribution.pdf"
+    with pymupdf.open() as doc:
+        doc.new_page(width=600, height=800)
+        doc.save(chemin)
+    # tournée d'un quart de tour, la page se lit en 800 × 600
+    t = tiree(0.1, [(1, 100.0, 0.0)], [], 1)
+    caviarder(chemin, sortie, t, {}, {1: Sens(90, 600, 800)}, "cahier.pdf")
+    with pymupdf.open(sortie) as doc:
+        page = doc[0]
+        assert page.rotation == 90
+        assert (page.rect.width, page.rect.height) == (800, 600)
+        pix = page.get_pixmap(dpi=36)  # un demi-point par pixel
+        # le gris couvre le dessus du début, en haut de la page lue
+        assert pix.pixel(200, 20) != (255, 255, 255)
+        assert pix.pixel(200, 200) == (255, 255, 255)
