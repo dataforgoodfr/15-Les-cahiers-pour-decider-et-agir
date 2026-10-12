@@ -167,3 +167,14 @@ def delimites(
         if f in pages
         and plus_loin.get(f, 0) >= derniere_page(pages[f], f, qualifications)
     }
+
+
+ECARTER = "à écarter"
+
+
+def ecartee(fichier: str, pages: list[int], qualifications: dict) -> bool:
+    """Une page de la contribution porte un contenu à ne pas publier."""
+    return any(
+        qualifications.get((fichier, n), {}).get("problemes", {}).get(ECARTER)
+        for n in pages
+    )

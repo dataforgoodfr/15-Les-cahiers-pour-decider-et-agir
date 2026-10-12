@@ -8,6 +8,7 @@ from selection.contribution import (
     delimites,
     derniere_page,
     doublons,
+    ecartee,
     hors_contribution,
     tiree,
 )
@@ -154,3 +155,17 @@ def test_reordonner_garde_les_elements_et_met_les_faits_a_la_fin():
     assert [e["fichier"] for e in nouvelle["elements"]] == ["c", "b", "a"]
     assert nouvelle["elements"][0]["commentaire"] == "C"
     assert nouvelle["titre"] == "T"
+
+
+def test_une_page_a_ecarter_ecarte_la_contribution():
+    qualifications = {
+        ("c.pdf", 3): {"problemes": {"à écarter": True}},
+        ("c.pdf", 5): {"problemes": {"coupée": True}},
+    }
+    assert ecartee("c.pdf", [2, 3], qualifications)
+    assert not ecartee("c.pdf", [4, 5], qualifications)
+
+
+def test_decocher_a_ecarter_rend_la_contribution():
+    decoche = {("c.pdf", 3): {"problemes": {"à écarter": False}}}
+    assert not ecartee("c.pdf", [3], decoche)

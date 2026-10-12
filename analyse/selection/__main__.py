@@ -18,6 +18,8 @@ a tous ses débuts de contributions notés. La contribution tirée s'en déduit
   métadonnées du PDF sont effacées ;
 - `selection.csv` : une ligne par cahier tiré, sa commune, la contribution
   retenue (rang, pages) et le nombre de cadres caviardés, ou ce qui manque.
+  Une contribution dont une page est qualifiée « à écarter » (contenu qu'on
+  ne publie pas au nom de l'association) n'est pas exportée.
 
 Réordonne aussi la liste « selection » de l'outil d'annotation : d'abord les
 cahiers à délimiter dont la région et la taille de commune manquent le plus,
@@ -46,6 +48,7 @@ from selection.contribution import (
     Sens,
     delimites,
     doublons,
+    ecartee,
     hors_contribution,
     tiree,
 )
@@ -193,6 +196,13 @@ def main() -> None:
         if contribution is None:
             ligne["statut"] = "vu sans début noté"
             continue
+        if ecartee(fichier, contribution.pages, qualifications):
+            ligne |= {
+                "statut": "écarté",
+                "rang": contribution.rang,
+                "contributions": contribution.n,
+            }
+            continue
         pages = set(contribution.pages)
         notes_a_cacher = [
             {**n, **{k: v for k, v in zip(CHAMPS, cadre(n))}}
@@ -240,7 +250,7 @@ def main() -> None:
     print(f"  sans caviardage : {sum(1 for x in exportes if not x['caviardages'])}")
     a_verifier = [x for x in lignes if x["statut"].startswith("à vérifier")]
     print(f"  à vérifier (débuts en double) : {len(a_verifier)}")
-    for statut in ("vu sans début noté", "à délimiter"):
+    for statut in ("écarté", "vu sans début noté", "à délimiter"):
         print(f"  {statut} : {sum(1 for x in lignes if x['statut'] == statut)}")
     print(f"PDF dans {dossier}")
 
