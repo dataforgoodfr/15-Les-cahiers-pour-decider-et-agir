@@ -2,7 +2,13 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import Contribution, Document, Page, Run
+from .models import Contribution, Document, Page, Rattachement, Run, Transcription
+
+
+class RattachementInline(admin.TabularInline):
+    model = Rattachement
+    extra = 0
+    autocomplete_fields = ["commune"]
 
 
 @admin.register(Document)
@@ -13,6 +19,7 @@ class DocumentAdmin(admin.ModelAdmin):
     search_fields = ["fichier", "commune__nom", "code_insee"]
     autocomplete_fields = ["commune"]
     readonly_fields = ["voir_pages"]
+    inlines = [RattachementInline]
 
     @admin.display(description="pages")
     def voir_pages(self, document):
@@ -38,6 +45,15 @@ class PageAdmin(admin.ModelAdmin):
 class RunAdmin(admin.ModelAdmin):
     list_display = ["libelle", "genre", "auteur", "cree", "actif"]
     list_filter = ["genre", "actif"]
+
+
+@admin.register(Transcription)
+class TranscriptionAdmin(admin.ModelAdmin):
+    list_display = ["page", "run", "qualite"]
+    list_filter = ["run"]
+    list_select_related = ["page__document", "run"]
+    search_fields = ["page__document__fichier"]
+    raw_id_fields = ["page"]
 
 
 @admin.register(Contribution)
