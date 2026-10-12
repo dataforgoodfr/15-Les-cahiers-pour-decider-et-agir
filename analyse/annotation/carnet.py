@@ -39,6 +39,8 @@ PROBLEMES = (
     "illisible",
     "coupée",
     "doublon",
+    # contenu qu'on ne publie pas (propos haineux, illicites…) : mis de côté
+    "à écarter",
 )
 TYPES = ("dactylographiée", "manuscrite", "mixte", "vierge")
 ROTATIONS = (0, 90, 180, 270)  # quart de tour de l'affichage, sens horaire

@@ -47,11 +47,13 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   qualité, mots, page de service) et ce que les analyses y ont détecté
   (`orientation`, `manquantes`, `concatenes`, inventaire), lus dans `data/`.
 - **Qualifier la page** : ses problèmes (tournée, ordre des pages, page
-  manquante, illisible, coupée, doublon) arrivent cochés d'avance quand une
+  manquante, illisible, coupée, doublon, à écarter) arrivent cochés d'avance quand une
   analyse les a détectés, avec la mention « détecté » ; décocher un faux
   positif est gardé. Le type arrive rempli par le typage : le corriger au
   besoin ; une page marquée vue sans correction confirme son typage. Une page
-  à problème porte ⚠ dans les vignettes, un type corrigé ✓.
+  à problème porte ⚠ dans les vignettes, un type corrigé ✓. « À écarter »
+  met de côté un contenu qu'on ne publie pas au nom de l'association
+  (propos haineux ou illicites) : `selection` ne l'exporte pas.
 - **Écrire des remarques libres** sur la page ou sur le cahier.
 - **Afficher la couche texte** (« Texte OCR ») : les cadres des lignes
   reconnues par l'OCR du versement ; survoler une ligne montre son texte.
