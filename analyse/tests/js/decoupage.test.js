@@ -20,7 +20,7 @@ test("un début et une fin près des bords couvrent la largeur", () => {
 
 test("une case de grille garde ses côtés", () => {
   const cadres = decouper([page(1)], [debut(1, 200, 200), fin(1, 360, 300)]);
-  assert.deepEqual(cadres.get(1), [{ contribution: 1, x0: 200, y0: 200 - MARGE, x1: 360, y1: 300 + MARGE }]);
+  assert.deepEqual(cadres.get(1), [{ contribution: 1, x0: 200 - MARGE, y0: 200 - MARGE, x1: 360 + MARGE, y1: 300 + MARGE }]);
 });
 
 test("sur plusieurs pages, les pages du milieu sont pleines", () => {
@@ -42,7 +42,7 @@ test("une double page se lit à gauche puis à droite", () => {
   const cadres = decouper(pages, [debut(42, 40, 663), debut(43, 438, 72), fin(43, 346, 96), fin(43, 797, 210)]);
   const coupure = 438 - MARGE;
   assert.deepEqual(cadres.get(43), [
-    { contribution: 1, x0: 0, y0: 0, x1: 346, y1: 96 + MARGE },
+    { contribution: 1, x0: 0, y0: 0, x1: 346 + MARGE, y1: 96 + MARGE },
     { contribution: 2, x0: coupure, y0: 72 - MARGE, x1: 840, y1: 210 + MARGE },
   ]);
 });
