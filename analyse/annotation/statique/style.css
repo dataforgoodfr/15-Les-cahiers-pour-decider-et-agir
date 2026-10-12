@@ -128,6 +128,11 @@ main#vue { grid-area: vue; overflow: auto; position: relative; padding: 12px; }
 .calque .masque.retabli { fill: transparent; stroke: var(--retabli); stroke-width: 2px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 .calque .etiquette-retabli { fill: var(--retabli); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
 .calque .etiquette-marque { fill: var(--marque); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+.calque .contour { fill: none; stroke: var(--contour); stroke-width: 2px; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; pointer-events: none; }
+.calque .contour-1 { --contour: #2a9d8f; }
+.calque .contour-2 { --contour: #8e44ad; }
+.calque .contour-3 { --contour: #c0392b; }
+.calque .contour-0 { --contour: #d4a017; }
 .calque .trace { fill: none; stroke: var(--note); stroke-width: 2px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 #vide { text-align: center; margin-top: 20vh; }
 footer#vignettes {

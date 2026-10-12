@@ -275,21 +275,20 @@ function pageVoisine(sens) {
 
 function dimensionner() {
   // taille de chaque feuille selon le zoom et sa rotation
-  for (const p of etat.cahier.pages) {
-    surPage(p.page, () => {
-      const { feuille, image, calque } = etat.feuilles[p.page - 1];
-      const [largeurVue, hauteurVue] = dimensionsVue();
-      const s = largeurAffichee() / largeurVue; // pixels par point
-      feuille.style.width = `${largeurVue * s}px`;
-      feuille.style.height = `${hauteurVue * s}px`;
-      image.style.width = `${p.largeur * s}px`;
-      image.style.height = `${p.hauteur * s}px`;
-      image.style.transform = TRANSFORMATIONS[rotation()];
-      calque.setAttribute("viewBox", `0 0 ${largeurVue} ${hauteurVue}`);
-      if (image.getAttribute("src")) chargerImage(p.page); // à la nouvelle largeur
-      dessinerCalque();
-    });
-  }
+  surToutesLesPages(() => {
+    const p = pageCourante();
+    const { feuille, image, calque } = etat.feuilles[p.page - 1];
+    const [largeurVue, hauteurVue] = dimensionsVue();
+    const s = largeurAffichee() / largeurVue; // pixels par point
+    feuille.style.width = `${largeurVue * s}px`;
+    feuille.style.height = `${hauteurVue * s}px`;
+    image.style.width = `${p.largeur * s}px`;
+    image.style.height = `${p.hauteur * s}px`;
+    image.style.transform = TRANSFORMATIONS[rotation()];
+    calque.setAttribute("viewBox", `0 0 ${largeurVue} ${hauteurVue}`);
+    if (image.getAttribute("src")) chargerImage(p.page); // à la nouvelle largeur
+    dessinerCalque();
+  });
 }
 
 function chargerImage(n) {
@@ -372,8 +371,18 @@ $("vue").addEventListener("scroll", () => {
   });
 });
 
+function surToutesLesPages(fn) {
+  // le découpage se calcule une fois pour toutes les pages
+  decoupageFige = decoupage();
+  try {
+    for (const p of etat.cahier.pages) surPage(p.page, fn);
+  } finally {
+    decoupageFige = null;
+  }
+}
+
 function dessinerCalques() {
-  for (const p of etat.cahier.pages) surPage(p.page, dessinerCalque);
+  surToutesLesPages(dessinerCalque);
 }
 
 // ---------- calque : repérages et notes ----------
@@ -437,6 +446,15 @@ function dessinerCalque() {
     r.append(element("title", {}, l.texte));
     calque.append(r);
   }
+  if (!aMasquer()) {
+    // contours des contributions, sous les notes : un clic les traverse
+    for (const c of decoupage().get(etat.page) || []) {
+      calque.append(element("rect", {
+        x: c.x0, y: c.y0, width: c.x1 - c.x0, height: c.y1 - c.y0,
+        class: `contour contour-${c.contribution % 4}`,
+      }));
+    }
+  }
   notesDeLaPage().forEach((n, i) => {
     const f = forme(n.x0, n.y0, n.x1, n.y1, `note ${genre(n)}` + (n.id === etat.note ? " courant" : ""));
     f.dataset.id = n.id;
@@ -455,6 +473,28 @@ function dessinerCalque() {
     const b = etat.brouillon;
     calque.append(forme(b.x0, b.y0, b.x1, b.y1, "trace"));
   }
+}
+
+// Les contributions du cahier, d'après ses débuts et fins (`decoupage.js`),
+// recalculées quand une note, une rotation ou une double page change.
+let decoupageEnCache = { signature: null, cadres: new Map() };
+let decoupageFige = null; // le temps de redessiner toutes les pages
+function decoupage() {
+  if (decoupageFige) return decoupageFige;
+  const pages = etat.cahier.pages.map((p) => surPage(p.page, () => {
+    const [largeur, hauteur] = dimensionsVue();
+    return { page: p.page, largeur, hauteur, double: p.problemes["double page"] ?? null };
+  }));
+  const notes = etat.cahier.notes.filter((n) => n.etiquette === DEBUT || n.etiquette === FIN)
+    .map((n) => surPage(n.page, () => {
+      const [x, y] = cadreVue(n.x0, n.y0, n.x1, n.y1);
+      return { page: n.page, debut: n.etiquette === DEBUT, x, y };
+    }));
+  const signature = JSON.stringify([pages, notes]);
+  if (signature !== decoupageEnCache.signature) {
+    decoupageEnCache = { signature, cadres: decouper(pages, notes) };
+  }
+  return decoupageEnCache.cadres;
 }
 
 function estRetabli(m) {
@@ -539,7 +579,7 @@ async function finirGlisse() {
     Object.assign(n, origine);
     message(`Échec : ${e.message}`);
   }
-  dessinerCalque();
+  dessinerCalques(); // un début ou une fin déplacé redécoupe les pages voisines
 }
 
 function lignesOcr() {
@@ -756,7 +796,9 @@ async function accepterMarques() {
 }
 
 function rafraichirPage() {
-  dessinerCalque();
+  // une note de début ou de fin redécoupe aussi les pages voisines
+  if (etat.cahier) dessinerCalques();
+  else dessinerCalque();
   dessinerNotes();
   marquerVignette();
 }
@@ -894,6 +936,7 @@ async function qualifier(champ, valeur, page = etat.page) {
   else if (champ === "type") { p.type_verifie = valeur; masquerVierges(); }
   else if (champ === "remarque") p.remarque = valeur;
   else p.problemes[champ] = valeur;
+  if (champ === "double page") dessinerCalques(); // l'ordre de lecture change
   if (champ === "remarque") {
     // ne pas redessiner : on écraserait une saisie en cours dans l'autre champ
     message("Remarque enregistrée");
