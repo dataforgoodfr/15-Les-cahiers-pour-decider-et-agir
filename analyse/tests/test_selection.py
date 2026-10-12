@@ -124,7 +124,7 @@ def test_une_double_page_se_lit_a_gauche_puis_a_droite():
 
 
 def test_hors_contribution_couvre_le_dessus_du_debut_et_le_dessous_de_la_fin():
-    t = tiree(0.1, [(2, 100.0, 0.0), (3, 500.0, 0.0)], [(3, 200.0, 0.0)], 8)
+    t = tiree(0.1, [(2, 100.0, 0.0), (3, 500.0, 0.0)], [(3, 200.0, 590.0)], 8)
     assert hors_contribution(t, 2, 600, 800) == [(0.0, 0.0, 600, 100.0 - MARGE)]
     # la fin notée garde sa ligne
     assert hors_contribution(t, 3, 600, 800) == [(0.0, 200.0 + MARGE, 600, 800)]
@@ -137,6 +137,28 @@ def test_hors_contribution_couvre_le_dessus_du_debut_et_le_dessous_de_la_fin():
     # une contribution en haut de page, jusqu'à la fin du cahier : rien à couvrir
     t = tiree(1.0, [(2, 3.0, 0.0)], [], 8)
     assert hors_contribution(t, 2, 600, 800) == []
+
+
+def test_hors_contribution_suit_les_cotes_du_contour():
+    # une case de grille : le début borne la gauche, la fin notée la droite
+    t = tiree(0.1, [(1, 200.0, 200.0)], [(1, 300.0, 360.0)], 8)
+    assert hors_contribution(t, 1, 600, 800) == [
+        (0.0, 0.0, 600, 200.0 - MARGE),
+        (0.0, 300.0 + MARGE, 600, 800),
+        (0.0, 200.0 - MARGE, 200.0 - MARGE, 300.0 + MARGE),
+        (360.0 + MARGE, 200.0 - MARGE, 600, 300.0 + MARGE),
+    ]
+    # sur plusieurs pages : la page du début n'est bornée qu'à gauche, celle
+    # de la fin qu'à droite ; près du bord, le côté colle à la page
+    t = tiree(0.1, [(1, 200.0, 200.0)], [(2, 300.0, 400.0)], 8)
+    assert hors_contribution(t, 1, 600, 800)[1:] == [
+        (0.0, 200.0 - MARGE, 200.0 - MARGE, 800)
+    ]
+    assert hors_contribution(t, 2, 600, 800)[1:] == [
+        (400.0 + MARGE, 0.0, 600, 300.0 + MARGE)
+    ]
+    t = tiree(0.1, [(1, 200.0, 80.0)], [(1, 300.0, 520.0)], 8)
+    assert hors_contribution(t, 1, 600, 800)[2:] == []
 
 
 def test_derniere_page_saute_les_vierges():

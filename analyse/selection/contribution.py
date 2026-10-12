@@ -29,6 +29,7 @@ from dataclasses import dataclass
 MARGE = 6  # points : le début est un point posé sur la première ligne
 CENTRE = (0.35, 0.65)  # part de la largeur où un début ouvre la page de droite
 DOUBLON = 10  # points : deux débuts si proches sont le même, posé deux fois
+BORD_X = 0.15  # part de la largeur sous laquelle un côté colle à la page
 
 
 @dataclass(frozen=True)
@@ -101,6 +102,8 @@ class Tiree:
     page_fin: int
     y_fin: float | None  # None : jusqu'en bas de la page de fin
     fin_notee: bool
+    x_debut: float = 0.0
+    x_fin: float | None = None  # abscisse de la fin notée
 
     @property
     def pages(self) -> list[int]:
@@ -147,13 +150,16 @@ def tiree(
     fin = next(
         (f for f in fins if f >= debut and (suivant is None or f <= suivant)), None
     )
+    x_fin = None
     if fin is not None:
-        page_fin, y_fin = fin[:2]
+        page_fin, y_fin, x_fin = fin
     elif suivant is not None:
         page_fin, y_fin = suivant[:2]
     else:
         page_fin, y_fin = derniere_page, None
-    return Tiree(rang, n, debut[0], debut[1], page_fin, y_fin, fin is not None)
+    return Tiree(
+        rang, n, debut[0], debut[1], page_fin, y_fin, fin is not None, debut[2], x_fin
+    )
 
 
 def hors_contribution(
@@ -166,24 +172,55 @@ def hors_contribution(
     """Cadres (x0, y0, x1, y1) de la page lue, de `largeur` × `hauteur`, qui
     n'appartiennent pas à la contribution tirée : au-dessus de son début, en
     dessous de sa fin. Une fin notée garde sa ligne ; un début suivant, non.
-    Sur une double page (`coupure`), chaque page est couverte à part."""
+    Sur une double page (`coupure`), chaque page est couverte à part.
+
+    Comme le contour de l'outil d'annotation, le début borne à gauche la
+    colonne où il est posé, et la fin notée la borne à droite, sauf près du
+    bord : un bout de la page voisine, numérisé avec, reste gris."""
     colonnes = (
         [(0.0, largeur)] if coupure is None else [(0.0, coupure), (coupure, largeur)]
     )
     total = len(colonnes) * hauteur
-    hors = []  # intervalles de hauteur dans l'ordre de lecture (`en_colonnes`)
-    if page == t.page_debut and t.y_debut - MARGE > 0:
-        hors.append((0.0, t.y_debut - MARGE))
+    haut = t.y_debut - MARGE if page == t.page_debut else 0.0
+    bas = total
     if page == t.page_fin and t.y_fin is not None:
         bas = t.y_fin + MARGE if t.fin_notee else t.y_fin - MARGE
-        if bas < total:
-            hors.append((max(0.0, bas), total))
+    hors = []  # intervalles de hauteur dans l'ordre de lecture (`en_colonnes`)
+    if haut > 0:
+        hors.append((0.0, haut))
+    if bas < total:
+        hors.append((max(0.0, bas), total))
     cadres = []
-    for haut, bas in hors:
-        for k, (x0, x1) in enumerate(colonnes):
-            y0, y1 = max(haut, k * hauteur), min(bas, (k + 1) * hauteur)
+    for k, (g, d) in enumerate(colonnes):
+        for y0, y1 in hors:
+            y0, y1 = max(y0, k * hauteur), min(y1, (k + 1) * hauteur)
             if y0 < y1:
-                cadres.append((x0, y0 - k * hauteur, x1, y1 - k * hauteur))
+                cadres.append((g, y0 - k * hauteur, d, y1 - k * hauteur))
+        # les côtés, sur la hauteur de la contribution dans cette colonne
+        y0, y1 = max(haut, k * hauteur), min(bas, (k + 1) * hauteur)
+        if y0 >= y1:
+            continue
+        # le début ou la fin est-il dans cette colonne ?
+        dedans = (k * hauteur, (k + 1) * hauteur + MARGE)
+        x0, x1 = g, d
+        if (
+            page == t.page_debut
+            and dedans[0] <= t.y_debut < dedans[1]
+            and t.x_debut - g > BORD_X * (d - g)
+        ):
+            x0 = t.x_debut - MARGE
+        if (
+            t.fin_notee
+            and page == t.page_fin
+            and dedans[0] <= t.y_fin < dedans[1]
+            and d - t.x_fin > BORD_X * (d - g)
+        ):
+            x1 = t.x_fin + MARGE
+        y0, y1 = y0 - k * hauteur, y1 - k * hauteur
+        if x0 > g:
+            cadres.append((g, y0, x0, y1))
+        if x1 < d:
+            cadres.append((x1, y0, d, y1))
     return cadres
 
 

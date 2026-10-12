@@ -500,7 +500,8 @@ function decoupage() {
 // Un contour est le rectangle calculé de la contribution, tant qu'on n'y
 // touche pas. Un clic sur une arête y ajoute un sommet, qu'on glisse aussitôt :
 // le contour devient un polygone, gardé au carnet pour cette page. Un sommet se
-// glisse, un double-clic le retire ; Alt+clic sur une arête rend le rectangle.
+// glisse, un double-clic le retire ; Maj+glisser une arête la déplace tout
+// entière, droit devant elle ; Alt+clic sur une arête rend le rectangle.
 
 function sommetsVue(c) {
   // les sommets du contour, dans le repère affiché
@@ -515,11 +516,12 @@ function contour(c) {
   const couleur = `contour-${c.contribution % 4}`;
   const trace = element("polygon", { points, class: `contour ${couleur}` });
   const prise = element("polygon", { points, class: "contour-prise" });
-  prise.append(element("title", {}, "Clic : ajouter un sommet · Alt+clic : revenir au rectangle"));
+  prise.append(element("title", {}, "Clic : ajouter un sommet · Maj+glisser : déplacer l'arête · Alt+clic : revenir au rectangle"));
   prise.addEventListener("pointerdown", (ev) => {
     if (ev.button !== 0) return;
     ev.stopPropagation();
     if (ev.altKey) retirerContour(c);
+    else if (ev.shiftKey) glisserArete(ev, c, sommets);
     else ajouterSommet(ev, c, sommets);
   });
   const formes = [trace, prise];
@@ -565,22 +567,44 @@ function distanceSegment([u, v], [a, b], [c, d]) {
   return Math.hypot(u - (a + t * (c - a)), v - (b + t * (d - b)));
 }
 
-let sommetGlisse = null; // {c, i, nouveau, origine, depart}
-let dernierClicSommet = {};
-function ajouterSommet(ev, c, sommets) {
-  const p = pointVue(ev);
-  // le nouveau sommet va sur l'arête la plus proche du clic
+function areteProche(p, sommets) {
+  // l'indice du premier sommet de l'arête la plus proche du point
   let arete = 0;
   sommets.forEach((s, i) => {
     const suivant = sommets[(i + 1) % sommets.length];
     const meilleur = sommets[arete], apres = sommets[(arete + 1) % sommets.length];
     if (distanceSegment(p, s, suivant) < distanceSegment(p, meilleur, apres)) arete = i;
   });
+  return arete;
+}
+
+let sommetGlisse = null; // {c, i, nouveau, origine, depart} ; arete : {debut, base, normale}
+let dernierClicSommet = {};
+function ajouterSommet(ev, c, sommets) {
+  const p = pointVue(ev);
+  // le nouveau sommet va sur l'arête la plus proche du clic
+  const arete = areteProche(p, sommets);
   const polygone = sommets.map(([u, v]) => versPage(u, v));
   polygone.splice(arete + 1, 0, versPage(...p));
   const origine = etat.contours.get(`${etat.page}|${c.debut}`) || null;
   etat.contours.set(`${etat.page}|${c.debut}`, polygone);
   commencerSommet(ev, c, arete + 1, origine, true);
+}
+
+function glisserArete(ev, c, sommets) {
+  // l'arête suit le pointeur droit devant elle : un côté du rectangle reste droit
+  const p = pointVue(ev);
+  const i = areteProche(p, sommets);
+  const [a, b] = [sommets[i], sommets[(i + 1) % sommets.length]];
+  const l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  const origine = etat.contours.get(`${etat.page}|${c.debut}`) || null;
+  etat.contours.set(`${etat.page}|${c.debut}`, sommets.map(([u, v]) => versPage(u, v)));
+  commencerSommet(ev, c, i, origine);
+  sommetGlisse.arete = {
+    debut: p,
+    base: sommets.map((s) => [...s]),
+    normale: [(a[1] - b[1]) / l, (b[0] - a[0]) / l],
+  };
 }
 
 function commencerSommet(ev, c, i, origine, nouveau = false) {
@@ -596,8 +620,21 @@ function commencerSommet(ev, c, i, origine, nouveau = false) {
 }
 
 function suivreSommet(ev) {
-  const { c, i } = sommetGlisse;
-  etat.contours.get(`${etat.page}|${c.debut}`)[i] = versPage(...pointVue(ev));
+  const { c, i, arete } = sommetGlisse;
+  const polygone = etat.contours.get(`${etat.page}|${c.debut}`);
+  if (arete) {
+    const p = pointVue(ev);
+    const [nu, nv] = arete.normale;
+    const d = (p[0] - arete.debut[0]) * nu + (p[1] - arete.debut[1]) * nv;
+    const [largeurVue, hauteurVue] = dimensionsVue();
+    for (const j of [i, (i + 1) % polygone.length]) {
+      const [u, v] = arete.base[j];
+      polygone[j] = versPage(
+        Math.min(Math.max(0, u + d * nu), largeurVue),
+        Math.min(Math.max(0, v + d * nv), hauteurVue),
+      );
+    }
+  } else polygone[i] = versPage(...pointVue(ev));
   dessinerCalque();
 }
 
@@ -605,8 +642,11 @@ async function finirSommet(ev) {
   const { c, origine, nouveau, depart } = sommetGlisse;
   sommetGlisse = null;
   const bouge = Math.hypot(ev.clientX - depart[0], ev.clientY - depart[1]) > 2;
+  // une arête non bougée laisse le contour tel qu'il était
+  if (!bouge && !nouveau && !origine) etat.contours.delete(`${etat.page}|${c.debut}`);
+  else if (!bouge && !nouveau) etat.contours.set(`${etat.page}|${c.debut}`, origine);
   // un sommet ajouté reste, même sans glisser ; un sommet existant non bougé, rien
-  if (nouveau || bouge) await enregistrerContour(c, etat.contours.get(`${etat.page}|${c.debut}`), origine);
+  else if (nouveau || bouge) await enregistrerContour(c, etat.contours.get(`${etat.page}|${c.debut}`), origine);
   dessinerCalque();
 }
 

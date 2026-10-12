@@ -63,8 +63,8 @@ function decouper(pages, notes) {
         // le début et la fin bornent les côtés de leur colonne ; près du bord,
         // le cadre colle à la page : une page pleine se voit d'un coup d'œil
         const ici = (pt) => pt.page === n && pt.v >= k * p.hauteur && pt.v < (k + 1) * p.hauteur + MARGE;
-        if (ici(debut) && debut.x - g > BORD_X * (d - g)) x0 = debut.x;
-        if (ici(arret) && d - arret.x > BORD_X * (d - g)) x1 = arret.x;
+        if (ici(debut) && debut.x - g > BORD_X * (d - g)) x0 = debut.x - MARGE;
+        if (ici(arret) && d - arret.x > BORD_X * (d - g)) x1 = arret.x + MARGE;
         if (y0 < BORD_Y * p.hauteur) y0 = 0;
         if (y1 > (1 - BORD_Y) * p.hauteur) y1 = p.hauteur;
         if (x0 < x1) cadres.get(n).push({ contribution: i + 1, debut: debut.id, x0, y0, x1, y1 });

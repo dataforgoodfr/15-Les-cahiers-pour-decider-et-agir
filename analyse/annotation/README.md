@@ -38,7 +38,9 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   bord colle à la page. Un clic sur une arête y ajoute un sommet, qu'on glisse
   aussitôt : le contour devient un polygone, gardé au carnet pour cette page,
   et l'export grise tout ce qui en sort. Un sommet se glisse, un double-clic
-  le retire ; Alt+clic sur une arête rend le rectangle.
+  le retire ; Maj+glisser une arête la déplace tout entière, pour écarter
+  d'un geste un bout de la page voisine ; Alt+clic sur une arête rend le
+  rectangle. Sans polygone, l'export suit aussi les côtés du rectangle.
 - **Faire défiler le cahier** : les pages se suivent les unes sous les autres ;
   la page courante (panneau de droite, statut, vignette) est celle qui occupe
   le haut de la vue, ou la dernière cliquée.
