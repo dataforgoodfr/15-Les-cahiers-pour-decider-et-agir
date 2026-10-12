@@ -18,6 +18,30 @@ Les modèles du POC y sont repris un à un. Pour l'instant :
   à un run, et plusieurs coexistent. Les contributions sont délimitées sur
   l'image, en points PDF, comme dans l'outil d'annotation d'`analyse/`.
 
+## La table des pages
+
+Le format commun de la chaîne texte
+([#16](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/16)) :
+les étapes lisent ces tables, pas les PDF. PostgreSQL fait référence.
+
+| Table | Une ligne par | Contenu |
+| --- | --- | --- |
+| `Document` | fichier du versement | catégorie, commune du nom de fichier, date de dépôt, nombre de pages |
+| `Rattachement` | changement de commune dans un document | page à partir de laquelle le cahier est celui d'une autre commune (#42) |
+| `Page` | page | type (vierge, dactylographiée, mixte, manuscrite), rotation, page de service ou d'ouverture, couche texte native du PDF |
+| `Run` | couche produite | genre, auteur, modèle et paramètres ; un seul actif par genre |
+| `Transcription` | page et run de transcription | texte, qualité entre 0 et 1, chemin des sorties lourdes (ALTO, images) hors base |
+| `Contribution` | contribution et run de délimitation | de (page, hauteur) à (page, hauteur), en points PDF ; texte s'il a été lu |
+
+Le fichier PDF (`CC_01000_190304_01053_MD_15462.pdf`) et le numéro de page,
+à partir de 1, désignent une page partout, dans `analyse/` comme ici.
+
+Chaque étape écrit sous un run de son genre, sans toucher aux couches des
+autres runs : une transcription par HTR ajoute des `Transcription`, un
+découpage automatique des `Contribution`. Le document et ses pages ne sont
+jamais réécrits ; seuls les attributs mesurés par `analyse/` (type, rotation,
+service, ouverture) y sont reportés.
+
 ## En local
 
 Il faut un PostgreSQL. Par exemple avec Podman ou Docker :

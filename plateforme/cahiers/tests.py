@@ -7,7 +7,7 @@ from django.test import TestCase
 from territoires.models import Commune, Departement, Region
 
 from . import noms
-from .models import Contribution, Document, Page, Run
+from .models import Contribution, Document, Page, Rattachement, Run, Transcription
 
 
 def bourg_en_bresse():
@@ -95,6 +95,34 @@ class ModelesTests(TestCase):
             )
         self.assertEqual(self.document.contributions.count(), 2)
 
+    def test_deux_transcriptions_de_la_meme_page(self):
+        page = self.document.pages.get(numero=1)
+        for libelle in ("htr a", "htr b"):
+            run = Run.objects.create(genre="transcription", libelle=libelle, auteur="t")
+            Transcription.objects.create(run=run, page=page, texte="…", qualite=0.8)
+        self.assertEqual(page.transcriptions.count(), 2)
+
+    def test_une_transcription_par_run_et_par_page(self):
+        run = Run.objects.create(genre="transcription", libelle="htr", auteur="t")
+        page = self.document.pages.get(numero=1)
+        Transcription.objects.create(run=run, page=page)
+        with self.assertRaises(IntegrityError):
+            Transcription.objects.create(run=run, page=page)
+
+    def test_qualite_entre_0_et_1(self):
+        run = Run.objects.create(genre="transcription", libelle="htr", auteur="t")
+        with self.assertRaises(IntegrityError):
+            Transcription.objects.create(
+                run=run, page=self.document.pages.get(numero=1), qualite=87
+            )
+
+    def test_cahier_concatene(self):
+        commune = bourg_en_bresse()
+        Rattachement.objects.create(
+            document=self.document, page_debut=3, code_insee="01053", commune=commune
+        )
+        self.assertEqual(self.document.rattachements.get().commune, commune)
+
 
 class AdminTests(TestCase):
     def test_pages_de_l_admin(self):
@@ -109,6 +137,7 @@ class AdminTests(TestCase):
             f"/admin/cahiers/document/{document.pk}/change/",
             "/admin/cahiers/page/",
             "/admin/cahiers/run/",
+            "/admin/cahiers/transcription/",
             "/admin/cahiers/contribution/",
         ]:
             self.assertEqual(self.client.get(url).status_code, 200, url)

@@ -96,6 +96,40 @@ class Page(models.Model):
         return f"{self.document} p. {self.numero}"
 
 
+class Rattachement(models.Model):
+    """À partir d'une page, le document est le cahier d'une autre commune.
+
+    Le nom du fichier donne une commune, que les pages de garde contredisent
+    parfois : un cahier concaténé à la suite (issue #42), un code faux dès la
+    première page, ou une commune absente du nom (`00000`).
+    """
+
+    document = models.ForeignKey(
+        Document, on_delete=models.CASCADE, related_name="rattachements"
+    )
+    page_debut = models.PositiveIntegerField()
+    # Code INSEE lu sur la page de garde, et la commune de 2019 qu'il désigne.
+    code_insee = models.CharField(max_length=6)
+    commune = models.ForeignKey(
+        Commune,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="rattachements",
+    )
+
+    class Meta:
+        ordering = ["document", "page_debut"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["document", "page_debut"], name="rattachement_unique_par_page"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.document} à partir de la p. {self.page_debut}"
+
+
 class Run(models.Model):
     """Une couche posée sur le corpus : qui l'a produite, comment, quand.
 
@@ -129,6 +163,42 @@ class Run(models.Model):
 
     def __str__(self):
         return self.libelle
+
+
+class Transcription(models.Model):
+    """Le texte qu'un run de transcription lit sur une page.
+
+    Une ligne par page et par run : un nouveau modèle de HTR ajoute des lignes
+    sans changer le format. La couche texte native reste dans `Page.texte`.
+    """
+
+    run = models.ForeignKey(
+        Run, on_delete=models.PROTECT, related_name="transcriptions"
+    )
+    page = models.ForeignKey(
+        Page, on_delete=models.CASCADE, related_name="transcriptions"
+    )
+    texte = models.TextField(blank=True)
+    # Confiance du modèle entre 0 et 1, s'il en donne une.
+    qualite = models.FloatField(null=True, blank=True)
+    # Sorties lourdes (ALTO, images des lignes), hors base : un chemin relatif
+    # au dossier du run.
+    fichier = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["page", "run"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["run", "page"], name="transcription_unique_par_run"
+            ),
+            models.CheckConstraint(
+                condition=Q(qualite__gte=0, qualite__lte=1) | Q(qualite__isnull=True),
+                name="qualite_entre_0_et_1",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.page} ({self.run})"
 
 
 class Contribution(models.Model):
