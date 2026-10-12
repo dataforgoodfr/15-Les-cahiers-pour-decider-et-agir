@@ -1,6 +1,11 @@
+import json
+import tempfile
 from datetime import date
+from io import StringIO
+from pathlib import Path
 
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import TestCase
 
@@ -141,3 +146,99 @@ class AdminTests(TestCase):
             "/admin/cahiers/contribution/",
         ]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
+
+
+FICHIER = "CC_01000_190304_01053_MD_15462.pdf"
+
+
+def sorties_d_analyse(dossier: Path):
+    """Des sorties d'analyse/ pour un cahier de 4 pages, concaténé en p. 3."""
+    fichiers = {
+        "typage/departements/BnF_GDN_01_PDF.csv": (
+            "fichier,page,type_page,encre,qualite,mots,page_de_service\n"
+            f"{FICHIER},1,dactylographiée,0.01,0.7,7,1\n"
+            f"{FICHIER},2,manuscrite,0.05,0.1,3,0\n"
+            f"{FICHIER},3,manuscrite,0.05,0.1,3,0\n"
+            f"{FICHIER},4,vierge,0,0,0,1\n"
+        ),
+        "orientation/pages_tournees.csv": (
+            f"fichier,pages,tournees,pages_tournees\n{FICHIER},4,2,p2 p3\n"
+        ),
+        "ouvertures/ouvertures.csv": f"fichier,page\n{FICHIER},2\n",
+        "concatenes/concatenes.csv": (
+            "fichier,pages,pages_de_garde,categorie,autres_communes,"
+            "pages_autres_communes,gardes_illisibles,desordre\n"
+            f"{FICHIER},4,2,concatene,p3:01024,2,,\n"
+        ),
+    }
+    for chemin, contenu in fichiers.items():
+        (dossier / chemin).parent.mkdir(parents=True, exist_ok=True)
+        (dossier / chemin).write_text(contenu, encoding="utf-8")
+    notes = [
+        {"type": "note", "fichier": FICHIER, "page": 2, "etiquette": "nom"},
+        {
+            "type": "qualification",
+            "fichier": FICHIER,
+            "page": 3,
+            "champ": "rotation",
+            "valeur": 270,
+        },
+        {
+            "type": "qualification",
+            "fichier": FICHIER,
+            "page": 2,
+            "champ": "type",
+            "valeur": "mixte",
+        },
+    ]
+    (dossier / "annotation").mkdir()
+    (dossier / "annotation" / "notes.jsonl").write_text(
+        "".join(json.dumps(n) + "\n" for n in notes), encoding="utf-8"
+    )
+
+
+class ChargerCorpusTests(TestCase):
+    def charger(self):
+        with tempfile.TemporaryDirectory() as dossier:
+            sorties_d_analyse(Path(dossier))
+            call_command("charger_corpus", "--analyse", dossier, stdout=StringIO())
+
+    def test_documents_et_pages(self):
+        commune = bourg_en_bresse()
+        self.charger()
+        document = Document.objects.get(fichier=FICHIER)
+        self.assertEqual(document.commune, commune)
+        self.assertEqual(document.nombre_pages, 4)
+        pages = {p.numero: p for p in document.pages.all()}
+        self.assertTrue(pages[1].service)
+        self.assertEqual(pages[1].type, "dactylographiee")
+        self.assertTrue(pages[2].ouverture)
+
+    def test_la_main_l_emporte_sur_la_mesure(self):
+        self.charger()
+        pages = {p.numero: p for p in Document.objects.get().pages.all()}
+        self.assertEqual(pages[2].type, "mixte")
+        self.assertEqual(pages[2].rotation, 90)
+        self.assertEqual(pages[3].rotation, 270)
+
+    def test_rattachement_hors_referentiel(self):
+        self.charger()
+        rattachement = Rattachement.objects.get()
+        self.assertEqual(
+            (rattachement.page_debut, rattachement.code_insee), (3, "01024")
+        )
+        self.assertIsNone(rattachement.commune)
+
+    def test_relancer_garde_les_runs(self):
+        self.charger()
+        document = Document.objects.get()
+        Page.objects.filter(document=document, numero=2).update(texte="couche")
+        run = Run.objects.create(genre="delimitation", libelle="r", auteur="t")
+        Contribution.objects.create(
+            run=run, document=document, rang=1, page_debut=2, page_fin=3
+        )
+        self.charger()
+        self.assertEqual(Page.objects.count(), 4)
+        self.assertEqual(Rattachement.objects.count(), 1)
+        self.assertEqual(document.pages.get(numero=2).texte, "couche")
+        self.assertEqual(document.contributions.count(), 1)

@@ -17,6 +17,11 @@ Les modèles du POC y sont repris un à un. Pour l'instant :
   la provenance, jamais réécrite ; une délimitation est une couche, rattachée
   à un run, et plusieurs coexistent. Les contributions sont délimitées sur
   l'image, en points PDF, comme dans l'outil d'annotation d'`analyse/`.
+  Les cahiers citoyens et leurs pages sont chargés par
+  `uv run python manage.py charger_corpus`, depuis les sorties d'`analyse/`
+  (`--analyse`, par défaut `../analyse/data`) : type, rotation, pages de
+  service et d'ouverture, rattachements à une autre commune. Les types et
+  rotations vérifiés dans l'outil d'annotation l'emportent sur les mesures.
 
 ## La table des pages
 
@@ -57,6 +62,7 @@ export DATABASE_URL=postgres://postgres:cahiers@localhost/cahiers DJANGO_DEBUG=1
 uv sync
 uv run python manage.py migrate
 uv run python manage.py charger_communes
+uv run python manage.py charger_corpus  # si les sorties d'analyse/ sont là
 uv run python manage.py createsuperuser
 uv run python manage.py runserver
 ```
