@@ -129,6 +129,8 @@ main#vue { grid-area: vue; overflow: auto; position: relative; padding: 12px; }
 .calque .etiquette-retabli { fill: var(--retabli); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
 .calque .etiquette-marque { fill: var(--marque); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
 .calque .contour { fill: none; stroke: var(--contour); stroke-width: 2px; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; pointer-events: none; }
+.calque .contour-prise { fill: none; stroke: transparent; stroke-width: 8px; vector-effect: non-scaling-stroke; pointer-events: stroke; cursor: copy; }
+.calque .sommet { fill: var(--surface); stroke: var(--contour); stroke-width: 2px; vector-effect: non-scaling-stroke; cursor: move; }
 .calque .contour-1 { --contour: #2a9d8f; }
 .calque .contour-2 { --contour: #8e44ad; }
 .calque .contour-3 { --contour: #c0392b; }

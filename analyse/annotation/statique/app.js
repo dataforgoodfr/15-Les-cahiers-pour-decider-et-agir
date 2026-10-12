@@ -23,6 +23,7 @@ const etat = {
   retablis: new Set(), // "fichier|page|id" des repérages rétablis (listes à masquer)
   note: null,         // identifiant de la note ouverte dans le formulaire
   brouillon: null,    // position d'une note en cours de création
+  contours: new Map(), // "page|début" -> sommets [[x, y]…] en points PDF, gardés au carnet
   feuilles: [],       // par page : {feuille, image, calque}
 };
 
@@ -50,7 +51,7 @@ function message(texte, duree = 1800) {
 }
 
 function element(nom, attributs = {}, texte) {
-  const e = nom === "svg" || ["rect", "circle", "line", "text", "g", "title"].includes(nom)
+  const e = nom === "svg" || ["rect", "circle", "line", "polygon", "text", "g", "title"].includes(nom)
     ? document.createElementNS(SVG, nom) : document.createElement(nom);
   for (const [k, v] of Object.entries(attributs)) e.setAttribute(k, v);
   if (texte !== undefined) e.textContent = texte;
@@ -121,6 +122,7 @@ async function ouvrirCahier(fichier, page = 1, defilerVers) {
   }
   for (const [p, s] of Object.entries(etat.cahier.statuts)) etat.statuts.set(cle(fichier, p), s);
   for (const [p, id] of etat.cahier.retablis) etat.retablis.add(`${cle(fichier, p)}|${id}`);
+  etat.contours = new Map(etat.cahier.contours.map((c) => [`${c.page}|${c.debut}`, c.points]));
   $("titre-cahier").textContent = nomCourt(fichier);
   $("titre-cahier").classList.remove("discret");
   $("total-pages").textContent = `/ ${etat.cahier.pages.length}`;
@@ -358,7 +360,7 @@ function pageEnVue() {
 let imageDefilement = 0;
 $("vue").addEventListener("scroll", () => {
   if (defilementProgramme) { defilementProgramme = false; return; }
-  if (!etat.cahier || trace || glisse) return;
+  if (!etat.cahier || trace || glisse || sommetGlisse) return;
   cancelAnimationFrame(imageDefilement);
   imageDefilement = requestAnimationFrame(() => {
     const n = pageEnVue();
@@ -447,13 +449,9 @@ function dessinerCalque() {
     calque.append(r);
   }
   if (!aMasquer()) {
-    // contours des contributions, sous les notes : un clic les traverse
-    for (const c of decoupage().get(etat.page) || []) {
-      calque.append(element("rect", {
-        x: c.x0, y: c.y0, width: c.x1 - c.x0, height: c.y1 - c.y0,
-        class: `contour contour-${c.contribution % 4}`,
-      }));
-    }
+    // contours des contributions, sous les notes : un clic les traverse,
+    // sauf sur une arête (ajoute un sommet) ou un sommet (le déplace)
+    for (const c of decoupage().get(etat.page) || []) calque.append(...contour(c));
   }
   notesDeLaPage().forEach((n, i) => {
     const f = forme(n.x0, n.y0, n.x1, n.y1, `note ${genre(n)}` + (n.id === etat.note ? " courant" : ""));
@@ -488,13 +486,158 @@ function decoupage() {
   const notes = etat.cahier.notes.filter((n) => n.etiquette === DEBUT || n.etiquette === FIN)
     .map((n) => surPage(n.page, () => {
       const [x, y] = cadreVue(n.x0, n.y0, n.x1, n.y1);
-      return { page: n.page, debut: n.etiquette === DEBUT, x, y };
+      return { id: n.id, page: n.page, debut: n.etiquette === DEBUT, x, y };
     }));
   const signature = JSON.stringify([pages, notes]);
   if (signature !== decoupageEnCache.signature) {
     decoupageEnCache = { signature, cadres: decouper(pages, notes) };
   }
   return decoupageEnCache.cadres;
+}
+
+// ---------- contours en polygone ----------
+//
+// Un contour est le rectangle calculé de la contribution, tant qu'on n'y
+// touche pas. Un clic sur une arête y ajoute un sommet, qu'on glisse aussitôt :
+// le contour devient un polygone, gardé au carnet pour cette page. Un sommet se
+// glisse, un double-clic le retire ; Alt+clic sur une arête rend le rectangle.
+
+function sommetsVue(c) {
+  // les sommets du contour, dans le repère affiché
+  const polygone = etat.contours.get(`${etat.page}|${c.debut}`);
+  if (polygone) return polygone.map(([x, y]) => versVue(x, y));
+  return [[c.x0, c.y0], [c.x1, c.y0], [c.x1, c.y1], [c.x0, c.y1]];
+}
+
+function contour(c) {
+  const sommets = sommetsVue(c);
+  const points = sommets.map((s) => s.join(",")).join(" ");
+  const couleur = `contour-${c.contribution % 4}`;
+  const trace = element("polygon", { points, class: `contour ${couleur}` });
+  const prise = element("polygon", { points, class: "contour-prise" });
+  prise.append(element("title", {}, "Clic : ajouter un sommet · Alt+clic : revenir au rectangle"));
+  prise.addEventListener("pointerdown", (ev) => {
+    if (ev.button !== 0) return;
+    ev.stopPropagation();
+    if (ev.altKey) retirerContour(c);
+    else ajouterSommet(ev, c, sommets);
+  });
+  const formes = [trace, prise];
+  if (etat.contours.has(`${etat.page}|${c.debut}`)) {
+    const r = 4 * echelle();
+    sommets.forEach(([u, v], i) => {
+      const s = element("circle", { cx: u, cy: v, r, class: `sommet ${couleur}` });
+      s.append(element("title", {}, "Glisser : déplacer · double-clic : retirer"));
+      s.addEventListener("pointerdown", (ev) => {
+        if (ev.button !== 0) return;
+        ev.stopPropagation();
+        // le calque est redessiné à chaque clic : le double-clic se compte ici
+        const id = `${etat.page}|${c.debut}|${i}`;
+        if (dernierClicSommet.id === id && ev.timeStamp - dernierClicSommet.temps < 400) {
+          dernierClicSommet = {};
+          ev.preventDefault();
+          retirerSommet(c, i);
+          return;
+        }
+        dernierClicSommet = { id, temps: ev.timeStamp };
+        commencerSommet(ev, c, i);
+      });
+      formes.push(s);
+    });
+  }
+  return formes;
+}
+
+function pointVue(ev) {
+  // point cliqué, dans le repère affiché, borné à la page
+  const calque = calqueCourant();
+  const pt = calque.createSVGPoint();
+  pt.x = ev.clientX;
+  pt.y = ev.clientY;
+  const r = pt.matrixTransform(calque.getScreenCTM().inverse());
+  const [largeurVue, hauteurVue] = dimensionsVue();
+  return [Math.min(Math.max(0, r.x), largeurVue), Math.min(Math.max(0, r.y), hauteurVue)];
+}
+
+function distanceSegment([u, v], [a, b], [c, d]) {
+  const l2 = (c - a) ** 2 + (d - b) ** 2;
+  const t = l2 ? Math.min(1, Math.max(0, ((u - a) * (c - a) + (v - b) * (d - b)) / l2)) : 0;
+  return Math.hypot(u - (a + t * (c - a)), v - (b + t * (d - b)));
+}
+
+let sommetGlisse = null; // {c, i, nouveau, origine, depart}
+let dernierClicSommet = {};
+function ajouterSommet(ev, c, sommets) {
+  const p = pointVue(ev);
+  // le nouveau sommet va sur l'arête la plus proche du clic
+  let arete = 0;
+  sommets.forEach((s, i) => {
+    const suivant = sommets[(i + 1) % sommets.length];
+    const meilleur = sommets[arete], apres = sommets[(arete + 1) % sommets.length];
+    if (distanceSegment(p, s, suivant) < distanceSegment(p, meilleur, apres)) arete = i;
+  });
+  const polygone = sommets.map(([u, v]) => versPage(u, v));
+  polygone.splice(arete + 1, 0, versPage(...p));
+  const origine = etat.contours.get(`${etat.page}|${c.debut}`) || null;
+  etat.contours.set(`${etat.page}|${c.debut}`, polygone);
+  commencerSommet(ev, c, arete + 1, origine, true);
+}
+
+function commencerSommet(ev, c, i, origine, nouveau = false) {
+  ev.preventDefault();
+  calqueCourant().setPointerCapture(ev.pointerId);
+  const polygone = etat.contours.get(`${etat.page}|${c.debut}`);
+  sommetGlisse = {
+    c, i, nouveau,
+    origine: origine === undefined ? polygone.map((s) => [...s]) : origine,
+    depart: [ev.clientX, ev.clientY],
+  };
+  dessinerCalque();
+}
+
+function suivreSommet(ev) {
+  const { c, i } = sommetGlisse;
+  etat.contours.get(`${etat.page}|${c.debut}`)[i] = versPage(...pointVue(ev));
+  dessinerCalque();
+}
+
+async function finirSommet(ev) {
+  const { c, origine, nouveau, depart } = sommetGlisse;
+  sommetGlisse = null;
+  const bouge = Math.hypot(ev.clientX - depart[0], ev.clientY - depart[1]) > 2;
+  // un sommet ajouté reste, même sans glisser ; un sommet existant non bougé, rien
+  if (nouveau || bouge) await enregistrerContour(c, etat.contours.get(`${etat.page}|${c.debut}`), origine);
+  dessinerCalque();
+}
+
+async function retirerSommet(c, i) {
+  const k = `${etat.page}|${c.debut}`;
+  const polygone = etat.contours.get(k);
+  if (!polygone || polygone.length <= 3) { message("Un polygone garde au moins trois sommets"); return; }
+  const origine = polygone.map((s) => [...s]);
+  polygone.splice(i, 1);
+  await enregistrerContour(c, polygone, origine);
+  dessinerCalque();
+}
+
+async function retirerContour(c) {
+  const k = `${etat.page}|${c.debut}`;
+  if (!etat.contours.has(k)) return;
+  const origine = etat.contours.get(k);
+  etat.contours.delete(k);
+  await enregistrerContour(c, null, origine);
+  dessinerCalque();
+}
+
+async function enregistrerContour(c, points, origine) {
+  const k = `${etat.page}|${c.debut}`;
+  try {
+    await api("/api/contour", { fichier: etat.cahier.fichier, page: etat.page, debut: c.debut, points });
+    message(points ? "Contour enregistré" : "Contour remis en rectangle");
+  } catch (e) {
+    if (origine) etat.contours.set(k, origine); else etat.contours.delete(k);
+    message(`Échec : ${e.message}`);
+  }
 }
 
 function estRetabli(m) {
@@ -598,15 +741,7 @@ function lignesOcr() {
 
 function pointPdf(ev) {
   // point cliqué, en points PDF (repère de la page, pas de l'affichage)
-  const calque = calqueCourant();
-  const pt = calque.createSVGPoint();
-  pt.x = ev.clientX;
-  pt.y = ev.clientY;
-  const r = pt.matrixTransform(calque.getScreenCTM().inverse());
-  const [largeurVue, hauteurVue] = dimensionsVue();
-  const [x, y] = versPage(
-    Math.min(Math.max(0, r.x), largeurVue), Math.min(Math.max(0, r.y), hauteurVue),
-  );
+  const [x, y] = versPage(...pointVue(ev));
   return { x, y };
 }
 
@@ -628,6 +763,7 @@ $("feuilles").addEventListener("pointerdown", (ev) => {
   dessinerCalque();
 });
 $("feuilles").addEventListener("pointermove", (ev) => {
+  if (sommetGlisse) { suivreSommet(ev); return; }
   if (glisse) { suivreGlisse(ev); return; }
   if (!trace) return;
   const d = pointPdf(ev);
@@ -635,6 +771,7 @@ $("feuilles").addEventListener("pointermove", (ev) => {
   dessinerCalque();
 });
 $("feuilles").addEventListener("pointerup", (ev) => {
+  if (sommetGlisse) { finirSommet(ev); return; }
   if (glisse) { finirGlisse(); return; }
   if (!trace) return;
   const bouge = Math.hypot(ev.clientX - trace.depart.clientX, ev.clientY - trace.depart.clientY) > 4;

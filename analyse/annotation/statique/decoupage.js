@@ -23,8 +23,9 @@ function avant(a, b) {
 
 // pages : [{page, largeur, hauteur, double}] (largeur et hauteur lues ;
 // double : la qualification « double page », null si non tranchée)
-// notes : [{page, debut, x, y}] (debut : vrai pour un début, faux pour une fin)
-// Rend, par page, les cadres {contribution, x0, y0, x1, y1} des contributions
+// notes : [{id, page, debut, x, y}] (debut : vrai pour un début, faux pour une fin)
+// Rend, par page, les cadres {contribution, debut, x0, y0, x1, y1} des contributions
+// (debut : l'identifiant de la note de début)
 // dont la fin est notée : tant qu'elle ne l'est pas, le contour distrairait.
 function decouper(pages, notes) {
   const parPage = new Map(pages.map((p) => [p.page, p]));
@@ -66,7 +67,7 @@ function decouper(pages, notes) {
         if (ici(arret) && d - arret.x > BORD_X * (d - g)) x1 = arret.x;
         if (y0 < BORD_Y * p.hauteur) y0 = 0;
         if (y1 > (1 - BORD_Y) * p.hauteur) y1 = p.hauteur;
-        if (x0 < x1) cadres.get(n).push({ contribution: i + 1, x0, y0, x1, y1 });
+        if (x0 < x1) cadres.get(n).push({ contribution: i + 1, debut: debut.id, x0, y0, x1, y1 });
       });
     }
   });
