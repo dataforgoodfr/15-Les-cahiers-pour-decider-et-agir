@@ -47,6 +47,7 @@ SELECTION = "selection"
 REGLES = {
     "courriel": "Courriels repérés",
     "gabarit": "Formulaires (gabarits) repérés",
+    "lettre": "Lettres repérées",
 }
 # listes à revoir : (nom, préfixe de la règle, titre)
 LISTES = [
@@ -57,6 +58,7 @@ LISTES = [
         "gabarit ",
         "Formulaires repérés à l'OCR près (en-tête abîmé, à vérifier)",
     ),
+    ("lettre", "lettre", "Lettres repérées (titre, salutation ou politesse)"),
 ]
 
 
@@ -209,6 +211,7 @@ def main() -> None:
                 "contributions": len(cahier),
                 "courriel": regles["courriel"],
                 "gabarit": sum(n for r, n in regles.items() if r.startswith("gabarit")),
+                "lettre": regles["lettre"],
                 "gabarit_souple": sum(
                     n for r, n in regles.items() if r.startswith("gabarit ")
                 ),
@@ -226,7 +229,7 @@ def main() -> None:
         ecrivain.writerows(resume)
     ecrire_listes(args.annotation / "listes", trouves, resume)
 
-    decoupes = {r["fichier"] for r in resume if r["courriel"] or r["gabarit"]}
+    decoupes = {r["fichier"] for r in resume if any(r[regle] for regle in REGLES)}
     print(f"{len(resume)} cahiers lus, {sum(r['pages'] for r in resume)} pages")
     for regle in REGLES:
         n = sum(1 for r in resume if r[regle])

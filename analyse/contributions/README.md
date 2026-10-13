@@ -5,9 +5,11 @@ uv run python -m contributions
 ```
 
 Repère où commencent les contributions des cahiers tirés pour l'association
-(#21), par des règles décrites dans `regles.py` : courriels imprimés et
-formulaires à gabarit répété. Les autres cahiers restent à découper, par une
-méthode encore à décider.
+(#21), par des règles décrites dans `regles.py` : courriels imprimés,
+formulaires à gabarit répété, et lettres. Une page ouvre une lettre si ses
+premières lignes portent un titre de doléance ou une salutation, ou si la
+page précédente finit par une formule de politesse ; la règle ne s'applique
+pas sur une page où une autre a trouvé un début.
 
 L'en-tête d'un formulaire se reconnaît à l'OCR près (75 % de caractères
 communs) ; quand il est méconnaissable, deux autres lignes de la première
@@ -43,8 +45,15 @@ trouvés à 99 %, avec 97 % de précision ; les courriels sont trop rares
 pour être mesurés (4 débuts). Le reste des débuts manqués est surtout des
 lettres, qu'aucune règle ne découpe.
 
-Les listes « Courriels repérés » et « Formulaires (gabarits) repérés »
-montrent les débuts trouvés dans l'outil d'annotation, pour les revoir.
+Au 13 octobre 2026, sur les 98 cahiers délimités du tirage qui ont des pages
+dactylographiées (1 536 débuts sur 2 548 pages) : précision 77 %, rappel
+48 % sans la règle des lettres ; 74 % et 66 % avec elle (64 % de précision
+pour la règle seule). 19 cahiers restent sans aucune règle. Les indices de
+mise en page (police du corps ou marge qui changent d'une page à l'autre)
+n'atteignent qu'environ 46 % de précision : ils ne sont pas retenus.
+
+Les listes « Courriels repérés », « Formulaires (gabarits) repérés » et
+« Lettres repérées » montrent les débuts trouvés dans l'outil d'annotation, pour les revoir.
 
 ## Mesure sur l'édition Chabin
 
@@ -66,6 +75,9 @@ sur 134 cahiers :
   tout le versement (3 115, dont 312 en Gironde et 180 en
   Charente-Maritime) ; les règles les sautent, ce qui double leur
   précision sur l'édition Chabin.
+- Avec la règle des lettres (13 octobre 2026), écrite sur le tirage et
+  non sur cette édition, les règles trouvent 50 % des débuts avec une
+  précision de 49 %.
 - Les formulaires repérés (3 cahiers, 44 débuts) sont des formulaires remplis
   à la main : l'édition les classe en manuscrits, sans position dans l'OCR.
   La référence ne peut pas les juger.

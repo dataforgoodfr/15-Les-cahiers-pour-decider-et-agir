@@ -12,7 +12,10 @@ qu'on ait à comprendre le texte :
   mairie ;
 - **les formulaires** (environ un cahier sur huit) : les mêmes lignes, les
   questions, reviennent d'une page à l'autre. La première d'entre elles, la
-  tête du gabarit, ouvre une contribution à chaque fois qu'elle revient.
+  tête du gabarit, ouvre une contribution à chaque fois qu'elle revient ;
+- **les lettres** : une page qui s'ouvre sur un titre de doléance ou une
+  salutation, ou qui suit une formule de politesse, commence une nouvelle
+  contribution en son haut.
 
 Les règles ne voient que des lignes et rendent des positions (page, ligne) :
 elles ne citent jamais le texte. Un cahier où aucune ne s'applique reste à
@@ -45,6 +48,19 @@ ECART_TRANSFERT = 3  # lignes non vides au plus entre deux blocs transférés
 LONGUEUR_GABARIT = 15  # caractères au moins d'une ligne de gabarit
 SIMILARITE = 0.75  # part de caractères communs pour reconnaître une ligne à l'OCR près
 ECART_DEBUT = 5  # lignes : un début trouvé si près du début du cahier le remplace
+TITRE_LETTRE = re.compile(
+    r"dol[ée]ances?|contributions?|grand d[ée]bat|propositions?", re.IGNORECASE
+)
+SALUTATION = re.compile(
+    r"^\s*(madame|monsieur|mesdames|messieurs|cher|chère|bonjour)\b", re.IGNORECASE
+)
+POLITESSE = re.compile(
+    r"cordialement|salutations|sentiments|respectueusement|veuillez agr[ée]er",
+    re.IGNORECASE,
+)
+LIGNES_TITRE = 3  # premières lignes non vides où chercher un titre de doléance
+LIGNES_SALUTATION = 8  # premières lignes non vides où chercher une salutation
+LIGNES_POLITESSE = 6  # dernières lignes non vides où chercher une formule de fin
 TOLERANCE = 30  # points PDF, environ deux lignes : écart admis avec la référence
 # points PDF : la note du lecteur peut s'écarter d'un début trouvé de la
 # hauteur d'un en-tête imprimé (logo et titre d'un formulaire)
@@ -242,6 +258,26 @@ def gabarit(pages: list[list[str]]) -> list[tuple[int, int, str]]:
     return debuts
 
 
+def lettres(pages: list[list[str]]) -> list[tuple[int, int]]:
+    """(indice de page, ligne) des pages qui ouvrent une lettre : leur
+    première ligne non vide, si leurs premières lignes portent un titre de
+    doléance ou une salutation, ou si la page précédente finit par une
+    formule de politesse."""
+    trouves = []
+    for p, lignes in enumerate(pages):
+        ecrites = [i for i, x in enumerate(lignes) if x.strip()]
+        if not ecrites:
+            continue
+        precedentes = [x for x in pages[p - 1] if x.strip()] if p else []
+        if (
+            any(TITRE_LETTRE.search(lignes[i]) for i in ecrites[:LIGNES_TITRE])
+            or any(SALUTATION.search(lignes[i]) for i in ecrites[:LIGNES_SALUTATION])
+            or any(POLITESSE.search(x) for x in precedentes[-LIGNES_POLITESSE:])
+        ):
+            trouves.append((p, ecrites[0]))
+    return trouves
+
+
 def debuts(
     pages: list[list[str]], debut_du_cahier: bool = True
 ) -> list[tuple[int, int, str]]:
@@ -264,6 +300,11 @@ def debuts(
     for p, lignes in enumerate(pages):
         for i in courriels(lignes):
             trouves.setdefault((p, i), "courriel")
+    # une lettre ne s'ajoute que sur une page où aucune autre règle ne trouve
+    deja = {p for p, _ in trouves}
+    for p, i in lettres(pages):
+        if p not in deja:
+            trouves[p, i] = "lettre"
     premier = next(
         (
             (p, i)
