@@ -42,6 +42,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+import numpy as np
 import pymupdf
 
 from annotation import listes
@@ -50,6 +51,7 @@ from anonymisation.detection import (
     CHEVAUCHEMENT,
     EXEMPLAIRES,
     charger_prenoms,
+    encre_sans_texte,
     modele_appris,
     mots_personnels,
     recouvrement,
@@ -89,6 +91,12 @@ def mots_de_la_page(page: pymupdf.Page) -> list[tuple]:
         r = pymupdf.Rect(x0, y0, x1, y1) * page.rotation_matrix
         sortie.append((r.x0, r.y0, r.x1, r.y1, *reste))
     return sortie
+
+
+def image_grise(page: pymupdf.Page) -> np.ndarray:
+    """La page affichée en niveaux de gris, un pixel par point."""
+    pix = page.get_pixmap(dpi=72, colorspace=pymupdf.csGRAY)
+    return np.frombuffer(pix.samples, np.uint8).reshape(pix.h, pix.w).copy()
 
 
 def lignes_placees(page: pymupdf.Page) -> dict[str, tuple[float, float]]:
@@ -319,6 +327,10 @@ def main() -> None:
                 page = mots_de_la_page(doc[n - 1])
                 for r in mots_personnels(page, commune, prenoms):
                     par_cahier[fichier].append({"page": n, **r, "source": "mot"})
+                for r in encre_sans_texte(image_grise(doc[n - 1]), page):
+                    par_cahier[fichier].append(
+                        {"page": n, **r, "source": "encre", "cle": None}
+                    )
                 texte = texte_de_la_page(page)
                 for m in modeles:
                     passages = caches[m.nom].obtenir(fichier, n, m, texte)

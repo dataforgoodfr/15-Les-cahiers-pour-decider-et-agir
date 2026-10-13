@@ -1,9 +1,11 @@
 """Repérages de données personnelles, sur des mots construits pour le test."""
 
+import numpy as np
 import pytest
 
 from anonymisation.__main__ import zones_reportees
 from anonymisation.detection import (
+    encre_sans_texte,
     modele_appris,
     mots_personnels,
     recouvrement,
@@ -238,3 +240,29 @@ def test_modele_appris_demande_deux_exemplaires():
     pages = {1: {"vos coordonnees facultatif": (50, 100), "autre ligne longue": (0, 0)}}
     bloc = {"x0": 0, "y0": 0, "x1": 10, "y1": 10, "etiquette": "bloc", "page": 1}
     assert modele_appris(pages, [bloc]) == []
+
+
+def _page_avec_traits(x0, y0, x1, y1, plein=False):
+    """Page blanche de 600 × 800 points, avec des traits (ou un aplat)."""
+    gris = np.full((800, 600), 255, np.uint8)
+    if plein:
+        gris[y0:y1, x0:x1] = 0
+    else:
+        gris[y0:y1:8, x0:x1] = 0  # une ligne d'écriture tous les 8 points
+    return gris
+
+
+def test_encre_sans_texte_trouve_les_traits_hors_des_mots():
+    zones_ = encre_sans_texte(_page_avec_traits(100, 300, 260, 360), [])
+    assert len(zones_) == 1
+    z = zones_[0]
+    assert z["x0"] <= 100 and z["x1"] >= 258 and z["y0"] <= 300 and z["y1"] >= 352
+    assert z["etiquette"] == "autre donnée identifiante"
+    assert type(z["x0"]) is int  # écrit tel quel dans la liste d'annotation
+
+
+def test_encre_sans_texte_ignore_les_mots_et_les_aplats():
+    mot = (98, 298, 262, 362, "texte")
+    assert encre_sans_texte(_page_avec_traits(100, 300, 260, 360), [mot]) == []
+    assert encre_sans_texte(_page_avec_traits(100, 300, 260, 360, True), []) == []
+    assert encre_sans_texte(_page_avec_traits(100, 300, 110, 310), []) == []

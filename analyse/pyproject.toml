@@ -5,6 +5,7 @@ description = "Analyse du corpus des cahiers citoyens de 2019 : typage des pages
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "numpy>=2.2",
     "openpyxl>=3.1.5",
     "pymupdf>=1.28.2",
     "wordfreq>=3.1.1",

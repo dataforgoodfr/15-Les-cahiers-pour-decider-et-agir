@@ -1,6 +1,6 @@
 """Données personnelles repérables sans comprendre le texte (issue #7).
 
-Deux sources de repérages, que l'annotation fait vérifier à la main :
+Trois sources de repérages, que l'annotation fait vérifier à la main :
 
 - **la forme des mots**, dans la couche texte (OCR du versement) :
   - les adresses de courriel, même quand l'OCR abîme le « @ » (« (a) »,
@@ -20,7 +20,11 @@ Deux sources de repérages, que l'annotation fait vérifier à la main :
   reportent sur tous les exemplaires du cahier. L'en-tête vient des règles
   de `contributions`, qui ne lisent que les pages dactylographiées ; un
   formulaire rempli à la main se reconnaît plutôt à ses lignes imprimées,
-  apprises sur les pages annotées (`modele_appris`).
+  apprises sur les pages annotées (`modele_appris`) ;
+- **l'encre sans texte** : sur une page dactylographiée, l'écriture à la
+  main, les tampons et les en-têtes en image n'ont pas de couche texte. Une
+  zone d'encre claire (des traits, pas un aplat) qu'aucun mot ne couvre peut
+  porter des coordonnées ou une signature (`encre_sans_texte`).
 
 Mieux vaut masquer une donnée de trop que laisser passer celle d'un
 citoyen : dans le doute, une adresse est personnelle. Une adresse n'est
@@ -34,9 +38,11 @@ import io
 import re
 import unicodedata
 import zipfile
-from collections import Counter
+from collections import Counter, deque
 from difflib import SequenceMatcher
 from statistics import median
+
+import numpy as np
 
 from contributions.regles import PUBLIC
 
@@ -111,6 +117,14 @@ NAISSANCES = 200  # naissances au moins (depuis 1900) pour qu'un prénom compte
 MARGE = 4  # points ajoutés autour d'une zone reportée
 CHEVAUCHEMENT = 0.3  # recouvrement minimal de deux rectangles d'une même zone
 EXEMPLAIRES = 2  # exemplaires annotés au moins pour reporter une zone
+# encre sans texte, sur l'image de la page à 72 dpi (un pixel, un point)
+CASE = 6  # côté des cases de la grille, en points
+ENCRE = 0.04  # part de pixels sombres pour qu'une case soit encrée
+VOISINES = 2  # cases au plus entre deux cases d'une même zone
+CASES_MIN = 4  # cases encrées au moins dans une zone
+BORD = 3  # cases ignorées au bord de la page (ombres de numérisation)
+AIRE_MIN = 600  # aire minimale d'une zone, en points carrés
+DENSITE_MAX = 0.15  # au-delà, un aplat (logo, photo) plutôt que des traits
 LIGNES_MODELE = 2  # lignes imprimées du modèle au moins sur un exemplaire
 
 
@@ -406,3 +420,50 @@ def _reporter(pages: dict[int, Lignes], groupe: list[dict]) -> list[dict]:
                 }
             )
     return reperes
+
+
+def encre_sans_texte(gris: np.ndarray, mots: list[tuple]) -> list[dict]:
+    """Zones d'encre qu'aucun mot de la couche texte ne couvre.
+
+    `gris` : l'image de la page affichée en niveaux de gris, un pixel par
+    point ; `mots` : leurs cadres dans le même repère. Les cases encrées
+    voisines forment une zone ; restent celles assez grandes et faites de
+    traits (écriture, tampon), pas d'un aplat."""
+    encre = gris < 128
+    for x0, y0, x1, y1, *_ in mots:
+        encre[max(0, int(y0) - 3) : int(y1) + 4, max(0, int(x0) - 3) : int(x1) + 4] = (
+            False
+        )
+    lignes, colonnes = encre.shape[0] // CASE, encre.shape[1] // CASE
+    grille = (
+        encre[: lignes * CASE, : colonnes * CASE]
+        .reshape(lignes, CASE, colonnes, CASE)
+        .mean(axis=(1, 3))
+        > ENCRE
+    )
+    grille[:BORD, :] = grille[-BORD:, :] = False
+    grille[:, :BORD] = grille[:, -BORD:] = False
+    vues = np.zeros_like(grille)
+    sortie = []
+    for i, j in zip(*np.nonzero(grille), strict=True):
+        if vues[i, j]:
+            continue
+        vues[i, j] = True
+        file, cases = deque([(i, j)]), []
+        while file:
+            a, b = file.popleft()
+            cases.append((a, b))
+            for x in range(max(0, a - VOISINES), min(lignes, a + VOISINES + 1)):
+                for y in range(max(0, b - VOISINES), min(colonnes, b + VOISINES + 1)):
+                    if grille[x, y] and not vues[x, y]:
+                        vues[x, y] = True
+                        file.append((x, y))
+        if len(cases) < CASES_MIN:
+            continue
+        ys, xs = [int(a) for a, _ in cases], [int(b) for _, b in cases]
+        x0, y0 = min(xs) * CASE, min(ys) * CASE
+        x1, y1 = (max(xs) + 1) * CASE, (max(ys) + 1) * CASE
+        if (x1 - x0) * (y1 - y0) < AIRE_MIN or encre[y0:y1, x0:x1].mean() > DENSITE_MAX:
+            continue
+        sortie.append(_cadre(x0, y0, x1, y1, "autre donnée identifiante"))
+    return sortie
