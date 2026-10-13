@@ -201,6 +201,13 @@ class Transcription(models.Model):
         return f"{self.page} ({self.run})"
 
 
+class ContributionQuerySet(models.QuerySet):
+    def montrables(self):
+        """Ce que le public peut voir : les contributions publiables du run de
+        délimitation actif qui ont un extrait relu."""
+        return self.filter(publiable=True, run__actif=True).exclude(extrait="")
+
+
 class Contribution(models.Model):
     """Ce qu'a écrit une personne, délimité dans un document.
 
@@ -233,6 +240,12 @@ class Contribution(models.Model):
     # Le texte, quand une transcription l'a lu. Vide pour le manuscrit non lu.
     texte = models.TextField(blank=True)
     publiable = models.BooleanField(default=True)
+    # Le PDF de la contribution seule, caviardé et relu (`selection` dans
+    # analyse/) : le seul fichier qu'on peut montrer au public. Vide tant
+    # qu'il n'a pas été relu.
+    extrait = models.FileField(upload_to="extraits/", blank=True)
+
+    objects = ContributionQuerySet.as_manager()
 
     class Meta:
         ordering = ["document", "rang"]

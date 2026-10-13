@@ -5,13 +5,15 @@ from io import StringIO
 from pathlib import Path
 
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
 from django.core.management import call_command
 from django.db import IntegrityError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from territoires.models import Commune, Departement, Region
 
 from . import noms
+from .management.commands.charger_contributions import LIBELLE
 from .models import Contribution, Document, Page, Rattachement, Run, Transcription
 
 
@@ -288,3 +290,139 @@ class ChargerContributionsTests(TestCase):
         self.charger()
         self.assertEqual(Run.objects.count(), 2)
         self.assertEqual(self.document.contributions.count(), 3)
+
+
+PDF = b"%PDF-1.4 extrait caviarde"
+
+
+class PagesPubliquesTests(TestCase):
+    def setUp(self):
+        self.media = tempfile.TemporaryDirectory()
+        self.reglage = override_settings(MEDIA_ROOT=self.media.name)
+        self.reglage.enable()
+        document = Document.objects.create(fichier=FICHIER, categorie="CC")
+        run = Run.objects.create(
+            genre="delimitation", libelle="à la main", auteur="t", actif=True
+        )
+
+        def contribution(rang, publiable=True, extrait=True):
+            c = Contribution.objects.create(
+                run=run,
+                document=document,
+                rang=rang,
+                page_debut=1,
+                page_fin=1,
+                publiable=publiable,
+            )
+            if extrait:
+                c.extrait.save(f"{c.pk}.pdf", ContentFile(PDF))
+            return c
+
+        self.montrable = contribution(1)
+        self.ecartee = contribution(2, publiable=False)
+        self.sans_extrait = contribution(3, extrait=False)
+
+    def tearDown(self):
+        self.reglage.disable()
+        self.media.cleanup()
+
+    def test_l_accueil_ne_tire_que_les_montrables(self):
+        for _ in range(10):
+            reponse = self.client.get("/")
+            self.assertEqual(reponse.context["contribution"], self.montrable)
+        self.assertEqual(reponse.context["total"], 1)
+
+    def test_une_autre_contribution_ecarte_la_precedente(self):
+        autre = Contribution.objects.create(
+            run=self.montrable.run,
+            document=self.montrable.document,
+            rang=4,
+            page_debut=2,
+            page_fin=2,
+        )
+        autre.extrait.save(f"{autre.pk}.pdf", ContentFile(PDF))
+        for _ in range(10):
+            reponse = self.client.get(f"/?apres={self.montrable.pk}")
+            self.assertEqual(reponse.context["contribution"], autre)
+
+    def test_l_extrait_d_une_contribution_montrable(self):
+        reponse = self.client.get(f"/contributions/{self.montrable.pk}/extrait.pdf")
+        self.assertEqual(reponse.status_code, 200)
+        self.assertEqual(reponse["Content-Type"], "application/pdf")
+        self.assertEqual(reponse["X-Frame-Options"], "SAMEORIGIN")
+        self.assertEqual(b"".join(reponse.streaming_content), PDF)
+
+    def test_rien_d_autre_n_est_servi(self):
+        for c in (self.ecartee, self.sans_extrait):
+            reponse = self.client.get(f"/contributions/{c.pk}/extrait.pdf")
+            self.assertEqual(reponse.status_code, 404)
+        # un run inactif ne montre rien
+        Run.objects.update(actif=False)
+        reponse = self.client.get(f"/contributions/{self.montrable.pk}/extrait.pdf")
+        self.assertEqual(reponse.status_code, 404)
+        self.assertIsNone(self.client.get("/").context["contribution"])
+
+
+class ChargerExtraitsTests(TestCase):
+    def setUp(self):
+        self.media = tempfile.TemporaryDirectory()
+        self.reglage = override_settings(MEDIA_ROOT=self.media.name)
+        self.reglage.enable()
+        document = Document.objects.create(fichier=FICHIER, categorie="CC")
+        run = Run.objects.create(
+            genre="delimitation",
+            libelle=LIBELLE,
+            auteur="t",
+            actif=True,
+        )
+        self.contributions = [
+            Contribution.objects.create(
+                run=run,
+                document=document,
+                rang=rang,
+                page_debut=rang,
+                page_fin=rang,
+                publiable=rang != 3,
+            )
+            for rang in (1, 2, 3)
+        ]
+
+    def tearDown(self):
+        self.reglage.disable()
+        self.media.cleanup()
+
+    def charger(self, lignes):
+        with tempfile.TemporaryDirectory() as dossier:
+            selection = Path(dossier) / "selection"
+            (selection / "pdf").mkdir(parents=True)
+            entete = "fichier,statut,rang,page_debut,page_fin,pdf\n"
+            (selection / "selection.csv").write_text(
+                entete + "".join(f"{FICHIER},{x}\n" for x in lignes), encoding="utf-8"
+            )
+            (selection / "pdf" / "a.pdf").write_bytes(PDF)
+            sortie = StringIO()
+            call_command("charger_extraits", "--analyse", dossier, stdout=sortie)
+        return sortie.getvalue()
+
+    def test_rattache_et_refuse(self):
+        sortie = self.charger(
+            [
+                "exporté,1,1,1,pdf/a.pdf",
+                "exporté,2,5,5,pdf/a.pdf",  # pages différentes
+                "exporté,3,3,3,pdf/a.pdf",  # non publiable
+            ]
+        )
+        un, deux, trois = (
+            Contribution.objects.get(pk=c.pk) for c in self.contributions
+        )
+        self.assertEqual(un.extrait.read(), PDF)
+        self.assertEqual(un.extrait.name, f"extraits/{un.pk}.pdf")
+        self.assertFalse(deux.extrait)
+        self.assertFalse(trois.extrait)
+        self.assertIn("1 extraits rattachés, 0 retirés, 2 refusés", sortie)
+
+    def test_relancer_retire_ce_qui_n_est_plus_exporte(self):
+        self.charger(["exporté,1,1,1,pdf/a.pdf"])
+        sortie = self.charger(["exporté,2,2,2,pdf/a.pdf"])
+        self.assertIn("1 extraits rattachés, 1 retirés", sortie)
+        self.assertFalse(Contribution.objects.get(pk=self.contributions[0].pk).extrait)
