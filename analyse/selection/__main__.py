@@ -23,7 +23,9 @@ a tous ses débuts de contributions notés. La contribution tirée s'en déduit
 - `selection.csv` : une ligne par cahier tiré, sa commune, la contribution
   retenue (rang, pages) et le nombre de cadres caviardés, ou ce qui manque.
   Une contribution dont une page est qualifiée « à écarter » (contenu qu'on
-  ne publie pas au nom de l'association) n'est pas exportée.
+  ne publie pas au nom de l'association, ou sans contenu) n'est pas
+  exportée : la suivante la remplace (`ecartees` : combien ont été
+  sautées). Un cahier n'est écarté que si toutes le sont.
 
 Réordonne aussi la liste « selection » de l'outil d'annotation : d'abord les
 cahiers à délimiter dont la région et la taille de commune manquent le plus,
@@ -186,6 +188,7 @@ def main() -> None:
             "position": t["position"],
             "statut": "à délimiter",
             "rang": "",
+            "ecartees": "",
             "contributions": "",
             "page_debut": "",
             "page_fin": "",
@@ -233,6 +236,12 @@ def main() -> None:
         if contribution is None:
             ligne["statut"] = "vu sans début noté"
             continue
+        # une contribution à écarter laisse la place à la suivante
+        for decalage in range(1, contribution.n):
+            if not ecartee(fichier, contribution.pages, qualifications):
+                break
+            ligne["ecartees"] = decalage
+            contribution = tiree(float(t["position"]), debuts, fins, derniere, decalage)
         if ecartee(fichier, contribution.pages, qualifications):
             ligne |= {
                 "statut": "écarté",

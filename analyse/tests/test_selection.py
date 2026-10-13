@@ -29,6 +29,13 @@ def test_tiree_prend_le_rang_de_la_position():
     assert t.pages == [3, 4, 5]
 
 
+def test_le_decalage_prend_la_suivante_puis_la_premiere():
+    debuts = [(1, 100.0, 0.0), (3, 50.0, 0.0), (5, 20.0, 0.0)]
+    # 0,5 × 3 = 1,5 → 2e début ; écartée, la 3e ; écartée aussi, la 1re
+    assert tiree(0.5, debuts, [], 8, decalage=1).rang == 3
+    assert tiree(0.5, debuts, [], 8, decalage=2).page_debut == 1
+
+
 def test_tiree_s_arrete_a_sa_fin_notee():
     debuts = [(1, 100.0, 0.0), (4, 80.0, 0.0)]
     t = tiree(0.1, debuts, [(2, 300.0, 0.0), (6, 10.0, 0.0)], 8)
