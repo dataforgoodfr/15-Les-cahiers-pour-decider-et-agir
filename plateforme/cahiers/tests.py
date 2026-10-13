@@ -242,3 +242,49 @@ class ChargerCorpusTests(TestCase):
         self.assertEqual(Rattachement.objects.count(), 1)
         self.assertEqual(document.pages.get(numero=2).texte, "couche")
         self.assertEqual(document.contributions.count(), 1)
+
+
+DELIMITATION = (
+    "fichier,rang,page_debut,x_debut,y_debut,page_fin,x_fin,y_fin,fin,publiable\n"
+    f"{FICHIER},1,1,40.0,100.0,2,300.0,500.0,notée,1\n"
+    f"{FICHIER},2,2,40.0,520.0,3,,,fin du cahier,0\n"
+    "CC_99999_190304_99999_MD_00001.pdf,1,1,40.0,100.0,1,,,fin du cahier,1\n"
+)
+
+
+class ChargerContributionsTests(TestCase):
+    def setUp(self):
+        self.document = Document.objects.create(fichier=FICHIER, categorie="CC")
+
+    def charger(self):
+        with tempfile.TemporaryDirectory() as dossier:
+            (Path(dossier) / "delimitation").mkdir()
+            (Path(dossier) / "delimitation" / "contributions.csv").write_text(
+                DELIMITATION, encoding="utf-8"
+            )
+            sortie = StringIO()
+            call_command("charger_contributions", "--analyse", dossier, stdout=sortie)
+        return sortie.getvalue()
+
+    def test_contributions_du_run_a_la_main(self):
+        sortie = self.charger()
+        premiere, seconde = self.document.contributions.all()
+        self.assertEqual(
+            (premiere.page_debut, premiere.x_debut, premiere.y_debut), (1, 40.0, 100.0)
+        )
+        self.assertEqual((premiere.page_fin, premiere.x_fin), (2, 300.0))
+        self.assertTrue(premiere.publiable)
+        self.assertIsNone(seconde.y_fin)
+        self.assertFalse(seconde.publiable)
+        self.assertTrue(premiere.run.actif)
+        self.assertIn("ignorées : CC_99999", sortie)
+
+    def test_relancer_remplace_le_run_sans_toucher_aux_autres(self):
+        autre = Run.objects.create(genre="delimitation", libelle="règles", auteur="t")
+        Contribution.objects.create(
+            run=autre, document=self.document, rang=1, page_debut=1, page_fin=1
+        )
+        self.charger()
+        self.charger()
+        self.assertEqual(Run.objects.count(), 2)
+        self.assertEqual(self.document.contributions.count(), 3)

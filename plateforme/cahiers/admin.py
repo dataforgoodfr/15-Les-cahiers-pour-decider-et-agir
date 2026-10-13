@@ -58,8 +58,16 @@ class TranscriptionAdmin(admin.ModelAdmin):
 
 @admin.register(Contribution)
 class ContributionAdmin(admin.ModelAdmin):
-    list_display = ["document", "rang", "page_debut", "page_fin", "run", "origine"]
-    list_filter = ["run", "document__categorie"]
+    list_display = [
+        "document",
+        "rang",
+        "page_debut",
+        "page_fin",
+        "run",
+        "origine",
+        "publiable",
+    ]
+    list_filter = ["run", "publiable", "document__categorie"]
     list_select_related = ["document", "run"]
     search_fields = ["document__fichier"]
     raw_id_fields = ["document"]
