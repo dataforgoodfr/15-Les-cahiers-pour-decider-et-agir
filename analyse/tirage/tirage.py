@@ -179,3 +179,18 @@ def choisir_contributions(
         fichier = rng.choices(fichiers, [cahiers[code][f] for f in fichiers])[0]
         choisies.append((fichier, round(1 - rng.random(), 3) or 0.001))
     return choisies
+
+
+# Cahiers tirés remplacés par un autre cahier de la même commune, à la même
+# position : document sans contribution individuelle (issue #21).
+REMPLACEMENTS = {
+    # Document imprimé de l'AMRF
+    "CC_69003_190315_69383_MD_18251.pdf": "CC_69003_190226_69383_MD_09126.pdf",
+}
+
+
+def remplacer(
+    tires: list[tuple[str, float]], remplacements: dict[str, str] = REMPLACEMENTS
+) -> list[tuple[str, float]]:
+    """Applique les remplacements de cahiers en gardant la position tirée."""
+    return [(remplacements.get(fichier, fichier), p) for fichier, p in tires]
