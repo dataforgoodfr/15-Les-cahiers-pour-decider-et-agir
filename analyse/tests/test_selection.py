@@ -287,3 +287,14 @@ def test_un_contour_grise_le_dehors_du_polygone(tmp_path):
         assert pix.pixel(100, 300) == (255, 255, 255)  # bas gauche : dedans
         # les bandes ne s'appliquent plus : le haut, au-dessus du début, reste
         assert pix.pixel(100, 20) == (255, 255, 255)
+
+
+def test_une_fin_sur_la_ligne_du_debut_est_celle_d_avant():
+    # fin de la contribution d'avant cliquée 5 points sous le début tiré
+    debuts = [(1, 100.0, 20.0), (2, 634.0, 19.0), (3, 50.0, 20.0)]
+    fins = [(2, 639.0, 531.0), (2, 800.0, 560.0)]
+    t = tiree(0.5, debuts, fins, 4)
+    assert (t.page_debut, t.page_fin, t.y_fin, t.fin_notee) == (2, 2, 800.0, True)
+    # la fin d'une contribution peut tomber juste sous le début suivant
+    t = tiree(0.3, debuts, [(2, 639.0, 531.0)], 4)
+    assert (t.page_fin, t.y_fin, t.fin_notee) == (2, 639.0, True)

@@ -5,7 +5,8 @@ lecteur note tous les débuts de contributions du cahier, et parfois leurs
 fins ; la contribution tirée est la ⌈position × n⌉-ième dans l'ordre de
 lecture (la suivante si elle est à écarter, la première après la dernière).
 Elle s'arrête à sa fin notée, sinon juste avant le début suivant,
-sinon à la dernière page du cahier.
+sinon à la dernière page du cahier. Une fin notée sur la ligne d'un début,
+quelques points dessous, est celle de la contribution d'avant.
 
 L'ordre de lecture se prend dans le sens où la page se lit : une page
 numérisée de travers a été tournée à l'affichage, rotation gardée dans le
@@ -30,6 +31,9 @@ from dataclasses import dataclass
 MARGE = 6  # points : le début est un point posé sur la première ligne
 CENTRE = (0.35, 0.65)  # part de la largeur où un début ouvre la page de droite
 DOUBLON = 10  # points : deux débuts si proches sont le même, posé deux fois
+# points : une fin si près sous un début est sur sa ligne, celle de la
+# contribution d'avant (fin cliquée un peu bas, début un peu haut)
+MEME_LIGNE = 12
 BORD_X = 0.15  # part de la largeur sous laquelle un côté colle à la page
 
 
@@ -160,8 +164,17 @@ def tiree(
     rang = (min(n, max(1, math.ceil(position * n))) - 1 + decalage) % n + 1
     debut = debuts[rang - 1]
     suivant = debuts[rang] if rang < n else None
+
+    def apres(f: Point, d: Point) -> bool:
+        return (f[0], f[1]) > (d[0], d[1] + MEME_LIGNE)
+
     fin = next(
-        (f for f in fins if f >= debut and (suivant is None or f <= suivant)), None
+        (
+            f
+            for f in fins
+            if apres(f, debut) and (suivant is None or not apres(f, suivant))
+        ),
+        None,
     )
     x_fin = None
     if fin is not None:
