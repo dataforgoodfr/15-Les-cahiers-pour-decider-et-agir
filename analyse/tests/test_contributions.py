@@ -5,6 +5,7 @@ from contributions.regles import (
     debuts,
     evaluer,
     gabarit,
+    lettres,
     public,
     ressemble,
 )
@@ -153,3 +154,19 @@ def test_courriel_imprime_depuis_une_messagerie():
     assert courriels(page) == [0]
     # une adresse en haut d'une lettre, sans destinataire, n'en fait pas un courriel
     assert courriels(["jean@exemple.com", "Monsieur le Maire,", "texte"]) == []
+
+
+def test_lettres_titre_salutation_ou_politesse():
+    pages = [
+        ["", "Mes doléances", "Je propose"],  # titre de doléance
+        ["suite du texte", "fin de la page"],  # continuation
+        ["texte", "Veuillez agréer mes salutations"],  # finit par la politesse
+        ["Nouveau texte", "sans en-tête"],  # suit une politesse
+        ["Ville, le 3 février", "Madame, Monsieur,", "texte"],  # salutation
+    ]
+    assert lettres(pages) == [(0, 1), (3, 0), (4, 0)]
+
+
+def test_une_lettre_ne_double_pas_un_courriel():
+    pages = [COURRIEL + ["Bonjour", "texte"], ["Madame,", "texte"]]
+    assert [regle for _, _, regle in debuts(pages)] == ["courriel", "lettre"]
