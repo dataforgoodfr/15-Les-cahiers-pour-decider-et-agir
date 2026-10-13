@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Les cahiers pour décider et agir</title>
+  <style>
+    :root { --encre: #1d1d1b; --fond: #faf8f3; --accent: #8a2d1e; }
+    body { margin: 0; font-family: system-ui, sans-serif; color: var(--encre); background: var(--fond); }
+    main { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+    .lieu { margin: 0 0 1rem; color: #555; }
+    iframe { width: 100%; height: 75vh; border: 1px solid #ccc; background: #fff; }
+    .actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-top: 1rem; }
+    .bouton { background: var(--accent); color: #fff; padding: .6rem 1rem; border-radius: .3rem; text-decoration: none; }
+    .note { font-size: .9rem; color: #555; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Une contribution de 2019, tirée au sort</h1>
+  {% if contribution %}
+    {% with commune=contribution.document.commune %}
+      <p class="lieu">
+        {% if commune %}{{ commune.nom }} ({{ commune.departement.nom }}){% else %}Commune inconnue{% endif %}
+        {% if contribution.document.date_depot %} · cahier déposé le {{ contribution.document.date_depot|date:"j F Y" }}{% endif %}
+      </p>
+    {% endwith %}
+    <iframe src="{% url 'extrait' contribution.pk %}" title="Contribution tirée au sort"></iframe>
+    <div class="actions">
+      <a class="bouton" href="?apres={{ contribution.pk }}">Afficher une autre contribution</a>
+      <a href="{% url 'extrait' contribution.pk %}">Ouvrir le PDF</a>
+    </div>
+    <p class="note">
+      Tirée au sort parmi {{ total }} contribution{{ total|pluralize }} relue{{ total|pluralize }} :
+      les passages en gris n'appartiennent pas à cette contribution, les données
+      personnelles sont cachées en noir.
+    </p>
+  {% else %}
+    <p>Aucune contribution n'est encore prête à être montrée.</p>
+  {% endif %}
+</main>
+</body>
+</html>

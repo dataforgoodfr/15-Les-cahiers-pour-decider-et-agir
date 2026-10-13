@@ -176,3 +176,6 @@ data/
 
 # Directives aux agents de Pycharm Junie
 .junie/
+
+# fichiers déposés de la plateforme (extraits, PDF des cahiers) : jamais dans git
+plateforme/media/
