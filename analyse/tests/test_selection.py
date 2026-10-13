@@ -3,7 +3,7 @@
 import pymupdf
 import pytest
 
-from selection.__main__ import caviarder
+from selection.__main__ import caviarder, changements
 from selection.contribution import (
     MARGE,
     Sens,
@@ -298,3 +298,21 @@ def test_une_fin_sur_la_ligne_du_debut_est_celle_d_avant():
     # la fin d'une contribution peut tomber juste sous le début suivant
     t = tiree(0.3, debuts, [(2, 639.0, 531.0)], 4)
     assert (t.page_fin, t.y_fin, t.fin_notee) == (2, 639.0, True)
+
+
+def test_changements_entre_deux_passages():
+    avant = [
+        {"fichier": "a.pdf", "commune": "A", "rang": "3", "caviardages": "2"},
+        {"fichier": "b.pdf", "commune": "B", "rang": "1", "caviardages": "0"},
+        {"fichier": "c.pdf", "commune": "C", "rang": "1", "caviardages": "0"},
+    ]
+    apres = [
+        {"fichier": "a.pdf", "commune": "A", "rang": 3, "caviardages": 5},
+        {"fichier": "b.pdf", "commune": "B", "rang": 1, "caviardages": 0},
+        {"fichier": "d.pdf", "commune": "D", "rang": 2, "caviardages": 1},
+    ]
+    assert changements(avant, apres) == [
+        ("A", ["caviardages"]),
+        ("D", ["nouveau"]),
+        ("C", ["disparu"]),
+    ]

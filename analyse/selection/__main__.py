@@ -3,7 +3,7 @@
     uv run python -m selection [--cahiers data/tirage/contributions.csv]
         [--versement data/versement] [--typage data/typage/departements]
         [--annotation data/annotation]
-        [--reperes data/anonymisation/reperes.csv] [--sortie data/selection]
+        [--reperes data/selection/reperes.csv] [--sortie data/selection]
 
 Lit la liste « selection » de l'outil d'annotation : un cahier dont la
 dernière page (hors pages vierges, que l'outil ne montre pas) est marquée vue
@@ -36,6 +36,12 @@ puis les cahiers délimités.
 et sur les pages dactylographiées les repérages de `anonymisation` que la
 relecture n'a pas rétablis (dans le doute, on cache). Des pages, des cadres et
 des comptes, jamais de texte.
+
+Les repérages lus sont une copie figée, `reperes.csv` de la sortie : ceux
+qu'on a relus dans les exports. `python -m anonymisation` réécrit les siens à
+chaque passage (nouvelles sources, nouveaux modèles appris) ; ils n'entrent
+dans les exports que si on les copie exprès, avant de relire ce qui change.
+Chaque passage affiche les exports qui diffèrent du précédent.
 """
 
 import argparse
@@ -111,6 +117,23 @@ def lire_cahier(chemin: Path, fichier: str, notes: list[dict], qualifications: d
     return sens, debuts, fins, coupures, ids
 
 
+def changements(avant: list[dict], apres: list[dict]) -> list[tuple[str, list]]:
+    """Les cahiers dont la ligne de `selection.csv` a changé : leur commune et
+    les colonnes qui diffèrent. Un cahier nouveau ou disparu compte aussi."""
+    anciens = {x["fichier"]: x for x in avant}
+    sortie = []
+    for x in apres:
+        a = anciens.pop(x["fichier"], None)
+        if a is None:
+            sortie.append((x["commune"], ["nouveau"]))
+            continue
+        champs = [k for k in x if str(x[k]) != a.get(k, "")]
+        if champs:
+            sortie.append((x["commune"], champs))
+    sortie += [(a["commune"], ["disparu"]) for a in anciens.values()]
+    return sortie
+
+
 def cadre(n: dict) -> pymupdf.Rect:
     return pymupdf.Rect(
         min(n["x0"], n["x1"]),
@@ -175,7 +198,7 @@ def main() -> None:
     parser.add_argument("--typage", type=Path, default=Path("data/typage/departements"))
     parser.add_argument("--annotation", type=Path, default=Path("data/annotation"))
     parser.add_argument(
-        "--reperes", type=Path, default=Path("data/anonymisation/reperes.csv")
+        "--reperes", type=Path, default=Path("data/selection/reperes.csv")
     )
     parser.add_argument("--sortie", type=Path, default=Path("data/selection"))
     args = parser.parse_args()
@@ -200,6 +223,11 @@ def main() -> None:
     for n in notes.values():
         if n.get("fichier") in fichiers:
             par_cahier[n["fichier"]].append(n)
+    if not args.reperes.exists():
+        raise SystemExit(
+            f"Pas de repérages figés dans {args.reperes} : y copier le "
+            "reperes.csv d'anonymisation qu'on va relire dans les exports."
+        )
     with args.reperes.open(encoding="utf-8", newline="") as f:
         reperes = [
             {**r, "page": int(r["page"]), **{k: float(r[k]) for k in CHAMPS}}
@@ -304,7 +332,12 @@ def main() -> None:
             "pdf": f"pdf/{nom}",
         }
 
-    with (args.sortie / "selection.csv").open("w", encoding="utf-8", newline="") as f:
+    precedent = args.sortie / "selection.csv"
+    avant = []
+    if precedent.exists():
+        with precedent.open(encoding="utf-8", newline="") as f:
+            avant = list(csv.DictReader(f))
+    with precedent.open("w", encoding="utf-8", newline="") as f:
         ecrivain = csv.DictWriter(f, list(lignes[0]))
         ecrivain.writeheader()
         ecrivain.writerows(lignes)
@@ -323,6 +356,13 @@ def main() -> None:
     for statut in ("écarté", "vu sans début noté", "à délimiter"):
         print(f"  {statut} : {sum(1 for x in lignes if x['statut'] == statut)}")
     print(f"PDF dans {dossier}")
+    modifies = changements(avant, lignes)
+    if modifies:
+        print("Exports modifiés depuis le passage précédent, à relire :")
+        for commune, champs in modifies:
+            print(f"  {commune} : {', '.join(champs)}")
+    elif avant:
+        print("Aucun export modifié depuis le passage précédent.")
 
     try:
         liste = listes.lire(args.annotation / "listes", TACHE)
