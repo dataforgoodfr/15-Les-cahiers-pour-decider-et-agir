@@ -79,6 +79,38 @@ def point(n: dict, sens: Sens) -> tuple[int, float, float]:
     return n["page"], min(a[1], b[1]), min(a[0], b[0])
 
 
+def lire_cahier(chemin: Path, fichier: str, notes: list[dict], qualifications: dict):
+    """Le sens de lecture de chaque page, et les débuts et fins notés dans
+    l'ordre de lecture (`en_colonnes`) ; rend aussi les coupures des doubles
+    pages, et l'identifiant de la note de chaque début."""
+    with pymupdf.open(chemin) as doc:
+        sens = {
+            n: Sens(
+                qualifications.get((fichier, n), {}).get("rotation", 0),
+                doc[n - 1].rect.width,
+                doc[n - 1].rect.height,
+            )
+            for n in range(1, doc.page_count + 1)
+        }
+    notes_debut = [n for n in notes if n["etiquette"] == DEBUT]
+    debuts = [point(n, sens[n["page"]]) for n in notes_debut]
+    fins = [point(n, sens[n["page"]]) for n in notes if n["etiquette"] == FIN]
+    coupures = {
+        n: coupure(
+            sens[n],
+            [x for p, _, x in debuts if p == n],
+            qualifications.get((fichier, n), {}).get("problemes", {}).get(DOUBLE),
+        )
+        for n in sens
+    }
+    debuts, fins = (
+        [en_colonnes(p, coupures[p[0]], sens[p[0]].dimensions[1]) for p in points]
+        for points in (debuts, fins)
+    )
+    ids = dict(zip(debuts, (n["id"] for n in notes_debut), strict=True))
+    return sens, debuts, fins, coupures, ids
+
+
 def cadre(n: dict) -> pymupdf.Rect:
     return pymupdf.Rect(
         min(n["x0"], n["x1"]),
@@ -200,32 +232,10 @@ def main() -> None:
         if fichier not in vus:
             continue
         ns = par_cahier[fichier]
-        with pymupdf.open(chemins[fichier]) as doc:
-            sens = {
-                n: Sens(
-                    qualifications.get((fichier, n), {}).get("rotation", 0),
-                    doc[n - 1].rect.width,
-                    doc[n - 1].rect.height,
-                )
-                for n in range(1, doc.page_count + 1)
-            }
-        derniere = len(sens)
-        notes_debut = [n for n in ns if n["etiquette"] == DEBUT]
-        debuts = [point(n, sens[n["page"]]) for n in notes_debut]
-        fins = [point(n, sens[n["page"]]) for n in ns if n["etiquette"] == FIN]
-        coupures = {
-            n: coupure(
-                sens[n],
-                [x for p, _, x in debuts if p == n],
-                qualifications.get((fichier, n), {}).get("problemes", {}).get(DOUBLE),
-            )
-            for n in sens
-        }
-        debuts, fins = (
-            [en_colonnes(p, coupures[p[0]], sens[p[0]].dimensions[1]) for p in points]
-            for points in (debuts, fins)
+        sens, debuts, fins, coupures, ids = lire_cahier(
+            chemins[fichier], fichier, ns, qualifications
         )
-        ids = dict(zip(debuts, (n["id"] for n in notes_debut), strict=True))
+        derniere = len(sens)
         repetes = doublons(debuts)[1]
         if repetes:
             # un début posé deux fois : un double clic manqué (une fin) ou non

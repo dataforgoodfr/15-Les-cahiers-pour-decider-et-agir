@@ -111,6 +111,16 @@ class Tiree:
         return list(range(self.page_debut, self.page_fin + 1))
 
 
+def vers_pdf(sens: Sens, y: float, x: float) -> tuple[float, float]:
+    """Un point (y, x) de l'ordre de lecture (`en_colonnes`) ramené dans le
+    repère du PDF non tourné : (x, y). La page de droite d'une double page
+    remonte d'une hauteur de page."""
+    hauteur = sens.dimensions[1]
+    if y >= hauteur:
+        y -= hauteur
+    return sens.vers_pdf(x, y)
+
+
 def doublons(debuts: list[Point]) -> tuple[list[Point], list[Point]]:
     """Sépare les débuts posés plusieurs fois au même point d'une page. Un
     seul compte ; l'intention reste à vérifier (deux clics trop lents pour un
@@ -163,6 +173,12 @@ def tiree(
     return Tiree(
         rang, n, debut[0], debut[1], page_fin, y_fin, fin is not None, debut[2], x_fin
     )
+
+
+def toutes(debuts: list[Point], fins: list[Point], derniere_page: int) -> list[Tiree]:
+    """Toutes les contributions d'un cahier, dans l'ordre de lecture."""
+    n = len(doublons(debuts)[0])
+    return [tiree(0.0, debuts, fins, derniere_page, k) for k in range(n)]
 
 
 def hors_contribution(
