@@ -39,6 +39,7 @@ from tirage.tirage import (
     caler,
     choisir_contributions,
     garantir,
+    remplacer,
     tirer_communes,
 )
 
@@ -206,6 +207,7 @@ def main() -> None:
         tires += choisir_contributions(
             tirer_communes(communes, n, rng), par_commune, rng
         )
+    tires = remplacer(tires)
 
     lignes = []
     for fichier, position in sorted(tires):
@@ -247,7 +249,8 @@ def main() -> None:
         "",
         (
             "Dans chaque cahier tiré, compter les n contributions retenues et "
-            "prendre la ⌈position × n⌉-ième."
+            "prendre la ⌈position × n⌉-ième. Cahiers remplacés par un autre de "
+            "la même commune : `tirage.tirage.REMPLACEMENTS`."
         ),
         "",
     ]

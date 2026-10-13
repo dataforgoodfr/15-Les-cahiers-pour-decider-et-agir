@@ -11,6 +11,7 @@ from tirage.tirage import (
     caler,
     choisir_contributions,
     garantir,
+    remplacer,
     tirer_communes,
 )
 
@@ -125,3 +126,8 @@ def test_profil_quarts_de_revenu_pondérés_par_la_population():
     assert profil.quart(30000, seuils) == profil.QUARTS[3]
     assert profil.quart(None, seuils) == profil.INCONNU
     assert profil.repartition(["x", "y"], [3, 1]) == {"x": 0.75, "y": 0.25}
+
+
+def test_remplacer_garde_la_position():
+    tires = [("a.pdf", 0.2), ("b.pdf", 0.5)]
+    assert remplacer(tires, {"a.pdf": "c.pdf"}) == [("c.pdf", 0.2), ("b.pdf", 0.5)]
