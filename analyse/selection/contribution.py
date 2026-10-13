@@ -3,7 +3,8 @@
 Le tirage (`tirage`) donne pour chaque cahier une position entre 0 et 1. Le
 lecteur note tous les débuts de contributions du cahier, et parfois leurs
 fins ; la contribution tirée est la ⌈position × n⌉-ième dans l'ordre de
-lecture. Elle s'arrête à sa fin notée, sinon juste avant le début suivant,
+lecture (la suivante si elle est à écarter, la première après la dernière).
+Elle s'arrête à sa fin notée, sinon juste avant le début suivant,
 sinon à la dernière page du cahier.
 
 L'ordre de lecture se prend dans le sens où la page se lit : une page
@@ -138,13 +139,15 @@ def tiree(
     debuts: list[Point],
     fins: list[Point],
     derniere_page: int,
+    decalage: int = 0,
 ) -> Tiree | None:
-    """La contribution tirée parmi les débuts et fins (page, y, x)."""
+    """La contribution tirée parmi les débuts et fins (page, y, x), ou la
+    `decalage`-ième après elle, en repartant de la première."""
     if not debuts:
         return None
     debuts, fins = doublons(debuts)[0], sorted(fins)
     n = len(debuts)
-    rang = min(n, max(1, math.ceil(position * n)))
+    rang = (min(n, max(1, math.ceil(position * n))) - 1 + decalage) % n + 1
     debut = debuts[rang - 1]
     suivant = debuts[rang] if rang < n else None
     fin = next(
