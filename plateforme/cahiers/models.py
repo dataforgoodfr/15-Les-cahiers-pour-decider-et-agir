@@ -204,9 +204,16 @@ class Transcription(models.Model):
 class Contribution(models.Model):
     """Ce qu'a écrit une personne, délimité dans un document.
 
-    Elle commence à une hauteur d'une page et finit à une hauteur d'une autre,
-    en points PDF dans le repère de la page non tournée. Une hauteur vide veut
-    dire le haut de la page pour le début, le bas pour la fin.
+    Elle commence à un point d'une page et finit à un point d'une autre, en
+    points PDF dans le repère de la page non tournée, comme les notes de
+    l'outil d'annotation. La hauteur seule ne suffit pas : sur une page
+    tournée, la hauteur de lecture est une abscisse du PDF ; sur une double
+    page, l'abscisse dit de quelle page il s'agit. Une position vide veut dire
+    le haut de la page pour le début, le bas pour la fin.
+
+    Une contribution non publiable (contenu haineux ou illicite, ou sans
+    contenu : « à écarter » dans l'outil d'annotation) reste délimitée, pour
+    mesurer le découpage, mais n'est jamais montrée.
     """
 
     run = models.ForeignKey(Run, on_delete=models.PROTECT, related_name="contributions")
@@ -215,14 +222,17 @@ class Contribution(models.Model):
     )
     rang = models.PositiveIntegerField()  # dans le document, à partir de 1
     page_debut = models.PositiveIntegerField()
+    x_debut = models.FloatField(null=True, blank=True)
     y_debut = models.FloatField(null=True, blank=True)
     page_fin = models.PositiveIntegerField()
+    x_fin = models.FloatField(null=True, blank=True)
     y_fin = models.FloatField(null=True, blank=True)
     # Ce qui a délimité la contribution : une note de l'outil d'annotation,
     # une règle de découpage…
     origine = models.CharField(max_length=50, blank=True)
     # Le texte, quand une transcription l'a lu. Vide pour le manuscrit non lu.
     texte = models.TextField(blank=True)
+    publiable = models.BooleanField(default=True)
 
     class Meta:
         ordering = ["document", "rang"]

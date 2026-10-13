@@ -22,6 +22,11 @@ Les modèles du POC y sont repris un à un. Pour l'instant :
   (`--analyse`, par défaut `../analyse/data`) : type, rotation, pages de
   service et d'ouverture, rattachements à une autre commune. Les types et
   rotations vérifiés dans l'outil d'annotation l'emportent sur les mesures.
+  Les contributions délimitées à la main (sortie de `python -m delimitation`
+  dans `analyse/`) sont chargées par `uv run python manage.py
+  charger_contributions`, sous un run de délimitation « à la main » : un
+  début et une fin en (page, x, y), et `publiable` à faux pour ce qui est « à
+  écarter », jamais montré.
 
 ## La table des pages
 
@@ -36,7 +41,7 @@ les étapes lisent ces tables, pas les PDF. PostgreSQL fait référence.
 | `Page` | page | type (vierge, dactylographiée, mixte, manuscrite), rotation, page de service ou d'ouverture, couche texte native du PDF |
 | `Run` | couche produite | genre, auteur, modèle et paramètres ; un seul actif par genre |
 | `Transcription` | page et run de transcription | texte, qualité entre 0 et 1, chemin des sorties lourdes (ALTO, images) hors base |
-| `Contribution` | contribution et run de délimitation | de (page, hauteur) à (page, hauteur), en points PDF ; texte s'il a été lu |
+| `Contribution` | contribution et run de délimitation | de (page, x, y) à (page, x, y), en points PDF ; publiable ou non ; texte s'il a été lu |
 
 Le fichier PDF (`CC_01000_190304_01053_MD_15462.pdf`) et le numéro de page,
 à partir de 1, désignent une page partout, dans `analyse/` comme ici.
@@ -63,6 +68,7 @@ uv sync
 uv run python manage.py migrate
 uv run python manage.py charger_communes
 uv run python manage.py charger_corpus  # si les sorties d'analyse/ sont là
+uv run python manage.py charger_contributions  # après python -m delimitation
 uv run python manage.py createsuperuser
 uv run python manage.py runserver
 ```
