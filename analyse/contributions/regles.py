@@ -51,9 +51,9 @@ SANS_TETE = (
 )
 SIMILARITE = 0.75  # part de caractères communs pour reconnaître une ligne à l'OCR près
 ECART_DEBUT = 5  # lignes : un début trouvé si près du début du cahier le remplace
-TITRE_LETTRE = re.compile(
-    r"dol[ée]ances?|contributions?|grand d[ée]bat|propositions?", re.IGNORECASE
-)
+# « propositions » n'en est pas : sur les cahiers délimités, il ouvre 3 fois
+# sur 10 une vraie lettre, le plus souvent il est dans le texte (#5)
+TITRE_LETTRE = re.compile(r"dol[ée]ances?|contributions?|grand d[ée]bat", re.IGNORECASE)
 SALUTATION = re.compile(
     r"^\s*(madame|monsieur|mesdames|messieurs|cher|chère|bonjour)\b", re.IGNORECASE
 )

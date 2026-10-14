@@ -175,7 +175,7 @@ def test_courriel_imprime_depuis_une_messagerie():
 def test_lettres_titre_salutation_ou_politesse():
     pages = [
         ["", "Mes doléances", "Je propose"],  # titre de doléance
-        ["suite du texte", "fin de la page"],  # continuation
+        ["Mes propositions pour la suite", "fin de la page"],  # continuation
         ["texte", "Veuillez agréer mes salutations"],  # finit par la politesse
         ["Nouveau texte", "sans en-tête"],  # suit une politesse
         ["Ville, le 3 février", "Madame, Monsieur,", "texte"],  # salutation
