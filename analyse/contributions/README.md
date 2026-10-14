@@ -63,6 +63,14 @@ ses débuts sont justes mais comptés faux, trop bas. Restent les feuilles de
 suite d'un même auteur (numéro et « suite » écrits à la main), les
 formulaires laissés vierges et les pages numérisées deux fois.
 
+Le même jour, « propositions » ne compte plus comme titre de lettre : il
+n'ouvrait une vraie lettre qu'une fois sur trois (33 débuts, 10 justes).
+Lettres : 67 % de précision ; toutes règles : 76 % de précision, 65 % de
+rappel. Quatre cahiers font plus de la moitié des lettres fausses
+restantes, sans indice de forme commun (longueur de la ligne, rang, fin de
+la page précédente) : ils sont à regarder dans la liste « Lettres
+repérées ».
+
 Les listes « Courriels repérés », « Formulaires (gabarits) repérés » et
 « Lettres repérées » montrent les débuts trouvés dans l'outil d'annotation, pour les revoir.
 
