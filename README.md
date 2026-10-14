@@ -33,16 +33,21 @@ livraison au premier trimestre 2027. Le détail est dans l'issue
 
 ## Où on en est
 
-Au 7 octobre 2026 :
+Au 14 octobre 2026 :
 
 - **Le corpus est mesuré** : type de chaque page, communes, panel
   ([`analyse/`](analyse/)).
-- **100 contributions sont tirées.** Pour chacune, il faut délimiter à la main
-  toutes les contributions de son cahier, puis caviarder la contribution
-  tirée. 37 sont faites et exportées en PDF caviardés, soit 1 300 contributions
-  délimitées ; il en reste 63
+- **Les 100 contributions tirées sont prêtes** : exportées en PDF caviardés,
+  réunies dans un recueil pour l'association. Leurs cahiers sont délimités
+  en entier à la main, soit 4 228 contributions
   ([#5](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/5),
   [#7](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/7)).
+- **Le découpage automatique** (règles : courriels, formulaires, lettres)
+  est mesuré sur ces cahiers délimités : sur les pages dactylographiées, 78 %
+  des débuts trouvés sont justes et 65 % des débuts sont trouvés.
+- **La plateforme Django** charge les cahiers, les contributions délimitées
+  et celles de l'édition Chabin
+  ([`plateforme/`](plateforme/)).
 
 Le POC de l'été 2026 a porté sur trois départements (Ain, Eure-et-Loir,
 Mayenne). Son code est dans [dataforgoodfr/cahier_doleances](https://github.com/dataforgoodfr/cahier_doleances).
@@ -62,13 +67,13 @@ Mayenne). Son code est dans [dataforgoodfr/cahier_doleances](https://github.com/
 
 On est encore loin de diffuser massivement les cahiers :
 
-- **Contenu prêt** : les 37 contributions délimitées et caviardées à la main
-  de la première sélection. C'est le rythme d'un lecteur, pas d'une diffusion
+- **Contenu prêt** : les 100 contributions délimitées et caviardées à la main
+  du premier tirage. C'est le rythme d'un lecteur, pas d'une diffusion
   massive.
 - **Découper et anonymiser automatiquement** est le préalable au reste du
-  corpus. Aujourd'hui, les règles ne découpent que les courriels et les
-  formulaires dactylographiés, et l'anonymisation automatique doit être relue
-  à la main.
+  corpus. Aujourd'hui, les règles ne découpent que les pages
+  dactylographiées (courriels, formulaires, lettres) et en manquent un tiers
+  des débuts ; l'anonymisation automatique doit être relue à la main.
 - **La moitié des pages écrites sont manuscrites** (142 000 sur 276 000) et
   ne sont pas encore lues
   ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)).
