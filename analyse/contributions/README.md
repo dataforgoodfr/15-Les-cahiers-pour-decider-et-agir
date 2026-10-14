@@ -71,6 +71,15 @@ restantes, sans indice de forme commun (longueur de la ligne, rang, fin de
 la page précédente) : ils sont à regarder dans la liste « Lettres
 repérées ».
 
+Regardés après masquage (GLiNER), ces quatre cahiers montrent des pages
+qui continuent un document : numéro de page (« Page 2 sur 5 », « P.3/5 »),
+pied et en-tête d'impression d'un courriel (« 3 sur 7 09:50 ») ou titre
+courant, et des envois de la mairie sans contribution. Une page numérotée
+au-delà de la première n'ouvre plus de lettre : 35 débuts de moins, dont
+un seul juste ; lettres 73 % de précision, toutes règles 78 % et 65 % de
+rappel. Le numéro de la page précédente et l'en-tête repris d'une page à
+l'autre retirent autant de vrais débuts que de faux : écartés.
+
 Les listes « Courriels repérés », « Formulaires (gabarits) repérés » et
 « Lettres repérées » montrent les débuts trouvés dans l'outil d'annotation, pour les revoir.
 

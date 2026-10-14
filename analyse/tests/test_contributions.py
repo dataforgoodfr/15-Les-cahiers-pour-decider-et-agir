@@ -183,6 +183,16 @@ def test_lettres_titre_salutation_ou_politesse():
     assert lettres(pages) == [(0, 1), (3, 0), (4, 0)]
 
 
+def test_une_page_numerotee_au_dela_de_la_premiere_continue():
+    pages = [
+        ["Mes doléances", "Page 1 sur 2"],  # ouvre la lettre
+        ["Cahier de doléances", "P.2/2"],  # titre courant de la suite
+        ["Fwd: grand débat", "texte", "3 sur 7 09:50"],  # pied d'impression
+        ["Contribution au grand débat", "Paris, le 11/12/2018"],  # une date
+    ]
+    assert lettres(pages) == [(0, 0), (3, 0)]
+
+
 def test_une_lettre_ne_double_pas_un_courriel():
     pages = [COURRIEL + ["Bonjour", "texte"], ["Madame,", "texte"]]
     assert [regle for _, _, regle in debuts(pages)] == ["courriel", "lettre"]
