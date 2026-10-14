@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paires de propositions</title>
+<link rel="stylesheet" href="/statique/style.css">
+</head>
+<body class="paires">
+<header>
+  <label class="groupe">Annotateur
+    <input id="annotateur" placeholder="Votre prénom" spellcheck="false" autocomplete="off">
+  </label>
+  <div class="groupe" role="tablist" aria-label="Mode">
+    <button id="mode-juger" class="mode" aria-pressed="true">Juger</button>
+    <button id="mode-adjuger" class="mode" aria-pressed="false">Adjuger <span id="compte-litiges" class="discret"></span></button>
+  </div>
+  <nav class="groupe" aria-label="Paires">
+    <button id="prec" title="Paire précédente (←)">◀</button>
+    <span id="position" class="discret"></span>
+    <button id="suiv" title="Paire suivante (→)">▶</button>
+    <button id="a-faire" title="Prochaine paire sans jugement (n)">Prochaine à faire</button>
+  </nav>
+  <span id="avancement" class="groupe discret"></span>
+  <a class="groupe" href="/">Cahiers</a>
+</header>
+<main id="paire">
+  <p id="consigne" class="discret">Ces deux propositions disent-elles la même chose ? Jugez seul, sans chercher l'avis des autres.</p>
+  <div class="propositions" id="propositions">
+    <article class="proposition"><p class="contexte discret" id="contexte-a"></p><p class="texte" id="texte-a"></p></article>
+    <article class="proposition"><p class="contexte discret" id="contexte-b"></p><p class="texte" id="texte-b"></p></article>
+  </div>
+  <p id="avis" class="discret" hidden></p>
+  <div id="jugements" class="jugements"></div>
+  <p id="info" class="discret"></p>
+</main>
+<script src="/statique/paires.js"></script>
+</body>
+</html>

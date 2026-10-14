@@ -90,6 +90,17 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   adresse, téléphone… d'un seul rectangle) ;
   sur une note ouverte, elles changent son étiquette, et Suppr l'efface.
 
+- **Juger des paires de propositions** (http://127.0.0.1:8765/paires) :
+  deux propositions de l'édition Chabin côte à côte (sortie de
+  `python -m paires`), à juger « même proposition », « même sujet, mesure
+  différente », « sans rapport » ou « pas une proposition » (touches 1 à 4 ;
+  Suppr retire le jugement, `n` va à la prochaine paire à faire). Chacun
+  juge seul, sous son prénom, sans voir la tranche, la similarité ni les
+  jugements des autres. En mode « Adjuger », un troisième annotateur tranche
+  les paires où les deux premiers ne sont pas d'accord.
+  `uv run python -m paires.accord` donne l'accord (kappa de Cohen) ; il lit
+  plusieurs journaux si chacun a annoté sur sa machine.
+
 Raccourcis : ← → page, n p élément de liste, v vue puis élément suivant, r à
 revoir, + − 0 zoom, t pivoter, 1 à 9 étiquette, a accepter les repérages,
 m montrer ou cacher les repérages, Suppr supprimer la note ouverte, Échap
@@ -104,6 +115,7 @@ Tout reste dans `data/annotation/`, hors de git :
   et les remarques peuvent citer le cahier ; les analyses n'en lisent que les
   positions, les étiquettes et les qualifications sans remarques
   (`Carnet.positions`, `Carnet.qualifications(remarques=False)`).
+- `paires.jsonl` : les jugements des paires (`paires.py`), en ajout seul.
 - `listes/*.json` : les listes à revoir (`listes.py`), qui ne contiennent que
   des positions, des étiquettes et des commentaires sur la méthode. Une liste
   « à masquer » identifie chaque repérage ; ses rétablissements vont au

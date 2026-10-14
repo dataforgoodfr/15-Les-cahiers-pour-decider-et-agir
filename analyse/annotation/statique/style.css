@@ -176,3 +176,21 @@ label.ligne { display: grid; gap: 2px; margin-bottom: 8px; }
 .calque .ligne-ocr { fill: transparent; stroke: var(--vue); stroke-width: 1px; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
 .calque .ligne-ocr:hover { fill: color-mix(in srgb, var(--vue) 18%, transparent); }
 #accepter { width: 100%; margin-top: 8px; }
+
+/* paires de propositions (paires.html) */
+body.paires { display: block; overflow: auto; }
+body.paires main { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1rem; }
+.propositions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 40rem) { .propositions { grid-template-columns: 1fr; } }
+.proposition { background: var(--surface); border: 1px solid var(--bord); border-radius: 6px; padding: 1rem; }
+.proposition .contexte { margin: 0 0 .5rem; font-size: .85em; }
+.proposition .contexte:empty { display: none; }
+.proposition .texte { margin: 0; font-size: 1.1em; line-height: 1.5; }
+.jugements { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.25rem; }
+button.jugement { padding: .5rem .9rem; }
+button.jugement[aria-pressed="true"], button.mode[aria-pressed="true"] { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+button.jugement kbd { font: inherit; opacity: .7; }
+#avis { margin-top: 1rem; }
+body.paires a { color: var(--accent); }
+#info { margin-top: 1rem; }
+button.mode[aria-pressed="true"] .discret { color: inherit; }
