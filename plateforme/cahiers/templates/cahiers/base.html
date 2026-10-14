@@ -1,0 +1,19 @@
+{% load static %}<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titre %}Les Cahiers pour Décider et Agir{% endblock %}</title>
+  <link rel="preload" href="{% static 'cahiers/polices/SofiaSansCondensed.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'cahiers/charte.css' %}">
+</head>
+<body>
+<header class="entete">
+  {# le logo de la charte remplacera ce logotype quand on en aura le SVG #}
+  <a class="logotype" href="{% url 'accueil' %}">Les Cahiers<br>pour Décider<br>et Agir</a>
+</header>
+<main>
+{% block contenu %}{% endblock %}
+</main>
+</body>
+</html>

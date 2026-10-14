@@ -40,6 +40,16 @@ Les modèles du POC y sont repris un à un. Pour l'instant :
   avec leur texte anonymisé par l'édition. Les manuscrits, sans position, ne
   sont pas chargés.
 
+## La charte graphique
+
+Les pages publiques suivent la charte des Cahiers (APE Studio, V.01 du
+12 octobre 2026) : couleurs en variables et composants dans
+`cahiers/static/cahiers/charte.css`, gabarit commun
+`cahiers/templates/cahiers/base.html`. La police de la charte n'a pas encore
+de licence : Sofia Sans Condensed (licence OFL, réduite au latin) la remplace,
+et se change dans `charte.css` seulement. Le logo attend ses fichiers SVG ;
+un logotype en texte tient sa place.
+
 ## La table des pages
 
 Le format commun de la chaîne texte
