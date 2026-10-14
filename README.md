@@ -76,7 +76,8 @@ On est encore loin de diffuser massivement les cahiers :
   des débuts ; l'anonymisation automatique doit être relue à la main.
 - **La moitié des pages écrites sont manuscrites** (142 000 sur 276 000) et
   ne sont pas encore lues
-  ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)).
+  ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)) :
+  aucun modèle local ne les lit encore assez bien ([`docs/htr.md`](docs/htr.md)).
 - **La plateforme sera en Django** sur Clever Cloud (PostgreSQL, Cellar pour
   les PDF), avec Wagtail s'il faut un CMS
   ([#34](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/34)) :
@@ -106,7 +107,8 @@ Pour commencer, voir [CONTRIBUTING.md](CONTRIBUTING.md).
 - [`plateforme/`](plateforme/) : l'application de production, en Django sur
   Clever Cloud. Pour l'instant un squelette, qui reprendra les modèles de
   `backend/`.
-- [`docs/`](docs/) : règles sur les données.
+- [`docs/`](docs/) : règles sur les données, banc d'essai de la lecture des
+  manuscrits ([`docs/htr.md`](docs/htr.md)).
 
 Chaque sous-projet utilise [uv](https://docs.astral.sh/uv/) : par exemple `cd analyse && uv sync`,
 puis `uv run ...`.
