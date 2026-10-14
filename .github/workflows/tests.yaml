@@ -17,6 +17,17 @@ jobs:
     - run: uv sync --locked
     - run: uv run pytest
 
+  htr:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: htr
+    steps:
+    - uses: actions/checkout@v7
+    - uses: astral-sh/setup-uv@v10.2.0
+    - run: uv sync --locked
+    - run: uv run pytest
+
   plateforme:
     runs-on: ubuntu-latest
     defaults:
