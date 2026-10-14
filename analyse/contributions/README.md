@@ -80,6 +80,13 @@ un seul juste ; lettres 73 % de précision, toutes règles 78 % et 65 % de
 rappel. Le numéro de la page précédente et l'en-tête repris d'une page à
 l'autre retirent autant de vrais débuts que de faux : écartés.
 
+Les en-têtes « Sujet : » et « Pour : » (messageries d'entreprise, Lotus
+Notes) sont reconnus : les envois de la mairie de Brest sont des courriels,
+et non plus des lettres. La mesure n'en change pas (1 003 débuts justes au
+lieu de 1 004) : un courriel de mairie seul sur sa page reste un début, car
+la délimitation en compte un le plus souvent ; ne plus l'ouvrir retire 8
+débuts justes.
+
 Les listes « Courriels repérés », « Formulaires (gabarits) repérés » et
 « Lettres repérées » montrent les débuts trouvés dans l'outil d'annotation, pour les revoir.
 

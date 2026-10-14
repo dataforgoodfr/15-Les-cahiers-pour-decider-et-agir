@@ -48,6 +48,12 @@ def test_un_envoi_de_mairie_n_est_pas_une_contribution():
     assert courriels([*MAIRIE, "texte"]) == [0]
 
 
+def test_courriel_d_une_messagerie_d_entreprise():
+    # Lotus Notes : « Sujet » pour l'objet, « Pour » pour le destinataire
+    page = ["Imprimé par l'agent", "Sujet : doléances", "De : Jean", "Date : hier"]
+    assert courriels([*page, "Pour : mairie", "texte"]) == [1]
+
+
 def test_un_courriel_en_tete_de_page():
     # un bloc à la ligne 0 ne doit pas être pris pour un transfert du suivant
     page = [*COURRIEL, "a", "b", "c", "d", *COURRIEL]
