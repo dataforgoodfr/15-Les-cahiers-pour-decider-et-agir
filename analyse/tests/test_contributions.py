@@ -59,6 +59,22 @@ def test_gabarit_repere_chaque_formulaire():
     assert gabarit(pages) == [(0, 1, "exact"), (1, 0, "exact"), (3, 0, "exact")]
 
 
+def test_gabarit_de_deux_feuilles_s_ouvre_sur_la_premiere():
+    premiere = ["Grand débat national", "Présentation du débat", *FORMULAIRE]
+    seconde = ["Vos autres propositions ici", "Merci de votre participation"]
+    # la seconde feuille ouvre plus de pages (une est seule, sa première
+    # feuille perdue), la première a un logo avant le titre
+    pages = [seconde] + [["logo", *premiere], seconde] * 4
+    assert gabarit(pages) == [(p, 1, "exact") for p in (1, 3, 5, 7)]
+
+
+def test_la_seconde_feuille_d_un_formulaire_n_ouvre_pas_de_lettre():
+    premiere = ["Grand débat national", "Présentation du débat", *FORMULAIRE]
+    seconde = ["Madame, Monsieur le maire,", "Vos autres propositions ici"]
+    pages = [premiere, seconde] * 4
+    assert {r for _, _, r in debuts(pages)} == {"gabarit"}
+
+
 def test_ressemble_a_l_ocr_pres():
     modele = "cahier de doléances"
     for ligne in (
