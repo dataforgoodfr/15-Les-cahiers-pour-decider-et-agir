@@ -46,6 +46,9 @@ ENTETE = re.compile(
 ECART_ENTETES = 3  # lignes au plus entre deux en-têtes d'un même bloc
 ECART_TRANSFERT = 3  # lignes non vides au plus entre deux blocs transférés
 LONGUEUR_GABARIT = 15  # caractères au moins d'une ligne de gabarit
+SANS_TETE = (
+    0.1  # part au plus des pages de la tête où paraît une ligne d'une autre feuille
+)
 SIMILARITE = 0.75  # part de caractères communs pour reconnaître une ligne à l'OCR près
 ECART_DEBUT = 5  # lignes : un début trouvé si près du début du cahier le remplace
 TITRE_LETTRE = re.compile(
@@ -188,6 +191,48 @@ def ressemble(ligne: str, modele: str) -> bool:
     return similarite(ligne, modele) >= SIMILARITE
 
 
+def _tete(normalisees: list[list[str]], lignes_: set[str]) -> str:
+    """La ligne de `lignes_` qui ouvre le plus souvent une page : la première
+    d'entre elles sur la page. Une ligne qui revient plusieurs fois sur la
+    plupart de ses pages (un intitulé de question répété) n'en est pas une."""
+    plusieurs, presente = Counter(), Counter()
+    for lignes in normalisees:
+        compte = Counter(x for x in lignes if x in lignes_)
+        presente.update(compte.keys())
+        plusieurs.update(x for x, n in compte.items() if n > 1)
+    uniques = {x for x in lignes_ if plusieurs[x] <= presente[x] / 2}
+    lignes_ = uniques or lignes_
+    premieres = Counter(
+        next(x for x in lignes if x in lignes_)
+        for lignes in normalisees
+        if lignes_ & set(lignes)
+    )
+    return premieres.most_common(1)[0][0]
+
+
+def _repetees(normalisees: list[list[str]]) -> set[str]:
+    """Les lignes du gabarit : vide si le cahier n'en a pas."""
+    if len(normalisees) < 3:
+        return set()
+    presences = Counter()
+    for lignes in normalisees:
+        presences.update({x for x in lignes if len(x) >= LONGUEUR_GABARIT})
+    seuil = max(3, len(normalisees) // 3)
+    repetees = {x for x, n in presences.items() if n >= seuil}
+    return repetees if len(repetees) >= 3 else set()
+
+
+def pages_de_formulaire(pages: list[list[str]]) -> set[int]:
+    """Indices des pages qui portent une ligne du gabarit, de quelque feuille
+    du formulaire qu'elles soient."""
+    repetees = _repetees([[normaliser(x) for x in lignes] for lignes in pages])
+    return {
+        p
+        for p, lignes in enumerate(pages)
+        if repetees and any(normaliser(x) in repetees for x in lignes)
+    }
+
+
 def gabarit(pages: list[list[str]]) -> list[tuple[int, int, str]]:
     """(indice de page, ligne, chemin) où commence chaque formulaire d'un
     cahier ; le chemin dit comment il a été trouvé : « exact »,
@@ -198,35 +243,44 @@ def gabarit(pages: list[list[str]]) -> list[tuple[int, int, str]]:
     un pied de page répété n'est pas un formulaire.
 
     La tête du gabarit est la ligne du gabarit qui ouvre le plus souvent une
-    page. Elle ouvre un formulaire partout où elle revient ; sur une page où
-    elle manque, une ligne qui lui ressemble à l'OCR près la remplace, si ce
-    n'est pas une autre ligne du gabarit. Quand l'OCR l'a rendue
+    page. Un formulaire de deux feuilles a deux têtes possibles : on garde
+    celle de la première feuille, la plus riche en lignes du gabarit (la
+    seconde n'a souvent que ses questions). La tête ouvre un formulaire
+    partout où elle revient ; sur une page où elle manque, une ligne qui lui
+    ressemble à l'OCR près la remplace, si ce n'est pas une autre ligne du
+    gabarit et si la page n'est pas d'une autre feuille (des lignes du
+    gabarit, mais ni la tête ni ses compagnes). Quand l'OCR l'a rendue
     méconnaissable, deux lignes de la première page du formulaire (celles qui
     accompagnent la tête) suffisent : le formulaire commence à la première
     d'entre elles.
     """
-    if len(pages) < 3:
-        return []
     normalisees = [[normaliser(x) for x in lignes] for lignes in pages]
-    presences = Counter()
-    for lignes in normalisees:
-        presences.update({x for x in lignes if len(x) >= LONGUEUR_GABARIT})
-    seuil = max(3, len(pages) // 3)
-    repetees = {x for x, n in presences.items() if n >= seuil}
-    if len(repetees) < 3:
+    repetees = _repetees(normalisees)
+    if not repetees:
         return []
-    premieres = Counter(
-        next(x for x in lignes if x in repetees)
-        for lignes in normalisees
-        if repetees & set(lignes)
-    )
-    tete = premieres.most_common(1)[0][0]
+    tete = _tete(normalisees, repetees)
     avec_tete = [set(lignes) for lignes in normalisees if tete in lignes]
     compagnes = [
         x
         for x in repetees - {tete}
         if sum(x in lignes for lignes in avec_tete) >= len(avec_tete) / 2
     ]
+    # un formulaire de deux feuilles : si la tête est sur la seconde, la
+    # première porte plus de lignes du gabarit (titre, présentation) qu'on
+    # ne voit presque jamais avec elle ; la tête est à reprendre parmi elles
+    autres = {
+        x
+        for x in repetees - {tete}
+        if sum(x in lignes for lignes in avec_tete) <= len(avec_tete) * SANS_TETE
+    }
+    if len(autres) > len(compagnes) + 1:
+        tete = _tete(normalisees, autres)
+        avec_tete = [set(lignes) for lignes in normalisees if tete in lignes]
+        compagnes = [
+            x
+            for x in autres - {tete}
+            if sum(x in lignes for lignes in avec_tete) >= len(avec_tete) / 2
+        ]
     debuts = []
     for p, lignes in enumerate(normalisees):
         # l'en-tête exact d'abord ; à défaut, une ligne qui lui ressemble sans
@@ -234,7 +288,9 @@ def gabarit(pages: list[list[str]]) -> list[tuple[int, int, str]]:
         # diffèrent parfois que d'un mot)
         chemin = "exact"
         trouves = [i for i, x in enumerate(lignes) if x == tete]
-        if not trouves:
+        presentes = repetees & set(lignes)
+        autre_feuille = presentes and not presentes & {tete, *compagnes}
+        if not trouves and not autre_feuille:
             chemin = "ressemblant"
             # un seul formulaire par page : la ligne la plus ressemblante, car
             # un en-tête court (« grand débat national ») se cite dans le texte
@@ -246,7 +302,7 @@ def gabarit(pages: list[list[str]]) -> list[tuple[int, int, str]]:
             # à score égal, la ligne la plus haute
             meilleur = max(scores, key=lambda x: (x[0], -x[1]), default=(0.0, None))
             trouves = [meilleur[1]] if meilleur[0] >= SIMILARITE else []
-        if not trouves:
+        if not trouves and not autre_feuille:
             chemin = "compagnes"
             appuis = [
                 i
@@ -300,8 +356,9 @@ def debuts(
     for p, lignes in enumerate(pages):
         for i in courriels(lignes):
             trouves.setdefault((p, i), "courriel")
-    # une lettre ne s'ajoute que sur une page où aucune autre règle ne trouve
-    deja = {p for p, _ in trouves}
+    # une lettre ne s'ajoute que sur une page où aucune autre règle ne trouve,
+    # ni sur une page de formulaire (sa seconde feuille, qui n'en ouvre pas)
+    deja = {p for p, _ in trouves} | pages_de_formulaire(pages)
     for p, i in lettres(pages):
         if p not in deja:
             trouves[p, i] = "lettre"

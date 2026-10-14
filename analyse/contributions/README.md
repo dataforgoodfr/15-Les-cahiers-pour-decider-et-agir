@@ -52,6 +52,17 @@ pour la règle seule). 19 cahiers restent sans aucune règle. Les indices de
 mise en page (police du corps ou marge qui changent d'une page à l'autre)
 n'atteignent qu'environ 46 % de précision : ils ne sont pas retenus.
 
+Au 14 octobre 2026, les formulaires de deux feuilles (#64) : la tête du
+gabarit est prise sur la première feuille, la plus riche en lignes du
+gabarit, et jamais sur une ligne qui revient plusieurs fois par page ; une
+seconde feuille n'ouvre ni formulaire ni lettre. Les gabarits passent de
+85 % à 91 % de précision (562 à 540 débuts, 475 à 494 justes), rappel 96 % ;
+toutes règles, 75 % de précision et 66 % de rappel. Dans un cahier, l'OCR ne
+lit la première feuille qu'à partir de ses questions, à 270 points du haut :
+ses débuts sont justes mais comptés faux, trop bas. Restent les feuilles de
+suite d'un même auteur (numéro et « suite » écrits à la main), les
+formulaires laissés vierges et les pages numérisées deux fois.
+
 Les listes « Courriels repérés », « Formulaires (gabarits) repérés » et
 « Lettres repérées » montrent les débuts trouvés dans l'outil d'annotation, pour les revoir.
 
