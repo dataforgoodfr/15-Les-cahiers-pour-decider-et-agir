@@ -54,6 +54,15 @@ ECART_DEBUT = 5  # lignes : un début trouvé si près du début du cahier le re
 # « propositions » n'en est pas : sur les cahiers délimités, il ouvre 3 fois
 # sur 10 une vraie lettre, le plus souvent il est dans le texte (#5)
 TITRE_LETTRE = re.compile(r"dol[ée]ances?|contributions?|grand d[ée]bat", re.IGNORECASE)
+# numéro de page d'un document de plusieurs pages : « Page 2 sur 5 »,
+# « P.3/5 », ou seul sur sa ligne « 2/4 », « 3 sur 7 09:50 » (pied
+# d'impression d'un courriel)
+NUMERO_PAGE = re.compile(
+    r"\bp(?:age|\.)?\s*(\d{1,3})\s*(?:sur|/)\s*(\d{1,3})\b"
+    r"|^\W*(\d{1,3})\s*(?:sur|/)\s*(\d{1,3})(?:\s+\S{1,6})?\W*$",
+    re.IGNORECASE,
+)
+LIGNES_NUMERO = 4  # premières et dernières lignes non vides où chercher le numéro
 SALUTATION = re.compile(
     r"^\s*(madame|monsieur|mesdames|messieurs|cher|chère|bonjour)\b", re.IGNORECASE
 )
@@ -314,15 +323,41 @@ def gabarit(pages: list[list[str]]) -> list[tuple[int, int, str]]:
     return debuts
 
 
+def _numeros(lignes: list[str]) -> list[tuple[int, int]]:
+    """(page, nombre de pages) lus en haut et en bas de la page."""
+    ecrites = [x for x in lignes if x.strip()]
+    bords = ecrites[:LIGNES_NUMERO] + ecrites[-LIGNES_NUMERO:]
+    sortie = []
+    for x in bords:
+        m = NUMERO_PAGE.search(x)
+        if m:
+            k, n = (int(g) for g in m.groups() if g)
+            if 0 < k <= n:
+                sortie.append((k, n))
+    return sortie
+
+
+def suite(lignes: list[str]) -> bool:
+    """La page continue un document : elle porte un numéro de page au-delà
+    du premier (« Page 2 sur 5 », pied d'impression d'un courriel).
+
+    Ni le numéro de la page précédente ni un en-tête repris d'une page à
+    l'autre ne valent : des lettres distinctes qui se suivent ont souvent
+    le même titre, et sur les cahiers délimités ces indices retirent autant
+    de vrais débuts que de faux."""
+    return any(k > 1 for k, _ in _numeros(lignes))
+
+
 def lettres(pages: list[list[str]]) -> list[tuple[int, int]]:
     """(indice de page, ligne) des pages qui ouvrent une lettre : leur
     première ligne non vide, si leurs premières lignes portent un titre de
     doléance ou une salutation, ou si la page précédente finit par une
-    formule de politesse."""
+    formule de politesse. Une page qui continue un document de la précédente
+    (`suite`) n'en ouvre pas."""
     trouves = []
     for p, lignes in enumerate(pages):
         ecrites = [i for i, x in enumerate(lignes) if x.strip()]
-        if not ecrites:
+        if not ecrites or suite(lignes):
             continue
         precedentes = [x for x in pages[p - 1] if x.strip()] if p else []
         if (
