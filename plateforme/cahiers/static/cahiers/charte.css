@@ -1,0 +1,89 @@
+/* Charte graphique des Cahiers (APE Studio, V.01 du 12 octobre 2026).
+   Police provisoire : Sofia Sans Condensed (OFL), en attendant la licence de
+   la police de la charte ; elle se remplace ici seulement. */
+
+@font-face {
+  font-family: "Cahiers";
+  src: url("polices/SofiaSansCondensed.woff2") format("woff2");
+  font-weight: 100 1000;
+  font-display: swap;
+}
+
+:root {
+  --creme: #f8f8f0;
+  --taupe: #c8c0b3;
+  --violet: #a69ef3;
+  --violet-fonce: #675cb7; /* titres sur fond crème */
+  --jaune: #f3f97d;
+  --noir: #1b1b1b;
+  --police: "Cahiers", "Arial Narrow", sans-serif;
+}
+
+body {
+  margin: 0;
+  font: 400 1.15rem/1.4 var(--police);
+  color: var(--noir);
+  background: var(--creme);
+}
+
+a { color: var(--noir); text-decoration-thickness: .08em; text-underline-offset: .15em; }
+
+.entete {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--noir);
+}
+.logotype {
+  font-weight: 800; font-size: 1.35rem; line-height: .95;
+  text-decoration: none; letter-spacing: -.01em;
+}
+
+main { max-width: 60rem; margin: 0 auto; padding: 2rem 1rem 3rem; }
+
+.surtitre {
+  display: inline-block; margin: 0 0 .75rem;
+  padding: 0 .2em; background: var(--jaune);
+  text-transform: uppercase; letter-spacing: .04em; font-size: 1rem;
+}
+h1 {
+  margin: 0 0 1.5rem;
+  color: var(--violet-fonce);
+  font-weight: 800; font-size: clamp(2.2rem, 7vw, 4rem); line-height: .95;
+  letter-spacing: -.02em;
+}
+.surligne { background: var(--jaune); }
+
+/* carte de contribution : jaune, filet noir, bandeau du lieu */
+.carte {
+  background: var(--jaune);
+  border: 2px solid var(--noir);
+  box-shadow: 6px 6px 0 var(--noir);
+}
+.carte iframe { display: block; width: 100%; height: 72vh; border: 0; border-bottom: 2px solid var(--noir); background: #fff; }
+.bandeau { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: space-between; }
+.bandeau .lieu { margin: 0; padding: .6rem 1rem; text-transform: uppercase; letter-spacing: .05em; }
+.bandeau a { padding: .6rem 1rem; background: var(--noir); color: var(--jaune); font-weight: 700; text-decoration: none; }
+
+/* bouton au coin corné */
+.bouton {
+  position: relative; display: inline-block;
+  padding: .55rem 1.6rem .55rem 1rem;
+  border: 2px solid var(--noir); background: var(--jaune); color: var(--noir);
+  font-weight: 800; font-size: 1.3rem; text-decoration: none;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - .9rem), calc(100% - .9rem) 100%, 0 100%);
+}
+.bouton::after {
+  content: ""; position: absolute; right: -2px; bottom: -2px;
+  width: .9rem; height: .9rem;
+  background: linear-gradient(135deg, var(--creme) 50%, var(--noir) 50%);
+  border-top: 2px solid var(--noir); border-left: 2px solid var(--noir);
+  box-sizing: border-box;
+}
+.bouton:hover, .bouton:focus-visible { background: var(--noir); color: var(--jaune); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-top: 2rem; }
+.note { max-width: 40rem; font-size: 1rem; }
+
+@media (max-width: 40rem) {
+  .carte iframe { height: 60vh; }
+}
