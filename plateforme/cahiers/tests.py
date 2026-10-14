@@ -292,6 +292,69 @@ class ChargerContributionsTests(TestCase):
         self.assertEqual(self.document.contributions.count(), 3)
 
 
+EXTRACTION = [
+    {
+        "city": {"insee": "17008", "commune": "Andilly"},
+        "contributions": [
+            {"title": f"{k}. …", "text": f"texte {k}"} for k in range(1, 6)
+        ],
+    }
+]
+ALIGNEMENT = (
+    "insee,rang,genre,fichier,page,ligne,y0,ressemblance\n"
+    "17008,1,manuscrit,,,,,\n"
+    f"17008,2,dactylographié,{FICHIER},2,0,87.6,0.97\n"
+    f"17008,3,mail,{FICHIER},3,4,300.0,0.9\n"
+    f"17008,4,dactylographié,{FICHIER},1,2,50.0,0.8\n"
+    "17008,5,dactylographié,CC_99999_190304_99999_MD_00001.pdf,1,0,40.0,0.9\n"
+)
+
+
+class ChargerChabinTests(TestCase):
+    def setUp(self):
+        self.document = Document.objects.create(fichier=FICHIER, categorie="CC")
+
+    def charger(self):
+        with tempfile.TemporaryDirectory() as dossier:
+            (Path(dossier) / "chabin").mkdir()
+            (Path(dossier) / "chabin" / "alignement.csv").write_text(
+                ALIGNEMENT, encoding="utf-8"
+            )
+            extraction = Path(dossier) / "extraction.json"
+            extraction.write_text(json.dumps(EXTRACTION), encoding="utf-8")
+            sortie = StringIO()
+            call_command(
+                "charger_chabin",
+                "--analyse",
+                dossier,
+                "--extraction",
+                extraction,
+                stdout=sortie,
+            )
+        return sortie.getvalue()
+
+    def test_contributions_retrouvees_dans_l_ocr(self):
+        sortie = self.charger()
+        deux, trois, quatre = self.document.contributions.all()
+        self.assertEqual([c.rang for c in (deux, trois, quatre)], [2, 3, 4])
+        self.assertEqual(deux.texte, "texte 2")
+        self.assertEqual((deux.page_debut, deux.y_debut), (2, 87.6))
+        # la suivante est plus loin dans le scan : elle en marque la fin
+        self.assertEqual((deux.page_fin, deux.y_fin), (3, 300.0))
+        # la suivante la précède dans le scan : fin au bas de la page
+        self.assertEqual((trois.page_fin, trois.y_fin), (3, None))
+        self.assertEqual(quatre.origine, "édition Chabin (dactylographié)")
+        self.assertFalse(deux.run.actif)
+        self.assertIn("1 sans position", sortie)
+        self.assertIn("ignorées : CC_99999", sortie)
+
+    def test_relancer_remplace_le_run(self):
+        self.charger()
+        self.charger()
+        self.assertEqual(Run.objects.count(), 1)
+        self.assertEqual(self.document.contributions.count(), 3)
+
+
 PDF = b"%PDF-1.4 extrait caviarde"
 
 

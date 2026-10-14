@@ -33,6 +33,12 @@ Les modèles du POC y sont repris un à un. Pour l'instant :
   d'accueil en tire une au sort (#30), parmi les contributions publiables du
   run actif qui ont un extrait ; le PDF d'un cahier n'a aucune adresse
   publique.
+  Les contributions de l'édition de Marie-Anne Chabin (Charente-Maritime)
+  sont chargées par `uv run python manage.py charger_chabin`, sous un run de
+  délimitation « édition Chabin », jamais activé : celles, dactylographiées
+  ou courriels, dont `python -m chabin` retrouve le début dans l'OCR du scan,
+  avec leur texte anonymisé par l'édition. Les manuscrits, sans position, ne
+  sont pas chargés.
 
 ## La table des pages
 
@@ -76,6 +82,7 @@ uv run python manage.py charger_communes
 uv run python manage.py charger_corpus  # si les sorties d'analyse/ sont là
 uv run python manage.py charger_contributions  # après python -m delimitation
 uv run python manage.py charger_extraits  # après python -m selection
+uv run python manage.py charger_chabin  # après python -m chabin
 uv run python manage.py createsuperuser
 uv run python manage.py runserver
 ```
