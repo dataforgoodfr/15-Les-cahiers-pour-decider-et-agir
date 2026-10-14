@@ -27,11 +27,12 @@ from collections import Counter
 from difflib import SequenceMatcher
 
 EXPEDITEUR = re.compile(r"^\s*(de|from|expéditeur)\s*:", re.IGNORECASE)
-OBJET = re.compile(r"^\s*(objet|subject)\s*:", re.IGNORECASE)
+# « Sujet » et « Pour » : messageries d'entreprise (Lotus Notes)
+OBJET = re.compile(r"^\s*(objet|subject|sujet)\s*:", re.IGNORECASE)
 COURRIEL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 # une adresse, même avec un « @ » abîmé par l'OCR : (a), (9>…
 ADRESSE_OCR = re.compile(r"[\w.+-]{2,}(?:@|\(\w{1,2}[)>])[\w-]{2,}")
-DESTINATAIRE = re.compile(r"^\s*(?:à|a|to|destinataire)\s*:", re.IGNORECASE)
+DESTINATAIRE = re.compile(r"^\s*(?:à|a|to|pour|destinataire)\s*:", re.IGNORECASE)
 ENTETE_IMPRIME = 6  # lignes après l'expéditeur où chercher le destinataire
 PUBLIC = re.compile(
     r"mairie|ville|gouv|agglo|communaut|m[ée]tropole|d[ée]partement|r[ée]gion|"
@@ -39,7 +40,7 @@ PUBLIC = re.compile(
     re.IGNORECASE,
 )
 ENTETE = re.compile(
-    r"^\s*(de|from|expéditeur|objet|subject|envoyé|sent|date|à|a|to|cc)"
+    r"^\s*(de|from|expéditeur|objet|subject|sujet|envoyé|sent|date|à|a|to|pour|cc)"
     r"\s*(le)?\s*:",
     re.IGNORECASE,
 )
