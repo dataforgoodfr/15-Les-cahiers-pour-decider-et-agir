@@ -1,5 +1,6 @@
 """Référence Chabin : liste à relire et comparaison des comptes."""
 
+from chabin.__main__ import DEBUT, lecture_htr, mesurer_manuscrits
 from chabin.alignement import genre, localiser, normaliser
 from chabin.reference import Cahier, cahiers, comparer, elements
 
@@ -93,3 +94,96 @@ def test_localiser_departage_les_formulaires_par_l_ordre():
 
 def test_localiser_sans_ocr_ressemblant():
     assert localiser(["Texte collé que l'OCR n'a pas lu du tout."], OCR) == [None]
+
+
+HTR = [
+    "Cahier citoyen",
+    "Je demande le retablisement de",
+    "lisf et la bausse de la csg sur",
+    "les petites retraites. Merci",
+]
+MANUSCRIT = (
+    "Je demande le rétablissement de l'ISF et la baisse de la CSG sur les "
+    "petites retraites. Merci."
+)
+
+
+def test_localiser_un_manuscrit_sous_son_seuil():
+    assert localiser([MANUSCRIT], HTR, [0.99]) == [None]
+    ((ligne, ressemblance),) = localiser([MANUSCRIT], HTR, [0.45])
+    assert ligne == 1
+    assert 0.45 <= ressemblance < 0.99
+
+
+def test_lecture_htr(tmp_path):
+    (tmp_path / "a.jsonl").write_text(
+        '{"page": 3, "lignes": [{"texte": "Bonjour", "cadre": [1, 2, 3, 4]}]}\n',
+        encoding="utf-8",
+    )
+    lues = lecture_htr(tmp_path, "a.pdf")
+    assert list(lues) == [3]
+    texte, cadre = lues[3][0]
+    assert texte == "Bonjour"
+    assert (cadre.y0, cadre.y1) == (2, 4)
+    assert lecture_htr(tmp_path, "b.pdf") == {}
+    assert lecture_htr(None, "a.pdf") == {}
+
+
+def test_mesurer_manuscrits(tmp_path):
+    (tmp_path / "a.jsonl").write_text(
+        '{"page": 2, "lignes": []}\n{"page": 3, "lignes": []}\n', encoding="utf-8"
+    )
+    alignement = [
+        {
+            "insee": "1",
+            "genre": "manuscrit",
+            "source": "htr",
+            "fichier": "a.pdf",
+            "page": 2,
+            "y0": 100.0,
+        },
+        {
+            "insee": "1",
+            "genre": "manuscrit",
+            "source": "htr",
+            "fichier": "a.pdf",
+            "page": 3,
+            "y0": 500.0,
+        },
+        {
+            "insee": "1",
+            "genre": "manuscrit",
+            "source": "",
+            "fichier": "",
+            "page": "",
+            "y0": "",
+        },
+        {
+            "insee": "1",
+            "genre": "mail",
+            "source": "ocr",
+            "fichier": "a.pdf",
+            "page": 1,
+            "y0": 50.0,
+        },
+        {
+            "insee": "2",
+            "genre": "manuscrit",
+            "source": "htr",
+            "fichier": "b.pdf",
+            "page": 1,
+            "y0": 80.0,
+        },
+    ]
+    notes = [
+        {"fichier": "a.pdf", "page": 2, "y0": 110.0, "etiquette": DEBUT},
+        {"fichier": "a.pdf", "page": 3, "y0": 80.0, "etiquette": DEBUT},
+        {"fichier": "a.pdf", "page": 1, "y0": 50.0, "etiquette": DEBUT},
+        {"fichier": "a.pdf", "page": 2, "y0": 300.0, "etiquette": "autre"},
+    ]
+    precision, rappel, placés, ref, total = mesurer_manuscrits(
+        alignement, {"1"}, {"1": ["a.pdf"], "2": ["b.pdf"]}, notes, tmp_path
+    )
+    # page 1 non lue par l'HTR : hors référence ; page 3 : placé trop bas
+    assert (placés, ref, total) == (2, 2, 3)
+    assert (precision, rappel) == (0.5, 0.5)

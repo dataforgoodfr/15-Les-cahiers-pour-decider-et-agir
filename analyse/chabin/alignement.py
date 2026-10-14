@@ -5,9 +5,10 @@ Marie-Anne Chabin a transcrit et séparé chaque contribution ; le titre en dit
 la forme (« 3. Mail imprimé, 15 lignes… », « 1. Dactylographié (6 pages)… »).
 Pour les contributions dactylographiées et les courriels, on cherche le début
 de sa transcription dans la couche texte du scan : la ligne où il commence
-est un début de contribution. Les manuscrits ne s'y retrouvent pas, l'OCR du
-versement ne les lit pas : ils restent à délimiter à la main (liste
-« chabin »).
+est un début de contribution. L'OCR du versement ne lit pas les manuscrits :
+on les cherche dans la lecture des pages manuscrites par un modèle HTR léger
+(`htr/`), avec un seuil plus bas, la lecture étant fautive (un caractère sur
+quatre environ).
 """
 
 import re
@@ -25,6 +26,7 @@ LONGUEUR_MOT = 4  # mots plus courts trop communs pour désigner une ligne
 CANDIDATS = 200  # lignes au plus comparées pour une contribution
 RECUL = 3  # lignes avant une ligne candidate où peut commencer l'ouverture
 SEUIL = 0.6  # ressemblance minimale de l'ouverture et de l'OCR
+SEUIL_HTR = 0.5  # pour un manuscrit, cherché dans la lecture HTR
 
 
 def genre(titre: str) -> str:
@@ -53,11 +55,13 @@ def normaliser(texte: str) -> str:
 
 
 def localiser(
-    transcriptions: list[str], lignes: list[str]
+    transcriptions: list[str],
+    lignes: list[str],
+    seuils: list[float] | None = None,
 ) -> list[tuple[int, float] | None]:
     """Pour chaque transcription, dans l'ordre de l'édition : la ligne de l'OCR
     où elle commence et la ressemblance (0 à 1), ou None si rien n'atteint
-    le seuil.
+    son seuil (`SEUIL` par défaut).
 
     Les lignes candidates sont celles qui partagent des mots avec l'ouverture
     de la transcription. Des contributions de même ouverture (formulaires) se
@@ -83,7 +87,9 @@ def localiser(
 
     sortie = []
     precedente = -1
-    for transcription in transcriptions:
+    for transcription, seuil in zip(
+        transcriptions, seuils or [SEUIL] * len(transcriptions)
+    ):
         ouverture = normaliser(transcription)[:OUVERTURE]
         votes = Counter()
         for mot in set(ouverture.split()):
@@ -99,7 +105,7 @@ def localiser(
             (SequenceMatcher(None, ouverture, fenetre(d, len(ouverture))).ratio(), d)
             for d in debuts
         )
-        retenus = [(s, d) for s, d in scores if s >= SEUIL]
+        retenus = [(s, d) for s, d in scores if s >= seuil]
         if not ouverture or not retenus:
             sortie.append(None)
             continue
