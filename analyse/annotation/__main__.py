@@ -2,16 +2,18 @@
 
     uv run python -m annotation [--versement data/versement]
         [--typage data/typage/departements] [--dossier data/annotation]
-        [--port 8765]
+        [--paires data/paires/paires.csv] [--port 8765]
 
-Puis ouvrir http://127.0.0.1:8765. Le serveur n'écoute que sur la machine :
+Puis ouvrir http://127.0.0.1:8765, ou http://127.0.0.1:8765/paires pour
+juger les paires de propositions (`annotation.paires`). Le serveur n'écoute que sur la machine :
 les pages, les notes et les listes ne la quittent pas.
 
 Dans le dossier (hors git, comme tout `data/`) :
 
 - `notes.jsonl` : le carnet des notes et des statuts (`annotation.carnet`) ;
 - `listes/` : les listes de pages à revoir (`annotation.listes`), écrites par
-  les modules d'analyse.
+  les modules d'analyse ;
+- `paires.jsonl` : les jugements des paires de propositions.
 
 Le panneau de chaque page montre son typage et ce que les analyses y ont
 détecté (`annotation.metadonnees`, lu dans `--donnees`).
@@ -34,6 +36,8 @@ from annotation import listes
 from annotation.carnet import PROBLEMES, TYPES, Carnet
 from annotation.corpus import Corpus
 from annotation.metadonnees import Metadonnees
+from annotation.paires import ADJUGER, JUGEMENTS, JUGER, Journal, etat, lire_paires
+from annotation.paires import litiges as litiges_
 
 STATIQUE = Path(__file__).parent / "statique"
 TYPES_MIME = {".html": "text/html", ".js": "text/javascript", ".css": "text/css"}
@@ -76,8 +80,36 @@ def tourner_les_pages_detectees(
             carnet.qualifier(fichier, page, "rotation", ROTATION_DETECTEE)
 
 
+def vue_paires(chemin: Path, journal: Journal, annotateur: str) -> dict:
+    """Les paires, les jugements de l'annotateur et les litiges qu'il peut
+    adjuger : ceux des autres, sans leurs noms."""
+    jugements, adjudications = etat(journal.evenements())
+    litiges = [
+        {
+            "paire": paire,
+            "jugements": [j for _, j in deux],
+            "adjudication": adjudications.get(paire, (None, None))[1],
+        }
+        for paire, deux in litiges_(jugements).items()
+        if annotateur and annotateur not in dict(deux)
+    ]
+    return {
+        "jugements_possibles": JUGEMENTS,
+        "paires": lire_paires(chemin),
+        "miens": {
+            p: par[annotateur] for p, par in jugements.items() if annotateur in par
+        },
+        "litiges": litiges,
+    }
+
+
 def application(
-    corpus: Corpus, carnet: Carnet, dossier_listes: Path, metadonnees: Metadonnees
+    corpus: Corpus,
+    carnet: Carnet,
+    dossier_listes: Path,
+    metadonnees: Metadonnees,
+    paires: Path | None = None,
+    journal: Journal | None = None,
 ):
     class Requete(BaseHTTPRequestHandler):
         def log_message(self, *args):  # pas de noms de cahiers dans le terminal
@@ -111,6 +143,8 @@ def application(
         def route_get(self, chemin: str, q: dict):
             if chemin in ("/", "/index.html"):
                 chemin = "/statique/index.html"
+            elif chemin == "/paires":
+                chemin = "/statique/paires.html"
             if chemin.startswith("/statique/"):
                 fichier = STATIQUE / chemin.removeprefix("/statique/")
                 if fichier.parent != STATIQUE or not fichier.is_file():
@@ -121,6 +155,8 @@ def application(
                 self.json(
                     {"etiquettes": ETIQUETTES, "problemes": PROBLEMES, "types": TYPES}
                 )
+            elif chemin == "/api/paires" and paires and journal:
+                self.json(vue_paires(paires, journal, q.get("annotateur", "").strip()))
             elif chemin == "/api/listes":
                 self.json(listes.sommaire(dossier_listes))
             elif chemin == "/api/liste":
@@ -228,6 +264,21 @@ def application(
                             corps.get("points"),
                         )
                     )
+                elif chemin == "/api/paires/juger" and paires and journal:
+                    annotateur = corps["annotateur"].strip()
+                    vue = vue_paires(paires, journal, annotateur)
+                    if corps["paire"] not in {p["paire"] for p in vue["paires"]}:
+                        raise KeyError(corps["paire"])
+                    role = corps.get("role", JUGER)
+                    if role == ADJUGER and corps["paire"] not in {
+                        x["paire"] for x in vue["litiges"]
+                    }:
+                        raise ValueError("adjuger une paire sans litige, ou la sienne")
+                    self.json(
+                        journal.juger(
+                            corps["paire"], annotateur, corps.get("jugement"), role
+                        )
+                    )
                 elif chemin == "/api/statut":
                     corpus.chemin(corps["fichier"])
                     self.json(
@@ -254,6 +305,7 @@ def main() -> None:
     parser.add_argument(
         "--donnees", type=Path, default=Path("data"), help="sorties des analyses"
     )
+    parser.add_argument("--paires", type=Path, default=Path("data/paires/paires.csv"))
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument(
         "--sans-navigateur", action="store_true", help="ne pas ouvrir le navigateur"
@@ -264,7 +316,14 @@ def main() -> None:
     carnet = Carnet(args.dossier / "notes.jsonl")
     serveur = ThreadingHTTPServer(
         ("127.0.0.1", args.port),
-        application(corpus, carnet, args.dossier / "listes", Metadonnees(args.donnees)),
+        application(
+            corpus,
+            carnet,
+            args.dossier / "listes",
+            Metadonnees(args.donnees),
+            args.paires,
+            Journal(args.dossier / "paires.jsonl"),
+        ),
     )
     adresse = f"http://127.0.0.1:{args.port}"
     print(
