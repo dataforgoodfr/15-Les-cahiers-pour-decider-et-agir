@@ -27,6 +27,7 @@ uv run pytest
 | `ouvertures` | #5 | Pages d'ouverture imprimées (couverture de l'association des maires…), qui ne sont pas des contributions |
 | `contributions` | #5 | Débuts des contributions (courriels, formulaires), mesurés sur les notes de l'outil d'annotation |
 | `chabin` | #5 | Référence de découpage : les cahiers de l'édition Chabin, délimités à la main et comparés à ses comptes ; ses contributions imprimées retrouvées dans l'OCR, pour mesurer les règles |
+| `propositions` | #94 | Contributions de l'édition Chabin (déjà anonymisées) découpées en propositions, l'unité de l'étalon de regroupement ; un échantillon à vérifier par des volontaires |
 | `annotation` | #5, #7 | Outil local d'annotation : vérités terrain sur les pages, listes à revoir |
 | `anonymisation` | #7 | Données personnelles (règles, zones de formulaire, modèles locaux), à vérifier dans l'outil d'annotation |
 
