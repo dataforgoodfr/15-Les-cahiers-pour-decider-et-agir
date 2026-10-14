@@ -1,0 +1,37 @@
+[project]
+name = "cahiers-htr"
+version = "0.1.0"
+description = "Lecture des pages manuscrites par un modèle HTR léger (kraken), sur CPU"
+readme = "README.md"
+# kraken 7.1.1 ne suit pas encore Python 3.14 ; il perd des lignes sous numpy 2
+# (« Extracting line failed ») et pyarrow récent exige numpy 2
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "kraken==7.1.1",
+    "numpy<2",
+    "pyarrow<19",
+    "pymupdf>=1.26",
+    "torch",
+    "torchvision",  # kraken l'importe ; du même index que torch, sinon il ne se charge pas
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

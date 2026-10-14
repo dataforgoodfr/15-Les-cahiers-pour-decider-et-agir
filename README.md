@@ -104,6 +104,8 @@ Pour commencer, voir [CONTRIBUTING.md](CONTRIBUTING.md).
 - [`backend/`](backend/) : extraction des fichiers des cahiers, base de données
   et interface d'administration.
 - [`extraction/`](extraction/) : transcriptions extérieures (édition Chabin).
+- [`htr/`](htr/) : lecture des pages manuscrites par un modèle HTR léger
+  (kraken, sur CPU).
 - [`plateforme/`](plateforme/) : l'application de production, en Django sur
   Clever Cloud. Pour l'instant un squelette, qui reprendra les modèles de
   `backend/`.
