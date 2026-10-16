@@ -32,6 +32,7 @@ uv run pytest
 | `paires.accord` | #94 | Accord des annotateurs sur les paires jugées dans l'outil d'annotation (kappa de Cohen), litiges et adjudications |
 | `annotation` | #5, #7 | Outil local d'annotation : vérités terrain sur les pages, listes à revoir |
 | `anonymisation` | #7 | Données personnelles (règles, zones de formulaire, modèles locaux), à vérifier dans l'outil d'annotation |
+| `anonymisation.publics` | #128 | Noms publics à ne pas cacher : titres, commune, maire (mandat 2014-2020), présidents de la Ve République, gouvernement de l'hiver 2018-2019 |
 
 Les modèles locaux de l'anonymisation (GLiNER) sont dans un groupe à part :
 `uv sync --group modeles`. Les LLM passent par [Ollama](https://ollama.com/),
