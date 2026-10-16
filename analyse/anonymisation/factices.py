@@ -23,11 +23,14 @@ On mesure le modèle, les règles de `detection` et les deux réunis, à
 chaque étape d'un filtrage cumulé (ETAPES) : noms publics
 (`anonymisation.publics` : titres, commune, maire, présidents, ministres),
 pronoms et passages sans majuscule, noms répandus dans plusieurs communes.
-Pour chacun :
+On y ajoute les zones de signature (`anonymisation.zones`) : dernières
+lignes courtes et première ligne courte, cachées en entier. Pour chacun :
 
 - le rappel : la part des données injectées entièrement couvertes, ou en
   partie ;
-- la précision : la part des repérages qui touchent une donnée injectée.
+- la précision : la part des repérages qui touchent une donnée injectée ;
+- les contributions où une donnée reste visible, et la part du texte
+  masquée hors données injectées (ce que coûte le masquage).
 
 Écrit dans la sortie `textes.jsonl` (les textes et leurs données
 injectées), le cache des réponses du modèle et `mesure.md`. La commande
@@ -61,6 +64,7 @@ from anonymisation.publics import (
     est_public,
     publics,
 )
+from anonymisation.zones import MOTS, zones
 from communes import sources
 
 BAN = "https://adresse.data.gouv.fr/data/ban/adresses/latest/csv/adresses-{}.csv.gz"
@@ -113,7 +117,18 @@ ETIQUETTES = {
     "courriel": "courriel",
 }
 PARTICULES = {"de", "du", "des", "d", "le", "la"}
-SOURCES = {"modèle": {"modèle"}, "règles": {"règles"}, "les deux": {"modèle", "règles"}}
+DEUX = {"modèle", "règles"}
+# sources réunies ; « fin k » : les k dernières lignes courtes (`zones`)
+SOURCES = {
+    "modèle": {"modèle"},
+    "règles": {"règles"},
+    "les deux": DEUX,
+    "les deux + 1 ligne de fin": DEUX | {"fin 1"},
+    "les deux + 2 lignes de fin": DEUX | {"fin 2"},
+    "les deux + 3 lignes de fin": DEUX | {"fin 3"},
+    "les deux + 2 lignes de fin + début": DEUX | {"fin 2", "début"},
+}
+FILTRAGE = ("modèle", "règles", "les deux")  # sources comparées à chaque étape
 ETAPES = ("brut", "noms publics", "pronoms et minuscules", "noms répandus")
 DESCRIPTIONS = (
     "brut : tous les repérages ;",
@@ -274,14 +289,25 @@ class Faussaire:
         return f"{local}@{self.alea.choice(DOMAINES)}"
 
 
+def _autre_prenom(vus: list[str], faussaire: Faussaire) -> str:
+    while (prenom := faussaire.prenom()) in vus:
+        pass
+    return prenom
+
+
 def _valeur(jeton: str, groupe: str, personne: dict, faussaire: Faussaire, insee):
     """La fausse valeur d'un jeton, dans sa casse (« NOM » → « DUPONT »)."""
     prenom, nom = personne["prenom"], personne["nom"]
     majuscules = jeton.isupper() and len(jeton) > 2
     if groupe == "prenom":
-        valeur = prenom
+        # « [Prénom et Prénom NOM] » : un couple, deux prénoms différents
+        vus = personne.setdefault("vus", [])
+        valeur = prenom if not vus else _autre_prenom(vus, faussaire)
+        vus.append(valeur)
         if jeton.lower().endswith("s") or jeton.lower().startswith("deux"):
-            valeur = f"{prenom} et {personne.setdefault('autre', faussaire.prenom())}"
+            autre = _autre_prenom(vus, faussaire)
+            vus.append(autre)
+            valeur = f"{valeur} et {autre}"
     elif groupe == "nom":
         valeur = nom
     elif groupe in ("initiale", "initiale_prenom"):
@@ -415,14 +441,45 @@ def garde(r: dict, etape: int, noms: Publics, repandus_: set[str]) -> bool:
     return True
 
 
+def reperes_de_zones(texte: str) -> list[dict]:
+    """Les zones de signature (`zones`), en repérages : « fin 1 » à « fin 3 »
+    selon le nombre de lignes de fin, « début » pour l'en-tête."""
+    sortie = []
+    for k in (1, 2, 3):
+        sortie += [
+            {
+                "debut": a,
+                "fin": b,
+                "etiquette": "zone",
+                "texte": texte[a:b],
+                "source": f"fin {k}",
+            }
+            for a, b, _ in zones(texte, fin=k, debut=0)
+        ]
+    sortie += [
+        {
+            "debut": a,
+            "fin": b,
+            "etiquette": "zone",
+            "texte": texte[a:b],
+            "source": "début",
+        }
+        for a, b, cote in zones(texte, fin=2, debut=1)
+        if cote == "début"
+    ]
+    return sortie
+
+
 def mesurer(textes: list[dict], noms: dict[str, Publics]) -> dict:
     """Pour chaque source et chaque étape de filtrage : rappel par étiquette
-    injectée, précision par étiquette repérée."""
+    injectée, précision par étiquette repérée ; contributions où une donnée
+    reste visible, et part du texte masquée hors données injectées."""
     repandus_ = repandus(textes)
     sortie = {}
     for source, gardees in SOURCES.items():
         for etape in range(len(ETAPES)):
             rappel, precision = defaultdict(Counter), defaultdict(Counter)
+            ensemble = Counter()
             for t in textes:
                 reperes = [
                     r
@@ -430,15 +487,18 @@ def mesurer(textes: list[dict], noms: dict[str, Publics]) -> dict:
                     if r["source"] in gardees
                     and garde(r, etape, noms[t["insee"]], repandus_)
                 ]
-                caches = set()
+                caches, donnees = set(), set()
                 for r in reperes:
                     caches |= _signes(t["texte"], r["debut"], r["fin"])
+                fuite = False
                 for d in t["donnees"]:
                     signes = _signes(t["texte"], d["debut"], d["fin"])
+                    donnees |= signes
                     c = rappel[d["etiquette"]]
                     c["donnees"] += 1
                     c["entieres"] += bool(signes) and signes <= caches
                     c["touchees"] += bool(signes & caches)
+                    fuite |= not signes <= caches
                 for r in reperes:
                     c = precision[r["etiquette"]]
                     c["reperes"] += 1
@@ -446,7 +506,17 @@ def mesurer(textes: list[dict], noms: dict[str, Publics]) -> dict:
                         r["debut"] < d["fin"] and d["debut"] < r["fin"]
                         for d in t["donnees"]
                     )
-            sortie[source, etape] = {"rappel": rappel, "precision": precision}
+                ensemble["avec_donnees"] += bool(t["donnees"])
+                ensemble["fuites"] += fuite
+                ensemble["hors_donnees"] += len(
+                    _signes(t["texte"], 0, len(t["texte"])) - donnees
+                )
+                ensemble["masques"] += len(caches - donnees)
+            sortie[source, etape] = {
+                "rappel": rappel,
+                "precision": precision,
+                "ensemble": ensemble,
+            }
     return sortie
 
 
@@ -459,6 +529,27 @@ def _somme(compte: dict) -> Counter:
     for c in compte.values():
         total.update(c)
     return total
+
+
+ENTETE = (
+    "| source | étape | repérages | précision | données entièrement couvertes "
+    "| touchées | contributions où une donnée reste visible "
+    "| texte masqué hors données |"
+)
+
+
+def _ligne(m: dict, source: str, etape: int, nom: str) -> str:
+    r = _somme(m[source, etape]["rappel"])
+    p = _somme(m[source, etape]["precision"])
+    e = m[source, etape]["ensemble"]
+    return (
+        f"| {source} | {nom} | {p['reperes']} "
+        f"| {pourcent(p['justes'], p['reperes'])} "
+        f"| {pourcent(r['entieres'], r['donnees'])} "
+        f"| {pourcent(r['touchees'], r['donnees'])} "
+        f"| {e['fuites']} sur {e['avec_donnees']} "
+        f"| {e['masques'] / e['hors_donnees']:.1%} |"
+    )
 
 
 def rapport(m: dict, modele: str, contributions: int, injectees: int) -> str:
@@ -483,25 +574,35 @@ def rapport(m: dict, modele: str, contributions: int, injectees: int) -> str:
         "",
         *(f"{k}. {e}" for k, e in enumerate(DESCRIPTIONS)),
         "",
-        "## Synthèse",
+        "## Filtrage",
+        "",
+        ENTETE,
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for source in FILTRAGE:
+        for etape, nom in enumerate(ETAPES):
+            lignes.append(_ligne(m, source, etape, f"{etape}. {nom}"))
+    derniere = len(ETAPES) - 1
+    lignes += [
+        "",
+        "## Zones de signature",
         "",
         (
-            "| source | étape | repérages | précision | données entièrement "
-            "couvertes | touchées |"
+            "Les dernières lignes courtes (au plus "
+            f"{MOTS} mots) de chaque contribution, et sa première ligne si elle "
+            "est courte, cachées en entier (`anonymisation.zones`), en plus des "
+            f"repérages filtrés jusqu'à l'étape {derniere}."
         ),
-        "|---|---|---|---|---|---|",
+        "",
+        ENTETE,
+        "|---|---|---|---|---|---|---|---|",
+        *(
+            _ligne(m, source, derniere, ETAPES[derniere])
+            for source in SOURCES
+            if source == "les deux" or source not in FILTRAGE
+        ),
     ]
-    for source in SOURCES:
-        for etape, nom in enumerate(ETAPES):
-            r = _somme(m[source, etape]["rappel"])
-            p = _somme(m[source, etape]["precision"])
-            lignes.append(
-                f"| {source} | {etape}. {nom} | {p['reperes']} "
-                f"| {pourcent(p['justes'], p['reperes'])} "
-                f"| {pourcent(r['entieres'], r['donnees'])} "
-                f"| {pourcent(r['touchees'], r['donnees'])} |"
-            )
-    for source, etape in (("modèle", 0), ("les deux", len(ETAPES) - 1)):
+    for source, etape in (("modèle", 0), ("les deux + 2 lignes de fin", derniere)):
         rappel, precision = m[source, etape]["rappel"], m[source, etape]["precision"]
         lignes += [
             "",
@@ -587,7 +688,8 @@ def main() -> None:
                     "reperes": [
                         r | {"source": "modèle"} for r in localiser(passages, texte)
                     ]
-                    + regles(texte, e["city"]["commune"], prenoms_insee),
+                    + regles(texte, e["city"]["commune"], prenoms_insee)
+                    + reperes_de_zones(texte),
                 }
             )
         print(

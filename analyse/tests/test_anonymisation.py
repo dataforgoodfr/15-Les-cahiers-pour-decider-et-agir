@@ -52,6 +52,32 @@ def test_telephone_coupe_en_plusieurs_mots():
     assert mots_personnels([mot(0, "12/02/2019"), mot(0, "75011", rang=1)]) == []
 
 
+def ligne(*textes, numero=0):
+    """Les mots d'une ligne, chacun à 10 points par caractère du précédent."""
+    sortie, x = [], 0
+    for rang, texte in enumerate(textes):
+        sortie.append(mot(x, texte, ligne=numero, rang=rang))
+        x += 10 * len(texte) + 10
+    return sortie
+
+
+def test_civilite_et_initiales():
+    reperes = mots_personnels(ligne("cédé", "à", "monsieur", "J.", "en", "2003"))
+    assert [(r["etiquette"], r["x0"], r["x1"]) for r in reperes] == [("nom", 70, 180)]
+    # « M. le Maire » n'est pas une initiale
+    assert mots_personnels(ligne("M.", "le", "Maire")) == []
+
+
+def test_valeur_d_un_champ_de_formulaire():
+    reperes = mots_personnels(
+        ligne("Prénom", ":", "…..", "Jean…..") + ligne("Objet", ":", "impôts", numero=1)
+    )
+    assert [(r["etiquette"], r["x0"]) for r in reperes] == [
+        ("bloc de coordonnées", 90)
+    ]
+    assert mots_personnels(ligne("Nom", ":", "……")) == []  # champ vide
+
+
 def test_recouvrement_d_un_point():
     rect = {"x0": 0, "y0": 0, "x1": 10, "y1": 10}
     assert recouvrement({"x0": 5, "y0": 5, "x1": 5, "y1": 5}, rect) == 1.0

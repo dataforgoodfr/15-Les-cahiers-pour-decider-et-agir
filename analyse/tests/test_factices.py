@@ -47,6 +47,12 @@ def test_injecter_initiales_et_casse():
     assert [d["etiquette"] for d in donnees] == ["initiale", "nom", "initiale"]
 
 
+def test_injecter_un_couple_a_deux_prenoms():
+    f = Faussaire({"Marie": 1, "Paul": 1}, ["DUPONT"], {}, graine=0)
+    texte, _ = injecter("[Prénom et Prénom NOM]", "17300", f, set())
+    assert texte in ("Marie et Paul DUPONT", "Paul et Marie DUPONT")
+
+
 def test_injecter_ecarte_les_noms_exclus():
     f = Faussaire({"Marie": 1}, ["DUPONT", "MARTIN"], {}, graine=0)
     for _ in range(20):
