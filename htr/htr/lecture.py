@@ -1,6 +1,7 @@
 """Lecture d'une page : rendu à la résolution du scan, segmentation en lignes
 par kraken (modèle blla par défaut), reconnaissance de chaque ligne."""
 
+import re
 import unicodedata
 
 import pymupdf
@@ -63,5 +64,27 @@ class Lecteur:
         for r in rpred.rpred(self.reconnaissance, im, seg):
             texte = unicodedata.normalize("NFC", r.prediction).strip()
             if texte:
-                sortie.append({"texte": texte, "cadre": cadre(r.boundary, facteur)})
+                sortie.append(
+                    {
+                        "texte": texte,
+                        "cadre": cadre(r.boundary, facteur),
+                        "mots": mots(r, facteur),
+                    }
+                )
         return sortie
+
+
+def mots(r, facteur: float) -> list[dict]:
+    """Les mots d'une ligne lue : texte (NFC), cadre en points, tiré des
+    coupures des caractères, et confiance moyenne du modèle (0 à 1)."""
+    sortie = []
+    for m in re.finditer(r"\S+", r.prediction):
+        _, polygone, confiance = r[m.start() : m.end()]
+        sortie.append(
+            {
+                "texte": unicodedata.normalize("NFC", m.group()),
+                "cadre": cadre(polygone, facteur),
+                "confiance": round(float(confiance), 3),
+            }
+        )
+    return sortie

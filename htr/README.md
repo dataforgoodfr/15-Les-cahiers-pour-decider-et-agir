@@ -34,11 +34,15 @@ Les pages à lire sont celles que `analyse/typage` a classées manuscrites
 `../data/htr/<modèle>/<scan>.jsonl` : une ligne par page lue,
 
 ```json
-{"page": 3, "lignes": [{"texte": "…", "cadre": [x0, y0, x1, y1]}]}
+{"page": 3, "lignes": [{"texte": "…", "cadre": [x0, y0, x1, y1],
+  "mots": [{"texte": "…", "cadre": [x0, y0, x1, y1], "confiance": 0.93}]}]}
 ```
 
 avec le cadre en points de la page affichée, comme les lignes de la couche
-texte dans `analyse`. Un scan déjà lu n'est pas relu. Le modèle est
+texte dans `analyse`. Le cadre d'un mot vient des coupures des caractères
+du modèle : il rate souvent le début du mot. Les lectures écrites avant
+l'ajout des mots n'ont pas de `mots` : supprimer le fichier pour relire le
+scan. Un scan déjà lu n'est pas relu. Le modèle est
 téléchargé depuis Zenodo et vérifié par sa somme de contrôle
 (`htr/modeles.py`).
 
