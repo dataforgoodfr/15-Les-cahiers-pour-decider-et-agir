@@ -66,6 +66,19 @@ CIVILITE = re.compile(
     r"\b(?:M\.|Mr\.?|Mme\.?|Mlle\.?|Monsieur|Madame|Mademoiselle|Dr\.?|Me\.?)\s+"
     r"(?:[A-ZÀ-Ý][\w'-]+\s*){1,3}"
 )
+# « Monsieur J. », « monsieur M. », « Mme A.B. » : une civilité et des initiales,
+# que CIVILITE ne voit pas (une lettre seule, une civilité en minuscule)
+CIVILITE_INITIALE = re.compile(
+    r"\b(?:[Mm]\.|[Mm]r\.?|[Mm]me\.?|[Mm]lle\.?|[Mm]onsieur|[Mm]adame|[Mm]ademoiselle)"
+    r"\s+[A-ZÀ-Ý]\.(?:\s?[A-ZÀ-Ý]\.)?"
+)
+# un champ de formulaire en début de ligne (« Prénom : Jean ») : sa valeur
+CHAMP = re.compile(
+    r"^\s*(?:pr[ée]noms?|nom(?:\s+de\s+famille)?|adresse(?:\s+postale)?|"
+    r"t[ée]l[ée]phone|t[ée]l\.?|portable|e-?mail|courriel)\s*:\s*"
+    r"(?P<valeur>\S.*?)\s*$",
+    re.IGNORECASE,
+)
 VOIE = re.compile(
     r"\b\d{1,4}\s?(?:bis|ter)?,?\s+(?:rue|avenue|av\.?|boulevard|bd|chemin|all[ée]e|"
     r"impasse|place|route|quai|cours|square|r[ée]sidence|lotissement|lieu-dit|"
@@ -208,8 +221,14 @@ def mots_personnels(
                 continue
             if adresse_personnelle(t.group("local"), domaine, commune):
                 reperes.append(cadre(t.start(), t.end(), "courriel"))
+        for t in CHAMP.finditer(texte):
+            if re.search(r"\w", t.group("valeur")):
+                reperes.append(
+                    cadre(t.start("valeur"), t.end("valeur"), "bloc de coordonnées")
+                )
         for motif, etiquette in (
             (TELEPHONE, "téléphone"),
+            (CIVILITE_INITIALE, "nom"),
             (VOIE, "adresse"),
             (CODE_POSTAL, "adresse"),
             (CIVILITE, "nom"),
