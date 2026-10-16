@@ -5,7 +5,7 @@ import pytest
 
 from htr import modeles
 from htr.__main__ import chemins, pages_typees, scans_extraction
-from htr.lecture import cadre, image, zoom
+from htr.lecture import cadre, image, mots, zoom
 
 
 def page_avec_image(largeur_px: int, hauteur_px: int, rotation: int = 0):
@@ -83,3 +83,23 @@ def test_modele_deja_present(tmp_path, monkeypatch):
     somme = modeles.md5(tmp_path / "m.mlmodel")
     monkeypatch.setitem(modeles.MODELES, "essai", ("m.mlmodel", "inutile", somme))
     assert modeles.modele("essai", tmp_path) == tmp_path / "m.mlmodel"
+
+
+class Enregistrement:
+    """Un faux enregistrement kraken : une tranche rend (texte, polygone,
+    confiance), le polygone couvrant 10 pixels par caractère."""
+
+    def __init__(self, prediction):
+        self.prediction = prediction
+
+    def __getitem__(self, tranche):
+        texte = self.prediction[tranche]
+        x0, x1 = 10 * tranche.start, 10 * tranche.stop
+        return texte, [(x0, 0), (x1, 0), (x1, 20), (x0, 20)], 0.5
+
+
+def test_mots_et_leur_cadre():
+    assert mots(Enregistrement(" l'État  va"), 2.0) == [
+        {"texte": "l'État", "cadre": [5.0, 0.0, 35.0, 10.0], "confiance": 0.5},
+        {"texte": "va", "cadre": [45.0, 0.0, 55.0, 10.0], "confiance": 0.5},
+    ]
