@@ -90,6 +90,20 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   adresse, téléphone… d'un seul rectangle) ;
   sur une note ouverte, elles changent son étiquette, et Suppr l'efface.
 
+- **Transcrire les pages d'un étalon HTR** (`docs/htr.md`) : une liste en
+  mode « transcrire » montre, à droite, une grande zone de texte où écrire
+  la page entière, sans repérages ni couche texte, pour une lecture
+  indépendante. Elle suit l'élément de la liste, pas la page en vue : on
+  fait défiler l'image sans changer de page transcrite. Le texte
+  s'enregistre en tapant ; Échap sort de la zone, `v` marque la page vue et
+  passe à la suivante. La liste se fait à partir des images de l'étalon, et
+  les transcriptions s'y exportent à côté, sous le nom du transcripteur :
+
+  ```bash
+  uv run python -m annotation.transcriptions liste ../../dole
+  uv run python -m annotation.transcriptions exporter ../../dole --transcripteur hugo
+  ```
+
 - **Juger des paires de propositions** (http://127.0.0.1:8765/paires) :
   deux propositions de l'édition Chabin côte à côte (sortie de
   `python -m paires`), à juger « même proposition », « même sujet, mesure
@@ -114,7 +128,8 @@ Tout reste dans `data/annotation/`, hors de git :
 - `notes.jsonl` : le carnet, en ajout seul (`carnet.py`). Le texte des notes
   et les remarques peuvent citer le cahier ; les analyses n'en lisent que les
   positions, les étiquettes et les qualifications sans remarques
-  (`Carnet.positions`, `Carnet.qualifications(remarques=False)`).
+  (`Carnet.positions`, `Carnet.qualifications(remarques=False)`). Les
+  transcriptions (`Carnet.transcriptions`) citent le cahier entier.
 - `paires.jsonl` : les jugements des paires (`paires.py`), en ajout seul.
 - `listes/*.json` : les listes à revoir (`listes.py`), qui ne contiennent que
   des positions, des étiquettes et des commentaires sur la méthode. Une liste

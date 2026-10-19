@@ -61,6 +61,10 @@ function element(nom, attributs = {}, texte) {
 const cle = (fichier, page) => `${fichier}|${page}`;
 const tache = () => encodeURIComponent(etat.liste?.tache || "");
 const aMasquer = () => etat.liste?.mode === "masquer";
+// une liste à transcrire : on lit la page seul, sans repérages ni couche texte
+const aTranscrire = () => etat.liste?.mode === "transcrire";
+// la vue au défilement marquerait vue une page dépassée, pas transcrite
+const vueAuDefilement = () => $("vue-auto").checked && !aTranscrire();
 const PERSONNELLES = "Données personnelles";
 // étiquettes des touches 1 à 9 : les données personnelles dans une liste à
 // masquer, toutes les étiquettes sinon
@@ -116,7 +120,7 @@ async function lireAdresse() {
 // quitter un cahier depuis sa dernière page montrée : on l'a lue jusqu'au
 // bout, elle est vue (le défilement ne la dépasse jamais)
 function surDernierePage() {
-  return etat.cahier && $("vue-auto").checked && etat.cahier.pages.length > 1
+  return etat.cahier && vueAuDefilement() && etat.cahier.pages.length > 1
     && pageVoisine(1) === etat.page && !etat.statuts.has(cle(etat.cahier.fichier, etat.page));
 }
 
@@ -376,7 +380,7 @@ $("vue").addEventListener("scroll", () => {
     // une page dépassée en défilant vers le bas est vue ; la dernière, qu'on
     // ne dépasse jamais, se marque à la main (pour « selection », le cahier
     // est alors délimité)
-    if (n > etat.page && $("vue-auto").checked) marquerVue(etat.page);
+    if (n > etat.page && vueAuDefilement()) marquerVue(etat.page);
     activerPage(n);
   });
 });
@@ -403,7 +407,7 @@ function echelle() {
 }
 
 function marquesDeLaPage() {
-  if (!etat.liste || !$("voir-marques").checked) return [];
+  if (!etat.liste || aTranscrire() || !$("voir-marques").checked) return [];
   return etat.liste.elements
     .filter((e) => e.fichier === etat.cahier.fichier && e.page === etat.page)
     .flatMap((e) => e.marques || []);
@@ -774,7 +778,7 @@ async function finirGlisse() {
 }
 
 function lignesOcr() {
-  if (!$("voir-ocr").checked) return [];
+  if (!$("voir-ocr").checked || aTranscrire()) return [];
   const c = cle(etat.cahier.fichier, etat.page);
   if (etat.lignes.has(c)) return etat.lignes.get(c);
   etat.lignes.set(c, []);
@@ -801,7 +805,7 @@ $("feuilles").addEventListener("pointerdown", (ev) => {
   if (feuille && Number(feuille.dataset.page) !== etat.page) activerPage(Number(feuille.dataset.page));
 }, true);
 $("feuilles").addEventListener("pointerdown", (ev) => {
-  if (!etat.cahier || ev.button !== 0 || !ev.target.closest(".calque")) return;
+  if (!etat.cahier || aTranscrire() || ev.button !== 0 || !ev.target.closest(".calque")) return;
   ev.preventDefault();
   calqueCourant().setPointerCapture(ev.pointerId);
   const d = pointPdf(ev);
@@ -844,7 +848,7 @@ $("feuilles").addEventListener("pointerup", (ev) => {
 $("feuilles").addEventListener("contextmenu", (ev) => {
   if (!etat.cahier || !ev.target.closest(".calque")) return;
   ev.preventDefault();
-  if (aMasquer()) return;
+  if (aMasquer() || aTranscrire()) return;
   const d = pointPdf(ev);
   poserNoteRapide({ x0: d.x, y0: d.y, x1: d.x, y1: d.y }, FIN);
 });
@@ -1144,6 +1148,66 @@ $("remarque-page").addEventListener("change", (ev) => qualifier("remarque", ev.t
 $("remarque-cahier").addEventListener("change", (ev) => qualifier("remarque", ev.target.value, 0));
 $("voir-ocr").addEventListener("change", () => etat.cahier && dessinerCalques());
 
+// ---------- transcription (liste à transcrire) ----------
+//
+// La zone de texte suit l'élément de la liste, pas la page en vue : on fait
+// défiler l'image pour en lire le bas sans changer de page transcrite. Le
+// texte s'enregistre après une pause dans la frappe, en quittant la zone, et
+// avant de changer d'élément ou de quitter l'onglet.
+
+const PAUSE_TRANSCRIPTION = 1000; // ms
+const transcription = { cible: null, enregistre: "", minuterie: null };
+
+async function enregistrerTranscription() {
+  clearTimeout(transcription.minuterie);
+  const c = transcription.cible;
+  const texte = $("transcription").value;
+  if (!c || texte === transcription.enregistre) return;
+  try {
+    await api("/api/transcrire", { fichier: c.fichier, page: c.page, texte });
+  } catch (e) {
+    $("etat-transcription").textContent = `échec : ${e.message}`;
+    return;
+  }
+  transcription.enregistre = texte;
+  if (etat.cahier?.fichier === c.fichier) etat.cahier.transcriptions[c.page] = texte;
+  if (transcription.cible === c) $("etat-transcription").textContent = "enregistrée";
+}
+
+async function dessinerTranscription() {
+  document.body.classList.toggle("transcrire", aTranscrire());
+  // sans effet dans ce mode : grisées, pour ne pas laisser croire le contraire
+  for (const id of ["voir-marques", "voir-ocr", "vue-auto", "etiquette"]) $(id).disabled = aTranscrire();
+  if (aTranscrire()) $("accepter").hidden = true;
+  const e = etat.liste?.elements[etat.index];
+  const actif = aTranscrire() && Boolean(etat.cahier) && e?.fichier === etat.cahier.fichier;
+  $("bloc-transcription").hidden = !actif;
+  if (!actif) return;
+  const c = transcription.cible;
+  if (c?.fichier === e.fichier && c?.page === e.page) return;
+  await enregistrerTranscription();
+  transcription.cible = { fichier: e.fichier, page: e.page };
+  transcription.enregistre = etat.cahier.transcriptions?.[e.page] || "";
+  $("transcription").value = transcription.enregistre;
+  $("transcription-page").textContent = e.page;
+  $("etat-transcription").textContent = "";
+}
+
+$("transcription").addEventListener("input", () => {
+  $("etat-transcription").textContent = "…";
+  clearTimeout(transcription.minuterie);
+  transcription.minuterie = setTimeout(enregistrerTranscription, PAUSE_TRANSCRIPTION);
+});
+$("transcription").addEventListener("change", enregistrerTranscription);
+window.addEventListener("pagehide", () => {
+  // l'onglet se ferme : un fetch n'aurait pas le temps d'aboutir
+  const c = transcription.cible;
+  const texte = $("transcription").value;
+  if (c && texte !== transcription.enregistre) {
+    navigator.sendBeacon("/api/transcrire", JSON.stringify({ fichier: c.fichier, page: c.page, texte }));
+  }
+});
+
 // ---------- file de chargement des images ----------
 //
 // Les pages du cahier se chargent à l'approche de la vue. La file charge, dans
@@ -1271,6 +1335,7 @@ async function rechargerStatuts() {
 }
 
 async function choisirListe(nom, index = 0) {
+  await enregistrerTranscription();
   if (!nom) {
     etat.liste = null;
     etat.index = -1;
@@ -1279,6 +1344,7 @@ async function choisirListe(nom, index = 0) {
     await rechargerStatuts();
     $("consigne").textContent = "";
     dessinerElements();
+    await dessinerTranscription();
     if (etat.cahier) rafraichirPage();
     return;
   }
@@ -1289,16 +1355,19 @@ async function choisirListe(nom, index = 0) {
   adapterEtiquettes();
   dessinerElements();
   if (etat.liste.elements.length) await allerElement(Math.min(index, etat.liste.elements.length - 1));
+  else await dessinerTranscription();
 }
 
 async function allerElement(i) {
   if (!etat.liste || !etat.liste.elements.length) return;
+  await enregistrerTranscription();
   etat.index = Math.min(Math.max(0, i), etat.liste.elements.length - 1);
   const e = etat.liste.elements[etat.index];
   const y = (e.marques || [])[0]?.y0;
   if (!etat.cahier || etat.cahier.fichier !== e.fichier) await ouvrirCahier(e.fichier, e.page, y);
   else allerPage(e.page, y);
   dessinerElements();
+  await dessinerTranscription();
 }
 
 function dessinerElements() {
@@ -1409,6 +1478,7 @@ window.addEventListener("resize", () => {
 });
 
 document.addEventListener("keydown", async (ev) => {
+  if (ev.key === "Escape" && ev.target === $("transcription")) { ev.target.blur(); return; }
   if (ev.key === "Escape") { fermerFormulaire(); if (etat.cahier) rafraichirPage(); return; }
   if (ev.target.closest("input, textarea, select") || ev.ctrlKey || ev.metaKey || ev.altKey) return;
   const actions = {

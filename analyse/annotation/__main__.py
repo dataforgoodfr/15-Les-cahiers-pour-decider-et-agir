@@ -207,6 +207,11 @@ def application(
                             for (f, p, d), points in carnet.contours().items()
                             if f == fichier
                         ],
+                        "transcriptions": {
+                            p: texte
+                            for (f, p), texte in carnet.transcriptions().items()
+                            if f == fichier
+                        },
                     }
                 )
             elif chemin == "/api/statuts":
@@ -264,6 +269,12 @@ def application(
                             corps.get("points"),
                         )
                     )
+                elif chemin == "/api/transcrire":
+                    fichier = corps["fichier"]
+                    page = int(corps["page"])
+                    if not 1 <= page <= len(corpus.pages(fichier)):
+                        raise ValueError(f"page inconnue : {page}")
+                    self.json(carnet.transcrire(fichier, page, corps["texte"]))
                 elif chemin == "/api/paires/juger" and paires and journal:
                     annotateur = corps["annotateur"].strip()
                     vue = vue_paires(paires, journal, annotateur)

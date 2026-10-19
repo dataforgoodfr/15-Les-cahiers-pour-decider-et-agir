@@ -57,6 +57,11 @@
 </main>
 
 <aside id="panneau-notes">
+  <section id="bloc-transcription" hidden>
+    <h2>Transcription de la page <span id="transcription-page"></span> <span id="etat-transcription" class="discret"></span></h2>
+    <p class="discret aide">Liée à l'élément de la liste, pas à la page en vue : faire défiler l'image ne la change pas. S'enregistre en tapant. Échap sort du texte ; v marque la page vue et passe à la suivante.</p>
+    <textarea id="transcription" spellcheck="false" aria-label="Transcription de la page"></textarea>
+  </section>
   <section id="infos" hidden>
     <h2>Page <span id="infos-numero"></span></h2>
     <dl id="typage" class="proprietes"></dl>
@@ -76,6 +81,7 @@
       <textarea id="remarque-cahier" rows="3"></textarea>
     </label>
   </section>
+  <div id="bloc-notes">
   <h2>Notes de la page</h2>
   <p class="discret aide">Clic : début de contribution. Clic droit : fin. Glisser : caviarder. Enregistré aussitôt, Suppr annule.</p>
   <form id="formulaire-note" hidden>
@@ -88,6 +94,7 @@
     </div>
   </form>
   <ol id="notes"></ol>
+  </div>
   <details>
     <summary>Raccourcis</summary>
     <dl class="raccourcis">
@@ -102,6 +109,7 @@
       <dt>a</dt><dd>accepter les repérages de la page</dd>
       <dt>clic</dt><dd>sur un repérage caché : le rétablir (listes à masquer)</dd>
       <dt>m</dt><dd>montrer ou cacher les repérages</dd>
+      <dt>Échap</dt><dd>dans la transcription : en sortir, pour les raccourcis</dd>
       <dt>Suppr</dt><dd>supprimer la note ouverte</dd>
       <dt>Échap</dt><dd>annuler</dd>
     </dl>

@@ -368,3 +368,27 @@ def test_un_contour_remplace_puis_rend_le_rectangle(serveur):
         {"fichier": FICHIER, "page": 1, "debut": "d1", "points": None},
     )
     assert carnet.contours() == {}
+
+
+def test_carnet_garde_la_derniere_transcription(tmp_path):
+    carnet = Carnet(tmp_path / "notes.jsonl")
+    carnet.transcrire("a.pdf", 2, "premier jet")
+    carnet.transcrire("a.pdf", 2, "relu")
+    carnet.transcrire("a.pdf", "3", "")
+    assert carnet.transcriptions() == {("a.pdf", 2): "relu", ("a.pdf", 3): ""}
+    assert carnet.positions() == []  # une transcription n'est pas une note
+
+
+def test_serveur_transcrit_une_page(serveur):
+    base, carnet = serveur
+    appeler(f"{base}/api/transcrire", {"fichier": FICHIER, "page": 2, "texte": "Lu"})
+    _, corps = appeler(f"{base}/api/cahier?fichier={FICHIER}")
+    assert json.loads(corps)["transcriptions"] == {"2": "Lu"}
+    for corps in (
+        {"fichier": FICHIER, "page": 3, "texte": "x"},
+        {"fichier": "autre.pdf", "page": 1, "texte": "x"},
+    ):
+        with pytest.raises(urllib.error.HTTPError) as e:
+            appeler(f"{base}/api/transcrire", corps)
+        assert e.value.code == 400
+    assert carnet.transcriptions() == {(FICHIER, 2): "Lu"}

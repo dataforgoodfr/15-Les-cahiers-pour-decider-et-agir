@@ -26,6 +26,11 @@ problème tranché à la main (page tournée, illisible…), le type de page
 vérifié, qui corrige ou confirme le typage, la rotation de l'affichage qui
 rend la page lisible (l'ordre de lecture des notes en dépend), ou une
 remarque libre.
+
+Une transcription est la lecture humaine d'une page entière, pour un étalon
+HTR (`annotation.transcriptions`) : chaque enregistrement réécrit tout le
+texte de la page, le dernier l'emporte. Elle cite le cahier : elle ne quitte
+pas la machine.
 """
 
 import json
@@ -189,6 +194,25 @@ class Carnet:
             else:
                 sortie.pop(cle, None)
         return sortie
+
+    def transcrire(self, fichier: str, page: int, texte: str) -> dict:
+        """Le texte entier de la page, lu à la main."""
+        return self._ecrire(
+            {
+                "type": "transcription",
+                "fichier": fichier,
+                "page": int(page),
+                "texte": str(texte),
+            }
+        )
+
+    def transcriptions(self) -> dict[tuple[str, int], str]:
+        """La dernière transcription de chaque page, par (fichier, page)."""
+        return {
+            (e["fichier"], e["page"]): e["texte"]
+            for e in self.evenements()
+            if e["type"] == "transcription"
+        }
 
     def qualifier(self, fichier: str, page: int, champ: str, valeur) -> dict:
         """Qualifie une page (page 0 : le cahier entier).
