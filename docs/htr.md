@@ -152,14 +152,17 @@ Référence : la transcription de Bendinelli, orthographe d'origine.
 
 | Modèle | Où il tourne | CER | WER | inventés | charabia | omis |
 |---|---|---:|---:|---:|---:|---:|
-| *Hugo (humaine), 4 pages, 556 mots* | — | *4,6 %* | *9,9 %* | *2,3 %* | *0,2 %* | *2,5 %* |
+| *Hugo (humaine), 7 pages, 884 mots* | — | *3,5 %* | *8,1 %* | *2,7 %* | *0,1 %* | *1,8 %* |
 | Gemma 4 31b, page entière | loué (Verda, UE), modèle de vision | 8,3 % | 16,9 % | 8,0 % | 1,8 % | 1,0 % |
 
 Gemma 4 31b y invente un peu plus qu'en Charente-Maritime (8,0 % contre
-6,6 %), à 13 s par page sur une A100. Une seconde lecture humaine, de
-Hugo sur 4 pages, s'écarte de celle de Bendinelli de 4,6 % des caractères,
-plus qu'en Charente-Maritime (2,8 %) ; sur ces 4 pages, Gemma est à 7,1 %
-de Bendinelli et 6,8 % de Hugo. Les modèles hébergés n'y ont pas été
+6,6 %), à 13 s par page sur une A100. Une seconde lecture humaine, de Hugo
+sur 7 pages, s'écarte de celle de Bendinelli de 3,5 % des caractères,
+comme en Charente-Maritime (2,8 %) ; sur ces 7 pages, Gemma est à 7,7 %
+de Bendinelli et 7,4 % de Hugo. Il est inégal : il lit certaines pages
+presque comme un humain (2,6 à 3,0 % sur `p22` et `p24`), mais une main
+le fait déraper (20 à 22 % sur `p51`, où les deux lectures humaines
+s'accordent à 2,3 %), comme `01193` en Charente-Maritime. Les modèles hébergés n'y ont pas été
 passés : les scans ne sont pas anonymisés.
 
 ## Ce que ça dit pour la suite
