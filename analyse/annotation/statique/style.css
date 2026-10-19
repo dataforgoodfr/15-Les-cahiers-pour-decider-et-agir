@@ -173,6 +173,10 @@ label.ligne { display: grid; gap: 2px; margin-bottom: 8px; }
 .source.verifie { background: var(--vue); color: var(--surface); }
 .cases .detecte { font-size: 11px; color: var(--revoir); }
 #panneau-notes textarea { width: 100%; resize: vertical; }
+/* liste à transcrire : un panneau large pour le texte, sans notes ni infos */
+body.transcrire { grid-template-columns: 220px 1fr minmax(420px, 34vw); }
+body.transcrire #bloc-notes, body.transcrire #infos { display: none; }
+#transcription { height: calc(100vh - 380px); min-height: 240px; font: 15px/1.5 ui-serif, Georgia, serif; }
 .calque .ligne-ocr { fill: transparent; stroke: var(--vue); stroke-width: 1px; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
 .calque .ligne-ocr:hover { fill: color-mix(in srgb, var(--vue) 18%, transparent); }
 #accepter { width: 100%; margin-top: 8px; }

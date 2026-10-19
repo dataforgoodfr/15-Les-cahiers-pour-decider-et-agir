@@ -22,6 +22,9 @@ liste a un mode :
 - « masquer » : chaque marque est cachée par défaut, et porte un « id ». Le
   relecteur rétablit les fausses alertes (`Carnet.retablir`) et encadre les
   oublis d'une note.
+- « transcrire » : le relecteur écrit le texte entier de chaque page
+  (`Carnet.transcrire`), sans voir de repérages ni la couche texte, pour
+  une lecture indépendante (`annotation.transcriptions`).
 
 Une liste ne contient que des positions, des étiquettes et des commentaires
 sur la méthode, jamais le texte d'un cahier.
@@ -32,7 +35,7 @@ import re
 from pathlib import Path
 
 NOM = re.compile(r"^[\w.-]+$")
-MODES = ("accepter", "masquer")
+MODES = ("accepter", "masquer", "transcrire")
 
 
 def ecrire(
