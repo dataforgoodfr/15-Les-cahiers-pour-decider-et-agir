@@ -35,9 +35,10 @@ uv run pytest
 | `anonymisation.publics` | #128 | Noms publics à ne pas cacher : titres, commune, maire (mandat 2014-2020), présidents de la Ve République, gouvernement de l'hiver 2018-2019 |
 | `anonymisation.factices` | #128 | Repérage mesuré sur l'édition Chabin, avec de fausses coordonnées à la place des crochets : rappel et précision du modèle, des règles et des deux, par étape de filtrage |
 | `anonymisation.zones` | #128 | Zones de signature d'une contribution (dernières lignes courtes, première ligne courte), à cacher en entier |
+| `aude` | #128 | Pages des cahiers de l'Aude publiés anonymisés par le CESE (`../aude/`) rapprochées de leurs pages BnF par l'image (points SIFT) : commune de chaque page, doublons du versement, cahiers absents du versement |
 
 Les modèles locaux de l'anonymisation (GLiNER) sont dans un groupe à part :
-`uv sync --group modeles`. Les LLM passent par [Ollama](https://ollama.com/),
-sur cette machine.
+`uv sync --group modeles` ; OpenCV, pour `aude`, aussi : `uv sync --group
+images`. Les LLM passent par [Ollama](https://ollama.com/), sur cette machine.
 
 Chaque module décrit sa commande dans sa docstring ou son README.

@@ -29,6 +29,11 @@ modeles = [
     "torch>=2.9",
 ]
 
+# rapprochement des pages de l'Aude (points SIFT) : uv sync --group images
+images = [
+    "opencv-python-headless>=4.10",
+]
+
 [tool.uv]
 # un groupe à part : `uv sync` seul ne l'installe pas
 default-groups = ["dev"]
