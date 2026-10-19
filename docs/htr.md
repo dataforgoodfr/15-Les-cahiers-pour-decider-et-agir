@@ -6,6 +6,8 @@ jusqu'ici pour choisir comment les lire. État au 19 octobre 2026.
 
 ## L'étalon
 
+Deux étalons : la Charente-Maritime, décrite ici, et Dole (plus bas).
+
 19 pages manuscrites de trois cahiers de Charente-Maritime (`01024`,
 `00722`, `01193`), recadrées sur les scans BnF à leur résolution d'origine
 (environ 150 ppp). Une 20ᵉ page, tronquée, est exclue.
@@ -132,19 +134,45 @@ Les HTR lisent ligne par ligne, après une segmentation par kraken. Sur
 qu'Ornith lit à 13-17 %. Une partie de l'écart se gagnera en segmentant
 mieux.
 
+### Un second étalon : Dole
+
+La transcription du cahier citoyen de Dole (Jura), réalisée en 2019 par
+Anaïs Rico--Perrier (alors en M2 Analyse du discours, université Marie et
+Louis Pasteur, anciennement de Franche-Comté) et Marion Bendinelli, qui nous
+autorise à la réutiliser. Faite sur le cahier consulté en mairie le
+4 février 2019, avant sa clôture ; ses pages sont rapprochées des pages BnF
+par les feuilles dactylographiées collées, retrouvées sans doute dans la
+couche texte. 31 pages manuscrites, 5 204 mots, pages entières non
+recadrées ; l'étalon reste hors du dépôt (`../dole/`).
+
+| Modèle | Où il tourne | CER | WER | inventés | charabia | omis |
+|---|---|---:|---:|---:|---:|---:|
+| Gemma 4 31b, page entière | loué (Verda, UE), modèle de vision | 11,1 % | 23,6 % | 12,2 % | 2,0 % | 3,1 % |
+
+Gemma 4 31b y invente deux fois plus qu'en Charente-Maritime, à 13 s par
+page sur une A100. La comparaison reste fragile tant que l'étalon n'a
+qu'une lecture humaine (sa version régularisée n'en diffère que de 0,4 %) :
+sans plancher humain, on ne sait pas quelle part de l'écart tient aux
+choix de la transcription, faite pour l'analyse du discours (numéros de
+page, ajouts en marge). Une seconde lecture est en cours. Les modèles
+hébergés n'y ont pas été passés : les scans ne sont pas anonymisés.
+
 ## Ce que ça dit pour la suite
 
 Aucun modèle à poids ouverts ne lit aujourd'hui les manuscrits assez bien
 pour publier : le meilleur, Gemma 4 31b, invente encore un mot sur quinze,
-et bien plus sur les mains difficiles. Il lirait les 142 000 pages
-manuscrites en huit jours environ sur une A100 louée en Europe. Deux pistes,
-à mesurer sur cet étalon :
+et bien plus sur les mains difficiles ou à Dole. Il lirait les 142 000
+pages manuscrites en huit à vingt jours sur une A100 louée en Europe, selon
+la taille des pages (5 à 13 s chacune). Deux pistes, à mesurer sur ces
+étalons :
 
 1. **Affiner Manicule 2026 sur nos écritures.** Les transcriptions de
    Chabin, alignées sur les lignes des scans, donnent des données
    d'entraînement, comme les transcriptions des Archives du Morbihan pour
    1789 (CER de 0,24 à 0,09 après affinage). Les trois cahiers de l'étalon
-   sont exclus de l'entraînement.
+   sont exclus de l'entraînement. Les pages de Dole hors étalon (incertaines
+   au rapprochement, ou dactylographiées et manuscrites mêlées) en donnent
+   d'autres.
 2. **Mieux segmenter** les pages recadrées et les écritures irrégulières.
 
 Une HTR médiocre suffit déjà pour une autre tâche : retrouver dans les scans
