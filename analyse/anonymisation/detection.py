@@ -50,8 +50,9 @@ EXTENSIONS = r"(?:fr|com|net|org|eu|be|ch|info|biz|io|de|uk|it|es|lu|re)"
 COURRIEL = re.compile(
     r"(?P<local>[\w.+-]{2,})"
     # le « @ », ou une lecture de l'OCR : un ou deux signes entre parenthèses,
-    # (a), (9), (g>, ©… ; le domaine doit alors finir par une extension connue
-    r"(?:@|(?P<ocr>\(\w{1,2}[)>]|©))"
+    # (a), (9), (g>, ©…, ou un « @ » détaché par une espace (« dnf @ orange.fr ») ;
+    # le domaine doit alors finir par une extension connue
+    r"(?:@|(?P<ocr>\(\w{1,2}[)>]|©)|(?P<espace>\s@\s?|@\s))"
     r"(?P<domaine>[\w-]{2,}(?:\.[\w-]{2,})*)"
 )
 GENERIQUES = re.compile(
@@ -132,6 +133,7 @@ CHEVAUCHEMENT = 0.3  # recouvrement minimal de deux rectangles d'une même zone
 EXEMPLAIRES = 2  # exemplaires annotés au moins pour reporter une zone
 # encre sans texte, sur l'image de la page à 72 dpi (un pixel, un point)
 CASE = 6  # côté des cases de la grille, en points
+SEUIL_ENCRE = 128  # niveau de gris sous lequel un pixel est encré
 ENCRE = 0.04  # part de pixels sombres pour qu'une case soit encrée
 VOISINES = 2  # cases au plus entre deux cases d'une même zone
 CASES_MIN = 4  # cases encrées au moins dans une zone
@@ -213,7 +215,10 @@ def mots_personnels(
 
         for t in COURRIEL.finditer(texte):
             domaine = t.group("domaine")
-            if t.group("ocr") and not re.search(rf"\.{EXTENSIONS}$", domaine):
+            # une lecture de l'OCR ou un « @ » détaché (« dnf @ orange.fr ») :
+            # le domaine doit finir par une extension connue
+            douteux = t.group("ocr") or t.group("espace")
+            if douteux and not re.search(rf"\.{EXTENSIONS}$", domaine):
                 continue
             sans_point = "." not in domaine
             # un domaine sans point n'est une adresse qu'entre chevrons ou après mailto
@@ -441,15 +446,27 @@ def _reporter(pages: dict[int, Lignes], groupe: list[dict]) -> list[dict]:
     return reperes
 
 
-def encre_sans_texte(gris: np.ndarray, mots: list[tuple]) -> list[dict]:
+def encre_sans_texte(
+    gris: np.ndarray,
+    mots: list[tuple],
+    seuil: int = SEUIL_ENCRE,
+    densite_max: float = DENSITE_MAX,
+    imprime=None,
+) -> list[dict]:
     """Zones d'encre qu'aucun mot de la couche texte ne couvre.
 
     `gris` : l'image de la page affichée en niveaux de gris, un pixel par
     point ; `mots` : leurs cadres dans le même repère. Les cases encrées
     voisines forment une zone ; restent celles assez grandes et faites de
-    traits (écriture, tampon), pas d'un aplat."""
-    encre = gris < 128
-    for x0, y0, x1, y1, *_ in mots:
+    traits (écriture, tampon), pas d'un aplat. Un pixel est encré sous
+    `seuil` ; une zone plus dense que `densite_max` est un aplat.
+    `imprime(texte)` dit si un mot de la couche texte est bien imprimé : sinon
+    (une lecture fautive de l'écriture à la main), son encre reste. Par
+    défaut, tout mot l'est."""
+    encre = gris < seuil
+    for x0, y0, x1, y1, texte, *_ in mots:
+        if imprime is not None and not imprime(texte):
+            continue
         encre[max(0, int(y0) - 3) : int(y1) + 4, max(0, int(x0) - 3) : int(x1) + 4] = (
             False
         )
@@ -482,7 +499,7 @@ def encre_sans_texte(gris: np.ndarray, mots: list[tuple]) -> list[dict]:
         ys, xs = [int(a) for a, _ in cases], [int(b) for _, b in cases]
         x0, y0 = min(xs) * CASE, min(ys) * CASE
         x1, y1 = (max(xs) + 1) * CASE, (max(ys) + 1) * CASE
-        if (x1 - x0) * (y1 - y0) < AIRE_MIN or encre[y0:y1, x0:x1].mean() > DENSITE_MAX:
+        if (x1 - x0) * (y1 - y0) < AIRE_MIN or encre[y0:y1, x0:x1].mean() > densite_max:
             continue
         sortie.append(_cadre(x0, y0, x1, y1, "autre donnée identifiante"))
     return sortie
