@@ -142,26 +142,31 @@ Louis Pasteur, anciennement de Franche-Comté) et Marion Bendinelli, qui nous
 autorise à la réutiliser. Faite sur le cahier consulté en mairie le
 4 février 2019, avant sa clôture ; ses pages sont rapprochées des pages BnF
 par les feuilles dactylographiées collées, retrouvées sans doute dans la
-couche texte. 31 pages manuscrites, 5 204 mots, pages entières non
-recadrées ; l'étalon reste hors du dépôt (`../dole/`).
+couche texte. 31 pages manuscrites, 5 037 mots, pages entières non
+recadrées ; l'étalon reste hors du dépôt (`../dole/`). La transcription
+soude les expressions (« pouvoir_d_achat ») et code la ponctuation
+(« PUN_T ») pour l'analyse du discours : l'extraction défait les unes et
+retire les autres.
+
+Référence : la transcription de Bendinelli, orthographe d'origine.
 
 | Modèle | Où il tourne | CER | WER | inventés | charabia | omis |
 |---|---|---:|---:|---:|---:|---:|
-| Gemma 4 31b, page entière | loué (Verda, UE), modèle de vision | 11,1 % | 23,6 % | 12,2 % | 2,0 % | 3,1 % |
+| *Hugo (humaine), 4 pages, 556 mots* | — | *4,6 %* | *9,9 %* | *2,3 %* | *0,2 %* | *2,5 %* |
+| Gemma 4 31b, page entière | loué (Verda, UE), modèle de vision | 8,3 % | 16,9 % | 8,0 % | 1,8 % | 1,0 % |
 
-Gemma 4 31b y invente deux fois plus qu'en Charente-Maritime, à 13 s par
-page sur une A100. La comparaison reste fragile tant que l'étalon n'a
-qu'une lecture humaine (sa version régularisée n'en diffère que de 0,4 %) :
-sans plancher humain, on ne sait pas quelle part de l'écart tient aux
-choix de la transcription, faite pour l'analyse du discours (numéros de
-page, ajouts en marge). Une seconde lecture est en cours. Les modèles
-hébergés n'y ont pas été passés : les scans ne sont pas anonymisés.
+Gemma 4 31b y invente un peu plus qu'en Charente-Maritime (8,0 % contre
+6,6 %), à 13 s par page sur une A100. Une seconde lecture humaine, de
+Hugo sur 4 pages, s'écarte de celle de Bendinelli de 4,6 % des caractères,
+plus qu'en Charente-Maritime (2,8 %) ; sur ces 4 pages, Gemma est à 7,1 %
+de Bendinelli et 6,8 % de Hugo. Les modèles hébergés n'y ont pas été
+passés : les scans ne sont pas anonymisés.
 
 ## Ce que ça dit pour la suite
 
 Aucun modèle à poids ouverts ne lit aujourd'hui les manuscrits assez bien
 pour publier : le meilleur, Gemma 4 31b, invente encore un mot sur quinze,
-et bien plus sur les mains difficiles ou à Dole. Il lirait les 142 000
+et bien plus sur les mains difficiles. Il lirait les 142 000
 pages manuscrites en huit à vingt jours sur une A100 louée en Europe, selon
 la taille des pages (5 à 13 s chacune). Deux pistes, à mesurer sur ces
 étalons :
