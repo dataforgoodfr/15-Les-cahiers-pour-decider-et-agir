@@ -162,8 +162,8 @@ comme en Charente-Maritime (2,8 %) ; sur ces 7 pages, Gemma est à 7,7 %
 de Bendinelli et 7,4 % de Hugo. Il est inégal : il lit certaines pages
 presque comme un humain (2,6 à 3,0 % sur `p22` et `p24`), mais une main
 le fait déraper (20 à 22 % sur `p51`, où les deux lectures humaines
-s'accordent à 2,3 %), comme `01193` en Charente-Maritime. Les modèles hébergés n'y ont pas été
-passés : les scans ne sont pas anonymisés.
+s'accordent à 2,3 %), comme `01193` en Charente-Maritime. Les modèles
+hébergés n'y ont pas été passés : les scans ne sont pas anonymisés.
 
 ## Ce que ça dit pour la suite
 
