@@ -53,8 +53,10 @@ contre la même lecture passée en orthographe corrigée.
 | Gemma 4 31b, page entière | loué (Verda, UE), modèle de vision | 6,4 % | 17,3 % | 6,6 % | 1,1 % | 0,8 % |
 | Gemma 4 31b, page entière, *reasoning* | loué (Verda, UE), modèle de vision | 6,7 % | 17,5 % | 7,0 % | 1,0 % | 0,6 % |
 | Inkling | hébergé (Fireworks) | 8,2 % | 18,8 % | 7,2 % | 0,9 % | 2,0 % |
+| Muse Glimmer 30b, page entière | loué (Verda, UE), modèle de vision | 8,4 % | 19,3 % | 7,6 % | 0,7 % | 1,9 % |
 | DeepSeek V4.1 Flash | hébergé (Fireworks) | 8,9 % | 20,9 % | 10,0 % | 1,1 % | 0,8 % |
 | Ornith-1.5 9b | local, modèle de vision | 9,6 % | 21,7 % | 9,1 % | 0,8 % | 1,2 % |
+| Qwen 3.8 27b, page entière | loué (Verda, UE), modèle de vision | 10,7 % | 24,0 % | 11,5 % | 1,2 % | 1,0 % |
 | GLM 5.3 Flash | hébergé (Fireworks) | 24,0 % | 31,6 % | 5,5 % | 0,9 % | 18,1 % |
 | Gemma 4 31b, ligne par ligne, *reasoning* | loué (Verda, UE), modèle de vision | 24,4 % | 40,7 % | 26,5 % | 3,7 % | 1,5 % |
 | Qwen 3.8 Max | hébergé (Fireworks) | 26,6 % | 32,9 % | 3,8 % | 1,1 % | 22,9 % |
@@ -93,16 +95,25 @@ serverless répartit les requêtes entre ses régions, États-Unis compris.
   mais en rendent vides 3 et 2 sur 19.
 - **Sur la main difficile, aucun ne tient** : 18 à 48 % de mots inventés
   sur `01193_p19`, contre 6 % pour Opus.
-- Les poids de ces modèles ne sont pas vérifiés : seul un modèle à poids
-  ouverts pourrait tourner chez un hébergeur européen pour le corpus.
+- **Cinq ont des poids publiés** (voir « Sources des modèles ») : Kimi K3,
+  Muse Spark, Inkling, DeepSeek V4.1 Flash et GLM 5.3 Flash. Ils pourraient
+  tourner chez un hébergeur européen, mais ils sont gros (321 à 2 780
+  milliards de paramètres) : des machines à plusieurs cartes, dix fois le
+  prix d'une A100 de l'heure. Ember 1 et Qwen 3.8 Max n'en ont pas.
 
 ### Modèles à poids ouverts
 
-- **Gemma 4 31b, page entière, est le meilleur modèle qu'on puisse faire
-  tourner nous-mêmes** (#44) : 6,6 % de mots inventés contre 9,1 % pour
+- **Gemma 4 31b, page entière, est le meilleur modèle qui tienne sur une
+  carte** (#44) : 6,6 % de mots inventés contre 9,1 % pour
   Ornith, mais trois fois plus qu'Opus. Sur la main difficile, il invente
   encore 28 % des mots de `01193_p19`. Q4_K_M (20 Go) sous Ollama, sur une
   A100 40 Go louée chez Verda (Finlande) : environ 5 s par page.
+- **Ses voisins de taille ne font pas mieux** : Muse Glimmer 30b (Meta,
+  Apache 2.0) fait jeu égal à Dole et moins bien en Charente-Maritime ;
+  Qwen 3.8 27b invente presque deux fois plus. Tous trois dérapent sur la
+  même main de Dole (`p51`, 22 à 26 % de CER). Glimmer importé de Hugging
+  Face (GGUF) ne rend rien sous Ollama, qui ne découpe pas ses canaux de
+  réponse : il faut le modèle de la bibliothèque d'Ollama (`muse-glimmer`).
 - **Le *reasoning* n'apporte rien** à Gemma 4 31b en page entière (7,0 %),
   pour un temps dix fois plus long (49 s par page). Il faut relever le
   plafond de jetons : à 2 048, la réflexion l'épuise et une page sur deux
@@ -153,7 +164,9 @@ Référence : la transcription de Bendinelli, orthographe d'origine.
 | Modèle | Où il tourne | CER | WER | inventés | charabia | omis |
 |---|---|---:|---:|---:|---:|---:|
 | *Hugo (humaine), 7 pages, 884 mots* | — | *3,5 %* | *8,1 %* | *2,7 %* | *0,1 %* | *1,8 %* |
+| Muse Glimmer 30b, page entière | loué (Verda, UE), modèle de vision | 8,2 % | 17,1 % | 8,6 % | 1,5 % | 1,1 % |
 | Gemma 4 31b, page entière | loué (Verda, UE), modèle de vision | 8,3 % | 16,9 % | 8,0 % | 1,8 % | 1,0 % |
+| Qwen 3.8 27b, page entière | loué (Verda, UE), modèle de vision | 12,6 % | 24,5 % | 13,1 % | 2,2 % | 1,7 % |
 
 Gemma 4 31b y invente un peu plus qu'en Charente-Maritime (8,0 % contre
 6,6 %), à 13 s par page sur une A100. Une seconde lecture humaine, de Hugo
@@ -167,9 +180,11 @@ hébergés n'y ont pas été passés : les scans ne sont pas anonymisés.
 
 ## Ce que ça dit pour la suite
 
-Aucun modèle à poids ouverts ne lit aujourd'hui les manuscrits assez bien
-pour publier : le meilleur, Gemma 4 31b, invente encore un mot sur quinze,
-et bien plus sur les mains difficiles. Il lirait les 142 000
+Aucun modèle qui tienne sur une carte ne lit aujourd'hui les manuscrits
+assez bien pour publier : le meilleur, Gemma 4 31b, invente encore un mot
+sur quinze, et bien plus sur les mains difficiles. Les modèles à poids
+ouverts plus gros font un peu mieux (Muse Spark, 4,9 % ; Kimi K3, 3,4 %),
+mais à un coût et une consommation hors de proportion avec le gain. Il lirait les 142 000
 pages manuscrites en huit à vingt jours sur une A100 louée en Europe, selon
 la taille des pages (5 à 13 s chacune). Deux pistes, à mesurer sur ces
 étalons :
@@ -195,6 +210,18 @@ alignement approximatif de son texte.
 | McCATMuS | CC BY 4.0 | [10.5281/zenodo.13788177](https://doi.org/10.5281/zenodo.13788177) |
 | Manu McFondue v4 | CC BY 4.0 | [10.5281/zenodo.10886224](https://doi.org/10.5281/zenodo.10886224) |
 | PyLaia RIMES (Teklia) | MIT | [huggingface.co/Teklia/pylaia-rimes](https://huggingface.co/Teklia/pylaia-rimes) |
+| Gemma 4 31b (Google) | Apache 2.0 | [huggingface.co/google/gemma-4-31B-it](https://huggingface.co/google/gemma-4-31B-it) |
+| Muse Glimmer 30b (Meta), 28 G paramètres | Apache 2.0 | [huggingface.co/meta-models/Muse-Glimmer-30B](https://huggingface.co/meta-models/Muse-Glimmer-30B) |
+| Qwen 3.8 27b | Apache 2.0 | [huggingface.co/Qwen/Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B) |
+| Kimi K3 (Moonshot), 2 780 G | propre (« kimi-k3 ») | [huggingface.co/moonshotai/Kimi-K3](https://huggingface.co/moonshotai/Kimi-K3) |
+| Muse Spark Open (Meta), 822 G | Muse Model License, accès sur formulaire | [huggingface.co/meta-models/Muse-Spark-Open-816B-A42B](https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B) |
+| Inkling (Thinking Machines), 952 G | Apache 2.0 | [huggingface.co/thinkingmachines/Inkling](https://huggingface.co/thinkingmachines/Inkling) |
+| DeepSeek V4.1 Flash, 763 G | MIT | [huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash) |
+| GLM 5.3 Flash (Z.ai), 321 G | MIT | [huggingface.co/zai-org/GLM-5.3-Flash](https://huggingface.co/zai-org/GLM-5.3-Flash) |
+| Ember 1, Qwen 3.8 Max | pas de poids publiés | servis par Fireworks seulement |
+
+Licences et tailles relevées sur Hugging Face le 19 octobre 2026 ; les
+versions servies par Fireworks peuvent être quantifiées autrement.
 
 Kraken 7.1.1 et PyLaia 1.1.2, sur CPU. Kraken 7.1.1 perd des lignes sous
 numpy 2 (« Extracting line failed ») : il faut `numpy<2`.
