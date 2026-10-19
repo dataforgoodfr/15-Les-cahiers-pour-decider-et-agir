@@ -36,6 +36,7 @@ uv run pytest
 | `anonymisation.factices` | #128 | Repérage mesuré sur l'édition Chabin, avec de fausses coordonnées à la place des crochets : rappel et précision du modèle, des règles et des deux, par étape de filtrage |
 | `anonymisation.zones` | #128 | Zones de signature d'une contribution (dernières lignes courtes, première ligne courte), à cacher en entier |
 | `aude` | #128 | Pages des cahiers de l'Aude publiés anonymisés par le CESE (`../aude/`) rapprochées de leurs pages BnF par l'image (points SIFT) : commune de chaque page, doublons du versement, cahiers absents du versement |
+| `aude.etalon` | #128 | Étalon d'anonymisation : les rectangles gris des Archives de l'Aude, repérés sur les pages publiées et reportés en points sur les pages BnF rapprochées (recalés localement, avec leur accord), manuscrits compris ; les découpes n'y figurent pas |
 
 Les modèles locaux de l'anonymisation (GLiNER) sont dans un groupe à part :
 `uv sync --group modeles` ; OpenCV, pour `aude`, aussi : `uv sync --group

@@ -51,13 +51,21 @@ def _gris(pix: pymupdf.Pixmap) -> np.ndarray:
     return a[:, : pix.w].copy()
 
 
-def _a_la_largeur(a: np.ndarray) -> np.ndarray | None:
+def _cadrer(a: np.ndarray) -> tuple[np.ndarray, tuple[int, int, float]] | None:
+    """L'image recadrée sur ce qui n'est pas du fond, à LARGEUR ; et le
+    cadrage (x0, y0, facteur) pour revenir à l'image d'origine."""
     ys, xs = np.where(a < BLANC)
     if len(ys) == 0:
         return None
-    a = a[ys.min() : ys.max() + 1, xs.min() : xs.max() + 1]
+    x0, y0 = int(xs.min()), int(ys.min())
+    a = a[y0 : ys.max() + 1, x0 : xs.max() + 1]
     f = LARGEUR / a.shape[1]
-    return cv2.resize(a, None, fx=f, fy=f, interpolation=cv2.INTER_AREA)
+    return cv2.resize(a, None, fx=f, fy=f, interpolation=cv2.INTER_AREA), (x0, y0, f)
+
+
+def _a_la_largeur(a: np.ndarray) -> np.ndarray | None:
+    cadree = _cadrer(a)
+    return None if cadree is None else cadree[0]
 
 
 def nature(page: pymupdf.Page) -> str:
@@ -80,6 +88,17 @@ def image_bnf(page: pymupdf.Page) -> np.ndarray | None:
     return _a_la_largeur(_gris(page.get_pixmap(dpi=DPI, colorspace=pymupdf.csGRAY)))
 
 
+def image_bnf_vers_page(page: pymupdf.Page) -> tuple[np.ndarray, np.ndarray] | None:
+    """L'image d'une page BnF, et la transformation (2 × 3) de ses pixels
+    vers les points de la page PDF."""
+    cadree = _cadrer(_gris(page.get_pixmap(dpi=DPI, colorspace=pymupdf.csGRAY)))
+    if cadree is None:
+        return None
+    image, (x0, y0, f) = cadree
+    k = 72 / DPI
+    return image, np.array([[k / f, 0, k * x0], [0, k / f, k * y0]])
+
+
 def descripteurs(image: np.ndarray | None) -> tuple[np.ndarray, np.ndarray]:
     """Positions (n, 2) et descripteurs SIFT (n, 128) ; vides sans image."""
     vide = np.empty((0, 2), np.float32), np.empty((0, 128), np.float32)
@@ -99,20 +118,26 @@ def _lowe(paires) -> list:
     ]
 
 
-def points_communs(a, b) -> int:
-    """Appariements de deux pages qu'une même similitude explique."""
+def similitude(a, b) -> tuple[np.ndarray | None, int]:
+    """La similitude (2 × 3) qui envoie la page a sur la page b, et le nombre
+    d'appariements qu'elle explique."""
     (pa, da), (pb, db) = a, b
     if len(da) < 2 or len(db) < 2:
-        return 0
+        return None, 0
     bons = _lowe(cv2.BFMatcher(cv2.NORM_L2).knnMatch(da, db, k=2))
     if len(bons) < 4:
-        return 0
+        return None, 0
     source = pa[[m.queryIdx for m in bons]]
     cible = pb[[m.trainIdx for m in bons]]
-    _, gardes = cv2.estimateAffinePartial2D(
+    matrice, gardes = cv2.estimateAffinePartial2D(
         source, cible, method=cv2.RANSAC, ransacReprojThreshold=TOLERANCE
     )
-    return 0 if gardes is None else int(gardes.sum())
+    return (None, 0) if gardes is None else (matrice, int(gardes.sum()))
+
+
+def points_communs(a, b) -> int:
+    """Appariements de deux pages qu'une même similitude explique."""
+    return similitude(a, b)[1]
 
 
 class Index:
