@@ -35,6 +35,12 @@ def test_courriels_personnels_et_publics():
     assert [(r["etiquette"], r["x1"]) for r in reperes] == [("courriel", 270)]
 
 
+def test_courriel_abrege_au_arobase_detache():
+    reperes = mots_personnels(ligne("écrire", "à", "dnf", "@", "orange.fr"))
+    assert [r["etiquette"] for r in reperes] == ["courriel"]
+    assert mots_personnels(ligne("dnf", "@", "maison")) == []  # sans extension
+
+
 def test_telephone_coupe_en_plusieurs_mots():
     mots = [
         mot(0, "Tél", rang=0),
@@ -72,9 +78,7 @@ def test_valeur_d_un_champ_de_formulaire():
     reperes = mots_personnels(
         ligne("Prénom", ":", "…..", "Jean…..") + ligne("Objet", ":", "impôts", numero=1)
     )
-    assert [(r["etiquette"], r["x0"]) for r in reperes] == [
-        ("bloc de coordonnées", 90)
-    ]
+    assert [(r["etiquette"], r["x0"]) for r in reperes] == [("bloc de coordonnées", 90)]
     assert mots_personnels(ligne("Nom", ":", "……")) == []  # champ vide
 
 
