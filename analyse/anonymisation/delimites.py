@@ -66,6 +66,7 @@ from anonymisation.publics import (
     COMMUNES,
     MAIRES,
     PERSONNALITES,
+    Publics,
     charger_maires,
     publics,
 )
@@ -244,26 +245,37 @@ def couverte(
     return _encre_couverte(donnee, gardes) >= ENCRE_COUVERTE
 
 
+def gardes_de(
+    p: dict, gardees: set[str], etape: int, noms_: Publics, repandus_: set[str]
+) -> list[dict]:
+    """Les repérages d'une page venus de `gardees` qui survivent aux filtres
+    jusqu'à `etape`."""
+    return [
+        r
+        for r in p["reperes"]
+        if r["source"] in gardees and garde(r, etape, noms_, repandus_)
+    ]
+
+
 def mesurer(
-    pages: dict, noms: dict, repandus_: set[str], lexique: set[str] = frozenset()
+    pages: dict,
+    noms: dict,
+    repandus_: set[str],
+    lexique: set[str] = frozenset(),
+    sources: dict[str, set[str]] = SOURCES,
 ) -> dict:
     """Pour chaque source et étape : données couvertes par étiquette,
     repérages qui touchent une donnée, contributions où une donnée reste
     visible, mots hors données cachés."""
     sortie = {}
     imprimes = gabarit(pages)
-    for source, gardees in SOURCES.items():
+    for source, gardees in sources.items():
         etapes = range(len(ETAPES)) if source in FILTRAGE else [len(ETAPES) - 1]
         for etape in etapes:
             rappel, ensemble = defaultdict(Counter), Counter()
             fuites, avec = set(), set()
             for (fichier, n), p in pages.items():
-                gardes = [
-                    r
-                    for r in p["reperes"]
-                    if r["source"] in gardees
-                    and garde(r, etape, noms[fichier], repandus_)
-                ]
+                gardes = gardes_de(p, gardees, etape, noms[fichier], repandus_)
                 for d in p["donnees"]:
                     ok = couverte(d, p["mots"], gardes, imprimes[fichier])
                     c = rappel[d["etiquette"]]
@@ -301,12 +313,7 @@ def visibles(pages: dict, noms: dict, repandus_: set[str]) -> list[dict]:
     gardees = SOURCES[COMPLETE]
     sortie = []
     for (fichier, n), p in sorted(pages.items()):
-        gardes = [
-            r
-            for r in p["reperes"]
-            if r["source"] in gardees
-            and garde(r, len(ETAPES) - 1, noms[fichier], repandus_)
-        ]
+        gardes = gardes_de(p, gardees, len(ETAPES) - 1, noms[fichier], repandus_)
         for d in p["donnees"]:
             if not couverte(d, p["mots"], gardes, imprimes[fichier]):
                 sortie.append(
@@ -445,6 +452,77 @@ def rapport(m: dict, pages: int, cahiers: int, donnees: int, modele: str) -> str
     return "\n".join(lignes)
 
 
+def reperes_de_la_page(
+    mots: list[tuple],
+    gris: np.ndarray,
+    commune: str,
+    prenoms: set[str],
+    imprime,
+    passages: list,
+) -> list[dict]:
+    """Les repérages d'une page par chaque source : règles, encre sans texte
+    et ses variantes, modèle (`passages` : ses réponses sur le texte de la
+    page). Sans les zones, qui demandent les contributions délimitées."""
+    reperes = [
+        r | {"texte": texte_du_cadre(mots, r), "source": "règles"}
+        for r in mots_personnels(mots, commune, frozenset(prenoms))
+    ]
+    reperes += [
+        r | {"etiquette": "écriture", "texte": "", "source": "encre"}
+        for r in encre_sans_texte(gris, mots)
+    ]
+    for nom, reglage in VARIANTES.items():
+        reglage = dict(reglage)
+        if reglage.pop("sous_ocr", False):
+            reglage["imprime"] = imprime
+        reperes += [
+            r | {"etiquette": "écriture", "texte": "", "source": nom}
+            for r in encre_sans_texte(gris, mots, **reglage)
+        ]
+    reperes += [
+        r | {"texte": texte_du_cadre(mots, r), "source": "modèle"}
+        for r in localiser(passages, mots)
+    ]
+    return reperes
+
+
+def references(
+    args: argparse.Namespace, fichiers: set[str]
+) -> tuple[set[str], set[str], dict, dict[str, str]]:
+    """Les prénoms de l'INSEE, les formes du lexique, les noms publics de
+    chaque cahier et le nom de chaque commune (`args.cache`, `args.communes`)."""
+    prenoms = charger_prenoms(sources.telecharger(PRENOMS, args.cache))
+    lexique = {
+        _simple(ligne.split("\t", 1)[0])
+        for ligne in sources.telecharger(LEXIQUE, args.cache).decode().splitlines()[1:]
+    }
+    maires = charger_maires(sources.telecharger(MAIRES, args.cache))
+    cog = {
+        c["com"]: (c["libelle"], c["nccenr"])
+        for c in sources.premier_csv_zip(sources.telecharger(COMMUNES, args.cache))
+    }
+    with args.communes.open(encoding="utf-8", newline="") as f:
+        nom_commune = {
+            c["code_insee"]: c["nom_2019"] or c["commune"] for c in csv.DictReader(f)
+        }
+    noms = {}
+    for f in fichiers:
+        code = code_insee(f) or ""
+        maire = (maires[code],) if code in maires else ()
+        noms[f] = publics(PERSONNALITES + maire, cog.get(code, ()), prenoms)
+    return prenoms, lexique, noms, nom_commune
+
+
+def modele_et_cache(args: argparse.Namespace) -> tuple[Paresseux, str, Cache]:
+    """Le modèle (`args.modele`), chargé à la demande, son nom et le cache de
+    ses réponses dans `args.modeles`."""
+    nom_modele = (
+        "gliner:urchade/gliner_multi_pii-v1" if args.modele == "gliner" else args.modele
+    )
+    cache = Cache(args.modeles / f"{re.sub(r'[^\w.-]', '_', nom_modele)}.jsonl")
+    return Paresseux(args.modele), nom_modele, cache
+
+
 def charger_pages(args: argparse.Namespace) -> tuple[dict, dict, str, set[str]]:
     """Les pages mesurées (mots, repérages, données encadrées), les noms
     publics de chaque cahier, le nom du modèle et les formes du lexique."""
@@ -480,35 +558,12 @@ def charger_pages(args: argparse.Namespace) -> tuple[dict, dict, str, set[str]]:
     for r in carnet.retablis().values():
         retablis[r["fichier"], r["page"]].append(r)
 
-    prenoms = charger_prenoms(sources.telecharger(PRENOMS, args.cache))
-    lexique = {
-        _simple(ligne.split("\t", 1)[0])
-        for ligne in sources.telecharger(LEXIQUE, args.cache).decode().splitlines()[1:]
-    }
+    prenoms, lexique, noms, nom_commune = references(args, fichiers)
 
     def imprime(texte: str) -> bool:
         return _simple(texte) in lexique
 
-    maires = charger_maires(sources.telecharger(MAIRES, args.cache))
-    cog = {
-        c["com"]: (c["libelle"], c["nccenr"])
-        for c in sources.premier_csv_zip(sources.telecharger(COMMUNES, args.cache))
-    }
-    with args.communes.open(encoding="utf-8", newline="") as f:
-        nom_commune = {
-            c["code_insee"]: c["nom_2019"] or c["commune"] for c in csv.DictReader(f)
-        }
-    noms = {}
-    for f in fichiers:
-        code = code_insee(f) or ""
-        maire = (maires[code],) if code in maires else ()
-        noms[f] = publics(PERSONNALITES + maire, cog.get(code, ()), prenoms)
-
-    modele = Paresseux(args.modele)
-    nom_modele = (
-        "gliner:urchade/gliner_multi_pii-v1" if args.modele == "gliner" else args.modele
-    )
-    cache = Cache(args.modeles / f"{re.sub(r'[^\w.-]', '_', nom_modele)}.jsonl")
+    modele, nom_modele, cache = modele_et_cache(args)
     par_fichier = defaultdict(list)
     for c in contributions:
         par_fichier[c["fichier"]].append(c)
@@ -538,30 +593,15 @@ def charger_pages(args: argparse.Namespace) -> tuple[dict, dict, str, set[str]]:
                 page = doc[n - 1]
                 mots = mots_de_la_page(page)
                 lignes[n] = lignes_de_la_page(mots)
-                reperes = []
-                for r in mots_personnels(mots, commune, frozenset(prenoms)):
-                    reperes.append(
-                        r | {"texte": texte_du_cadre(mots, r), "source": "règles"}
-                    )
                 gris = image_grise(page)
-                for r in encre_sans_texte(gris, mots):
-                    reperes.append(
-                        r | {"etiquette": "écriture", "texte": "", "source": "encre"}
-                    )
-                for nom, reglage in VARIANTES.items():
-                    reglage = dict(reglage)
-                    if reglage.pop("sous_ocr", False):
-                        reglage["imprime"] = imprime
-                    for r in encre_sans_texte(gris, mots, **reglage):
-                        reperes.append(
-                            r | {"etiquette": "écriture", "texte": "", "source": nom}
-                        )
-                texte = texte_de_la_page(mots)
-                passages = cache.obtenir(fichier, n, modele, texte)
-                for r in localiser(passages, mots):
-                    reperes.append(
-                        r | {"texte": texte_du_cadre(mots, r), "source": "modèle"}
-                    )
+                reperes = reperes_de_la_page(
+                    mots,
+                    gris,
+                    commune,
+                    prenoms,
+                    imprime,
+                    cache.obtenir(fichier, n, modele, texte_de_la_page(mots)),
+                )
                 ref = (
                     reference(
                         anciens[fichier, n], retablis[fichier, n], notes[fichier, n]
