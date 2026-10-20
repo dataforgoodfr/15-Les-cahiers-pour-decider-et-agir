@@ -33,7 +33,7 @@ livraison au premier trimestre 2027. Le détail est dans l'issue
 
 ## Où on en est
 
-Au 14 octobre 2026 :
+Au 20 octobre 2026 :
 
 - **Le corpus est mesuré** : type de chaque page, communes, panel
   ([`analyse/`](analyse/)).
@@ -45,6 +45,17 @@ Au 14 octobre 2026 :
 - **Le découpage automatique** (règles : courriels, formulaires, lettres)
   est mesuré sur ces cahiers délimités : sur les pages dactylographiées, 78 %
   des débuts trouvés sont justes et 65 % des débuts sont trouvés.
+- **L'anonymisation automatique** est mesurée sur trois étalons caviardés
+  par des humains ([`docs/anonymisation.md`](docs/anonymisation.md)).
+  Publié en texte seul, le corpus est couvert à 92 % en ne cachant que 3 %
+  des mots du lexique, à 94 % si l'on encadre deux pages par formulaire ;
+  1 333 cahiers en ont un
+  ([#128](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/128)).
+- **La lecture des manuscrits** a son banc d'essai, sur deux étalons
+  (Charente-Maritime, Dole) ([`docs/htr.md`](docs/htr.md)).
+- **Le regroupement des propositions** est outillé : découpage des
+  contributions de l'édition Chabin en propositions, paires tirées et outil
+  pour les juger ([#94](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/94)).
 - **La plateforme Django** charge les cahiers, les contributions délimitées
   et celles de l'édition Chabin
   ([`plateforme/`](plateforme/)).
@@ -70,10 +81,13 @@ On est encore loin de diffuser massivement les cahiers :
 - **Contenu prêt** : les 100 contributions délimitées et caviardées à la main
   du premier tirage. C'est le rythme d'un lecteur, pas d'une diffusion
   massive.
-- **Découper et anonymiser automatiquement** est le préalable au reste du
-  corpus. Aujourd'hui, les règles ne découpent que les pages
-  dactylographiées (courriels, formulaires, lettres) et en manquent un tiers
-  des débuts ; l'anonymisation automatique doit être relue à la main.
+- **Découper automatiquement** est le préalable au reste du corpus.
+  Aujourd'hui, les règles ne découpent que les pages dactylographiées
+  (courriels, formulaires, lettres) et en manquent un tiers des débuts.
+- **Anonymiser sans tout relire** suppose une décision de l'association :
+  publier le texte des contributions plutôt que les images des pages
+  ([#128](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/128)). Il resterait à encadrer deux pages par formulaire
+  (environ 2 700 pages) et un audit par échantillon.
 - **La moitié des pages écrites sont manuscrites** (142 000 sur 276 000) et
   ne sont pas encore lues
   ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)) :
