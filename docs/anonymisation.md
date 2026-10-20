@@ -3,7 +3,7 @@
 Faute de bénévoles, le corpus ne peut pas être relu page par page avant
 publication (#128). Ce document réunit les mesures de la chaîne
 d'anonymisation automatique sur trois étalons, chacun caviardé par des
-humains. État au 19 octobre 2026.
+humains. État au 20 octobre 2026.
 
 ## La chaîne
 
@@ -21,6 +21,11 @@ humains. État au 19 octobre 2026.
 - **Zones de signature** (`anonymisation.zones`) : les dernières lignes
   courtes et la première ligne courte de chaque contribution, cachées en
   entier. Elles demandent les contributions délimitées.
+- **Liste blanche** (`anonymisation.blanche`) : à l'inverse, on ne garde que
+  les mots sûrs (Lexique 3.83, France, Europe, régions, départements, noms
+  publics du cahier) et l'on cache tout le reste de la couche texte, si bien
+  qu'une lecture fautive est cachée au lieu de fuir. Un prénom de l'INSEE à
+  majuscule est caché, même s'il est dans le lexique.
 
 ## Les trois étalons
 
@@ -59,6 +64,46 @@ répandus.
 Le détail par étape de filtrage et par variante est dans le `mesure.md` de
 chaque mesure.
 
+## Publier le texte seul
+
+Publier le texte des pages, sans leurs images, change la donne : l'écriture
+à la main n'y paraît que si l'OCR l'a lue, en mots presque toujours hors du
+lexique, que la liste blanche cache. Sur les 100 cahiers
+(`anonymisation.blanche`), une donnée n'y fuit que par ses mots de la couche
+texte ; 686 des 1 935 n'en ont aucun et sont couvertes d'office.
+
+| Chaîne, texte seul | Données couvertes | Contributions où une donnée reste visible | Mots hors données cachés (du lexique) |
+|---|---|---|---|
+| règles + modèle | 70 % | 404 sur 835 | 1 % (1 %) |
+| liste blanche | 82 % | 253 | 10 % (1 %) |
+| règles + modèle + liste blanche + zones | 92 % | 111 | 12 % (3 %) |
+
+Sur les seules données qui ont des mots dans la couche texte, la chaîne
+complète en couvre 88 %. Ce qui fuit encore est surtout dans les blocs de
+coordonnées des formulaires (129 données sur 153), et ce sont des mots du
+lexique : 63 % en minuscules, 35 % à majuscule (un nom de famille comme
+« Petit », ou « Rue »). Une donnée compte comme visible dès qu'un seul de
+ses mots l'est : la mesure est pessimiste.
+
+Contre les blocs de coordonnées, un relecteur peut encadrer deux pages
+d'un formulaire : leurs zones se reportent sur les autres exemplaires
+(`detection.modele_appris`). Simulé en apprenant, pour chaque page, sur les
+deux pages à données les plus proches du même cahier, la chaîne passe à
+94 % (90 contributions où une donnée reste visible) pour un point de texte
+de plus, sans mot du lexique en plus. Apprendre sur toutes les autres pages
+ne gagne qu'un point (95 %, 69 contributions) et cache 20 % du texte, dont
+11 % du lexique. Il reste 104 blocs de coordonnées qui fuient, hors des
+formulaires répétés (lettres, pages libres).
+
+Sur les images, la liste blanche n'apporte presque rien : jointe à la
+chaîne la plus large, elle porte la couverture de 94 à 96 % (54
+contributions où une donnée reste visible), pour 32 % des mots cachés.
+
+Deux variantes, mesurées puis retirées du code : cacher les majuscules hors début de phrase (un
+point de couverture pour cinq points de lexique perdus), et garder les
+nombres sûrs (années, nombres suivis d'une unité), qui ne rend que 15 % des
+nombres cachés et laisse fuir des années dans les blocs de coordonnées.
+
 ## Ce que ça dit
 
 - **Le texte seul ne suffit pas.** La chaîne repère 97 % des données dans
@@ -77,6 +122,10 @@ chaque mesure.
   proposition de #128 (cacher toute l'écriture manuscrite) : sûre, mais le
   manuscrit ne se publie alors qu'en transcription (#6), à anonymiser comme
   un texte.
+- **Publié en texte, le corpus se passe presque de repérage.** La liste
+  blanche, avec les règles, le modèle et les zones, couvre 92 % des données
+  en ne cachant que 3 % des mots du lexique, et vaudra pour les manuscrits
+  transcrits (#6), dont les mots inventés tombent hors du lexique.
 - **Il reste un audit par échantillon.** Même la chaîne la plus large
   laisse visibles 6 % des données des 100 cahiers (dans 85 contributions
   sur 835) et 9 % des masques de l'Aude. `anonymisation.delimites` en écrit
