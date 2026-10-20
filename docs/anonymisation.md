@@ -81,3 +81,23 @@ chaque mesure.
   laisse visibles 6 % des données des 100 cahiers (dans 85 contributions
   sur 835) et 9 % des masques de l'Aude. `anonymisation.delimites` en écrit
   la liste, à vérifier dans l'outil d'annotation.
+
+## Les formulaires du corpus
+
+Encadrer deux exemplaires d'un formulaire en fait reporter les zones sur
+les autres (`detection.modele_appris`). Encore faut-il savoir quels cahiers
+en portent. Sur 174 cahiers jugés à l'œil, sur des planches de vignettes
+anonymisées (tirage caviardé, Paris, scans de l'Aude), 74 ont un
+formulaire. La règle de `contributions` n'en trouve que 46 (62 %) : elle
+ne lit que les pages dactylographiées et veut une ligne sur un tiers des
+pages. `anonymisation.formulaires` lit toutes les pages écrites, avec un
+seuil absolu (quatre pages portant chacune trois lignes imprimées qui
+reviennent sur quatre pages), et en trouve 62 (84 %). Ses 8 fausses alertes
+sont surtout des copies de lettres types signées, utiles elles aussi ; les
+formulaires manqués ont des pages que l'OCR ne lit pas.
+
+Sur le corpus, 1 333 cahiers sur 19 847 ont un formulaire (33 752 pages de
+formulaire, 12 % des pages écrites) : à deux pages encadrées par
+formulaire, environ 2 700 pages à annoter. La part varie beaucoup : 77 %
+des cahiers de Paris (le formulaire de la Ville), 22 % du tirage, 10 % de
+l'Aude, au moins 2 % de l'édition Chabin.
