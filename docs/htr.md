@@ -118,7 +118,7 @@ serverless répartit les requêtes entre ses régions, États-Unis compris.
   pour un temps dix fois plus long (49 s par page). Il faut relever le
   plafond de jetons : à 2 048, la réflexion l'épuise et une page sur deux
   sort vide.
-- **Le ligne par ligne du Campus Condorcet est à proscrire** : 41 % de mots
+- **Le ligne par ligne avec Gemma est à proscrire** : 41 % de mots
   inventés, 27 % avec le *reasoning* (10 à 24 min par page sur `01193`).
   Privé du contexte de la page, le modèle complète chaque fragment de ligne
   par du français plausible.
