@@ -157,7 +157,7 @@ def rapport(contributions, cahiers, vrai_debat) -> str:
     for nom, codes, _ in ordre:
         etiquette = f"{nom} *" if nom in ajouts else nom
         themes = ", ".join(THEMES[c] for c in codes if c not in "+2") or (
-            "secondaire" if "2" in codes else "–"
+            "complémentaire" if "2" in codes else "–"
         )
         lignes.append(
             f"| {etiquette} | {themes} | {colonne(contributions, nom)} | "
@@ -184,8 +184,17 @@ def rapport(contributions, cahiers, vrai_debat) -> str:
             f"| {titre} | {colonne(a_theme, 'x')} | {colonne(b_theme, 'x')} | "
             f"{colonne(c_theme, 'x')} |"
         )
+    hors_liste = [set() if r - ajouts else {"x"} for r in contributions]
     aucun = [set() if r else {"x"} for r in contributions]
-    lignes += ["", f"Contributions sans aucun sous-thème : {colonne(aucun, 'x')}.", ""]
+    lignes += [
+        "",
+        (
+            "Contributions qu'aucun sous-thème de la liste de l'association ne "
+            f"touche : {colonne(hors_liste, 'x')} ; sans aucun sous-thème, même "
+            f"avec les ajouts : {colonne(aucun, 'x')}."
+        ),
+        "",
+    ]
     return "\n".join(lignes)
 
 

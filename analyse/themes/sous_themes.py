@@ -1,10 +1,11 @@
 """Sous-thèmes des contributions, repérés par mots-clés (issue #24).
 
-Les cinq thèmes et leurs sous-thèmes viennent du document de l'association
-« Corpus et thèmes des cahiers » (V2) ; s'y ajoutent ses thèmes secondaires,
-et quelques sujets de 2019 qu'il ne cite pas (marqués `AJOUTS`), pour
-vérifier sur le corpus s'ils manquent. Un sous-thème peut relever de
-plusieurs thèmes : on classe par sous-thème et on remonte aux thèmes.
+Les sept thèmes et leurs sous-thèmes viennent du document de l'association
+« Thématiques » (V2, 8 thèmes et 42 sous-thèmes), le huitième étant ses
+thèmes complémentaires (code `2`). S'y ajoutent quelques sujets de 2019
+qu'il ne cite pas (marqués `AJOUTS`), pour vérifier sur le corpus s'ils
+manquent. Un sous-thème peut relever de plusieurs thèmes : on classe par
+sous-thème et on remonte aux thèmes.
 
 Les motifs portent sur le texte normalisé (`normaliser` : minuscules, sans
 accents ni ponctuation). C'est un premier repérage, pour mesurer la place
@@ -17,76 +18,97 @@ import unicodedata
 
 THEMES = {
     "D": "Démocratie",
-    "J": "Justice fiscale et sociale",
-    "S": "Services publics et égalité des territoires",
-    "E": "Écologie solidaire et accessible à tous",
-    "L": "Liens sociaux, vivre ensemble",
-    "2": "Thèmes secondaires",
+    "F": "Fiscalité (justice fiscale)",
+    "A": "Administration et services publics",
+    "H": "Habitabilité et transitions",
+    "P": "Pouvoir d'achat",
+    "R": "Ruralité",
+    "L": "Liens sociaux",
+    "2": "Thèmes complémentaires",
     "+": "Hors liste de l'association (à vérifier)",
 }
 
 # (sous-thème, thèmes, motifs)
 SOUS_THEMES = [
     # Démocratie
-    ("RIC", "D", [r"\bric\b", r"referendums? d initiative (citoyenne|populaire)"]),
-    ("Référendum (tous)", "D", [r"\breferendums?\b"]),
     (
-        "Vote blanc et nul",
-        "D",
-        [r"\bvotes? blancs?\b", r"\bvotes? nuls?\b", r"\bbulletins? blancs?\b"],
-    ),
-    (
-        "Privilèges et rémunération des élus",
+        "Meilleure représentativité",
         "D",
         [
-            r"\bprivileges?\b",
-            r"\b(indemnites?|salaires?|retraites?|avantages) (des|de nos) (elus|deputes|senateurs|ministres|parlementaires)\b",
-            r"\banciens presidents\b",
-        ],
-    ),
-    (
-        "Exemplarité des élus",
-        "D",
-        [
-            r"\bcorruption\b",
-            r"\bcasier judiciaire\b",
-            r"\bineligib",
-            r"\bconflits? d interets?\b",
-        ],
-    ),
-    ("Proportionnelle", "D", [r"\bproportionnel"]),
-    (
-        "Nombre de parlementaires, Sénat",
-        "D",
-        [
+            r"\bproportionnel",
+            r"\brepresentativite\b",
             r"\bnombre (de|des) (deputes|senateurs|parlementaires|elus)\b",
             r"\bsupprim\w* (le )?senat\b",
             r"\bcese\b",
         ],
     ),
     (
-        "Participation citoyenne",
+        "Place des citoyens et de leur parole",
         "D",
         [
             r"\bdemocratie (participative|directe)\b",
             r"\btirage au sort\b",
             r"\b(assemblees?|conventions?) citoyennes?\b",
+            r"\b(consult|ecout)\w* (le peuple|les citoyens|la population)\b",
+            r"\breferendums?\b",
         ],
     ),
-    # Justice fiscale et sociale
     (
-        "Pouvoir d'achat, salaires",
-        "J",
+        "Place, rôle et profils des élus",
+        "D",
         [
-            r"\bpouvoir d achat\b",
-            r"\bsmic\b",
-            r"\bsalaire minimum\b",
-            r"\bfins? de mois\b",
+            r"\bprivileges?\b",
+            r"\b(indemnites?|salaires?|retraites?|avantages) (des|de nos) (elus|deputes|senateurs|ministres|parlementaires)\b",
+            r"\banciens presidents\b",
+            r"\bcorruption\b",
+            r"\bcasier judiciaire\b",
+            r"\bineligib",
+            r"\bconflits? d interets?\b",
+            r"\bcumul (des|de) mandats?\b",
+        ],
+    ),
+    ("RIC", "D", [r"\bric\b", r"referendums? d initiative (citoyenne|populaire)"]),
+    (
+        "Transformation du système politique",
+        "D",
+        [
+            r"\b(6e|6eme|vie|sixieme) republique\b",
+            r"\bconstitution",
+            r"\b(quinquennat|septennat)\b",
+            r"\bmonarchie (presidentielle|republicaine)\b",
         ],
     ),
     (
-        "ISF, grandes fortunes",
-        "J",
+        "Vote blanc et nul",
+        "D",
+        [r"\bvotes? blancs?\b", r"\bvotes? nuls?\b", r"\bbulletins? blancs?\b"],
+    ),
+    # Fiscalité
+    (
+        "Diminution des taxes",
+        "F",
+        [
+            r"\b(baiss|diminu|redui|reduct|supprim)\w* (des |les |la |de la )?(taxes?|impots?|tva|csg|prelevements)\b",
+            r"\btrop d (impots|taxes)\b",
+            r"\b(pression|matraquage) fiscal",
+            r"\btaxe d habitation\b",
+        ],
+    ),
+    (
+        "Meilleure répartition de l'impôt",
+        "F",
+        [
+            r"\btva\b",
+            r"\bcsg\b",
+            r"\bimpots? sur le revenu\b",
+            r"\btranches? d imposition\b",
+            r"\bniches? fiscales?\b",
+            r"\bprogressivite\b",
+        ],
+    ),
+    (
+        "Rétablissement de l'ISF",
+        "F",
         [
             r"\bisf\b",
             r"\bimpot sur la fortune\b",
@@ -95,8 +117,8 @@ SOUS_THEMES = [
         ],
     ),
     (
-        "Évasion et fraude fiscales",
-        "J",
+        "Lutte contre la fraude fiscale",
+        "F",
         [
             r"\b(evasion|fraude|optimisation) fiscale\b",
             r"\bparadis fiscaux\b",
@@ -105,60 +127,74 @@ SOUS_THEMES = [
     ),
     (
         "Taxation financière",
-        "J",
+        "F",
         [
             r"\bdividendes?\b",
             r"\btransactions? financieres?\b",
-            r"\btaxe tobin\b",
+            r"\btaxe (tobin|zucman)\b",
             r"\bspeculat",
+            r"\bgafa\b",
         ],
     ),
+    # Administration et services publics
     (
-        "Impôts, TVA, CSG",
-        "J",
+        "Décentralisation, ville et campagne",
+        "A",
         [
-            r"\btva\b",
-            r"\bcsg\b",
-            r"\bimpots? sur le revenu\b",
-            r"\btranches? d imposition\b",
-            r"\bniches? fiscales?\b",
+            r"\bdecentralis",
+            r"\bcollectivites? (locales|territoriales)\b",
+            r"\bmetropoles?\b",
+            r"\bintercommunalit",
+            r"\bvilles? et (la |les )?campagnes?\b",
         ],
     ),
     (
-        "Logement",
-        "J",
-        [r"\blogements?\b", r"\bloyers?\b", r"\bhlm\b", r"\bsans abris?\b", r"\bsdf\b"],
-    ),
-    (
-        "Alimentation",
-        "J",
-        [r"\balimentation\b", r"\bse nourrir\b", r"\bbanques? alimentaires?\b"],
-    ),
-    # Services publics et égalité des territoires
-    (
-        "Services publics de proximité",
-        "S",
+        "Sécurité et forces de l'ordre",
+        "A",
         [
-            r"\bservices? publics?\b",
-            r"\bbureaux? de poste\b",
-            r"\btresoreries?\b",
-            r"\bfermetures? (des|de|du) (services?|ecoles?|classes?|bureaux?|gares?|maternites?|hopitaux|hopital)\b",
+            r"\bforces de l ordre\b",
+            r"\bpolic(e|iers?)\b",
+            r"\bgendarm",
+            r"\binsecurite\b",
+            r"\bdelinquan",
+            r"\bincivilites?\b",
         ],
     ),
     (
-        "Santé, médecins, hôpital",
-        "S",
+        "Qualité des services publics et de l'information",
+        "A",
         [
-            r"\bmedecins?\b",
-            r"\bdeserts? medica",
-            r"\bhopita(l|ux)\b",
-            r"\burgences\b",
-            r"\bmaternites?\b",
+            r"\bqualite (des|du) services?\b",
+            r"\bmedias?\b",
+            r"\bjournalis",
+            r"\b(fake news|fausses informations)\b",
         ],
     ),
     (
-        "École, éducation",
-        "S",
+        "Rationaliser, mille-feuille administratif",
+        "A",
+        [
+            r"\bmille ?feuilles?\b",
+            r"\btrain de vie\b",
+            r"\bdepenses? publiques?\b",
+            r"\bgaspillages?\b",
+            r"\bbureaucrat",
+            r"\bsimplifi\w* (administrati|les demarches)",
+        ],
+    ),
+    (
+        "Fin des privatisations",
+        "A",
+        [r"\bprivatis", r"\bautoroutes?\b", r"\bnationalis"],
+    ),
+    (
+        "Renforcement du service public",
+        "A",
+        [r"\bservices? publics?\b", r"\bhopita(l|ux)\b", r"\burgences\b"],
+    ),
+    (
+        "École, égalité d'accès",
+        "A",
         [
             r"\becoles?\b",
             r"\beducation\b",
@@ -167,42 +203,182 @@ SOUS_THEMES = [
             r"\b(colleges?|lycees?)\b",
         ],
     ),
+    # Habitabilité et transitions
     (
-        "Transports en commun, trains",
-        "SE",
-        [
-            r"\btransports? (en commun|publics?|collectifs?)\b",
-            r"\bsncf\b",
-            r"\bpetites? lignes\b",
-            r"\blignes? (de train|ferroviaires?|secondaires)\b",
-            r"\btrains?\b",
-        ],
-    ),
-    # Écologie
-    (
-        "Climat, transition écologique",
-        "E",
+        "Écologie",
+        "H",
         [
             r"\bclimat",
             r"\brechauffement\b",
-            r"\btransition (ecologique|energetique)\b",
+            r"\btransition ecologique\b",
             r"\becologi",
+            r"\bdechets?\b",
+            r"\bplastiques?\b",
+            r"\brecycl",
         ],
     ),
     (
-        "Carburant, taxe carbone",
-        "EJ",
+        "Modèle agricole",
+        "H",
+        [r"\bagricult", r"\bpesticides?\b", r"\bglyphosate\b", r"\bpaysans?\b"],
+    ),
+    (
+        "Soin du vivant, santé et biodiversité",
+        "H",
+        [
+            r"\bbiodiversite\b",
+            r"\bpollution",
+            r"\bperturbateurs? endocriniens?\b",
+            r"\b(bien etre|souffrance|cause) animal",
+        ],
+    ),
+    (
+        "Modèle économique",
+        "H",
+        [
+            r"\b(re|de)localis",
+            r"\bempreinte carbone\b",
+            r"\bmondialisation\b",
+            r"\blibre echange\b",
+            r"\b(ceta|mercosur)\b",
+        ],
+    ),
+    (
+        "Transition énergétique",
+        "H",
+        [
+            r"\btransition energetique\b",
+            r"\bnucleaire\b",
+            r"\benergies? renouvelables?\b",
+            r"\beoliennes?\b",
+            r"\b(solaire|photovoltai)",
+            r"\b(isolation|renovation) (thermique|energetique|des logements)\b",
+        ],
+    ),
+    (
+        "Qualité de l'eau",
+        "H",
+        [
+            r"\bqualite de l eau\b",
+            r"\beau potable\b",
+            r"\bnappes? phreatiques?\b",
+            r"\bassainissement\b",
+            r"\bprix de l eau\b",
+            r"\bnitrates?\b",
+        ],
+    ),
+    # Pouvoir d'achat
+    (
+        "Salaires et retraites",
+        "P",
+        [
+            r"\bpouvoir d achat\b",
+            r"\bsmic\b",
+            r"\bsalaire minimum\b",
+            r"\bfins? de mois\b",
+            r"\bretraites?\b",
+            r"\bpensions?\b",
+        ],
+    ),
+    (
+        "Logement",
+        "P",
+        [r"\blogements?\b", r"\bloyers?\b", r"\bhlm\b", r"\bsans abris?\b", r"\bsdf\b"],
+    ),
+    (
+        "Mobilité, carburant",
+        "P",
         [
             r"\bcarburants?\b",
+            r"\bessence\b",
             r"\bgasoil\b",
             r"\bgazole\b",
             r"\btaxe carbone\b",
             r"\bticpe\b",
+            r"\b80 ?km",
+            r"\blimitation de vitesse\b",
+            r"\bradars?\b",
+            r"\bpeages?\b",
+        ],
+    ),
+    (
+        "Justice sociale",
+        "P",
+        [
+            r"\bjustice sociale\b",
+            r"\binegalites?\b",
+            r"\bprecarite\b",
+            r"\bpauvrete\b",
+            r"\bminima sociaux\b",
+            r"\brsa\b",
+        ],
+    ),
+    (
+        "Sécurité sociale alimentaire",
+        "P",
+        [
+            r"\balimentation\b",
+            r"\bse nourrir\b",
+            r"\bbanques? alimentaires?\b",
+            r"\bsecurite sociale (de l )?aliment",
+            r"\bcantines?\b",
+        ],
+    ),
+    # Ruralité
+    (
+        "Accès aux services publics et à la santé",
+        "R",
+        [
+            r"\bmedecins?\b",
+            r"\bdeserts? medica",
+            r"\bspecialistes\b",
+            r"\bmaternites?\b",
+            r"\bbureaux? de poste\b",
+            r"\btresoreries?\b",
+            r"\bfermetures? (des|de|du) (services?|ecoles?|classes?|bureaux?|gares?|maternites?|hopitaux|hopital)\b",
+        ],
+    ),
+    (
+        "Mode de vie rural",
+        "R",
+        [
+            r"\bruralite\b",
+            r"\b(monde|milieu) rural\b",
+            r"\b(zones?|communes?) rurales?\b",
+            r"\bterritoires? ruraux\b",
+            r"\bvillages?\b",
+        ],
+    ),
+    (
+        "Local et petits producteurs",
+        "R",
+        [
+            r"\bpetits? producteurs?\b",
+            r"\bcircuits? courts?\b",
+            r"\bproduits? locaux\b",
+            r"\b(petits? commerces?|commerces? de proximite)\b",
+            r"\bconsommer local\b",
+        ],
+    ),
+    (
+        "Transports en commun",
+        "RAHP",
+        [r"\btransports? (en commun|publics?|collectifs?)\b"],
+    ),
+    (
+        "Trains, fermeture de lignes",
+        "R",
+        [
+            r"\bsncf\b",
+            r"\bpetites? lignes\b",
+            r"\blignes? (de train|ferroviaires?|secondaires)\b",
+            r"\btrains?\b",
+            r"\bgares?\b",
         ],
     ),
     # Liens sociaux
     (
-        "Isolement, liens sociaux",
+        "Liens sociaux, vivre ensemble",
         "L",
         [
             r"\bisolement\b",
@@ -213,7 +389,7 @@ SOUS_THEMES = [
             r"\bmepris\b",
         ],
     ),
-    # Thèmes secondaires de l'association
+    # Thèmes complémentaires de l'association
     (
         "Égalité femmes-hommes",
         "2",
@@ -260,7 +436,7 @@ SOUS_THEMES = [
     ),
     (
         "Illectronisme, numérique",
-        "2S",
+        "2A",
         [
             r"\billectronisme\b",
             r"\bnumerique\b",
@@ -272,27 +448,10 @@ SOUS_THEMES = [
 ]
 
 AJOUTS = [
-    ("Retraites et pensions", "+J", [r"\bretraites?\b", r"\bpensions?\b"]),
-    ("Chômage, emploi", "+J", [r"\bchomage\b", r"\bchomeurs?\b", r"\bpole emploi\b"]),
-    (
-        "80 km/h, radars",
-        "+E",
-        [r"\b80 ?km", r"\blimitation de vitesse\b", r"\bradars?\b"],
-    ),
-    (
-        "Énergie, nucléaire",
-        "+E",
-        [r"\bnucleaire\b", r"\benergies? renouvelables?\b", r"\beoliennes?\b"],
-    ),
-    (
-        "Agriculture, pesticides",
-        "+E",
-        [r"\bagricult", r"\bpesticides?\b", r"\bglyphosate\b", r"\bpaysans?\b"],
-    ),
-    ("Déchets, plastique", "+E", [r"\bdechets?\b", r"\bplastiques?\b", r"\brecycl"]),
+    ("Chômage, emploi", "+P", [r"\bchomage\b", r"\bchomeurs?\b", r"\bpole emploi\b"]),
     (
         "Personnes âgées, EHPAD",
-        "+S",
+        "+A",
         [
             r"\behpad\b",
             r"\bmaisons? de retraite\b",
@@ -300,12 +459,7 @@ AJOUTS = [
             r"\bpersonnes? agees\b",
         ],
     ),
-    ("Handicap", "+S", [r"\bhandicap"]),
-    (
-        "Train de vie de l'État",
-        "+D",
-        [r"\btrain de vie\b", r"\bdepenses? publiques?\b", r"\bgaspillages?\b"],
-    ),
+    ("Handicap", "+A", [r"\bhandicap"]),
     (
         "Immigration",
         "+",
@@ -317,11 +471,6 @@ AJOUTS = [
         ],
     ),
     ("Europe", "+", [r"\beurope", r"\bbruxelles\b"]),
-    (
-        "Insécurité, délinquance",
-        "+",
-        [r"\binsecurite\b", r"\bdelinquan", r"\bincivilites?\b"],
-    ),
     ("Laïcité, religion", "+", [r"\blaicite\b", r"\breligi"]),
 ]
 
