@@ -1,4 +1,4 @@
-"""Débuts de contributions des cahiers, repérés par règles (issue #5).
+"""Débuts de contributions des cahiers, repérés par règles et par un modèle (issue #5).
 
     uv run python -m contributions [--cahiers data/tirage/contributions.csv]
         [--versement data/versement] [--typage data/typage/departements]
@@ -7,7 +7,10 @@
 
 Règles dans `contributions.regles`. Seules les pages dactylographiées sont
 lues, hors pages de service et pages d'ouverture imprimées (sortie de
-`python -m ouvertures`, si elle existe). Écrit :
+`python -m ouvertures`, si elle existe). Sur les pages où aucune règle ne
+trouve de début, un modèle dit si la page en ouvre un en son haut
+(`contributions.pages`) : il s'entraîne sur les cahiers délimités, et chacun
+d'eux est jugé par un modèle qui ne l'a pas vu (validation croisée). Écrit :
 
 - `debuts.csv` dans la sortie : une ligne par début de contribution (fichier,
   page, rang de la ligne dans la couche texte, cadre de la ligne en points
@@ -29,11 +32,13 @@ import csv
 from collections import Counter, defaultdict
 from pathlib import Path
 
+import numpy as np
 import pymupdf
 
 from annotation import listes
 from annotation.carnet import Carnet
 from annotation.corpus import Corpus
+from contributions import pages as modele
 from contributions.regles import debuts, evaluer
 from ouvertures.__main__ import lire as lire_ouvertures
 from panel.panel import lire_typage
@@ -48,6 +53,7 @@ REGLES = {
     "courriel": "Courriels repérés",
     "gabarit": "Formulaires (gabarits) repérés",
     "lettre": "Lettres repérées",
+    "page": "Pages ouvertes par le modèle",
 }
 # listes à revoir : (nom, préfixe de la règle, titre)
 LISTES = [
@@ -59,6 +65,7 @@ LISTES = [
         "Formulaires repérés à l'OCR près (en-tête abîmé, à vérifier)",
     ),
     ("lettre", "lettre", "Lettres repérées (titre, salutation ou politesse)"),
+    ("page", "page", "Pages qui ouvrent une contribution selon le modèle"),
 ]
 
 
@@ -180,17 +187,52 @@ def main() -> None:
     lues = pages_lues(args.typage, fichiers, ouvertures)
     premieres = premieres_ecrites(args.typage, fichiers, ouvertures)
 
-    trouves, resume = [], []
+    lus = {}
     for fichier in sorted(lues):
-        numeros = lues[fichier]
         with pymupdf.open(chemins[fichier]) as doc:
-            pages = [lignes(doc[n - 1]) for n in numeros]
-        cahier = debuts(
-            [[texte for texte, _ in page] for page in pages],
-            debut_du_cahier=numeros[0] == premieres.get(fichier),
+            lus[fichier] = [
+                (modele.lignes(doc[n - 1]), doc[n - 1].rect) for n in lues[fichier]
+            ]
+    regles = {
+        fichier: debuts(
+            [[x.texte for x in page] for page, _ in lus[fichier]],
+            debut_du_cahier=lues[fichier][0] == premieres.get(fichier),
         )
+        for fichier in lus
+    }
+
+    # la référence : les cahiers délimités en entier pour le tirage (tâche
+    # « selection », dernière page vue), sur les pages que les règles lisent
+    carnet = Carnet(args.annotation / "notes.jsonl")
+    qualifications = carnet.qualifications(remarques=False)
+    vues = {
+        cle for cle, s in carnet.statuts(SELECTION, exacte=True).items() if s == "vue"
+    }
+    corpus = Corpus(args.versement, args.typage[0])
+    delimites = cahiers_delimites(
+        lues, {f: corpus.pages(f) for f in lues}, vues, qualifications
+    )
+    lues_delimitees = {(f, n) for f in delimites for n in lues[f]}
+    notes = defaultdict(list)
+    for n in carnet.positions():
+        if n["etiquette"] == DEBUT and (n["fichier"], n["page"]) in lues_delimitees:
+            notes[n["fichier"], n["page"]].append(min(n["y0"], n["y1"]))
+    reference = [(f, p, y) for (f, p), ys in notes.items() for y in ys]
+
+    for fichier, p in pages_ouvertes(lus, lues, regles, delimites, notes):
+        page = lus[fichier][p][0]
+        premiere = min(
+            (i for i, x in enumerate(page) if x.texte.strip()),
+            key=lambda i: (page[i].cadre.y0, page[i].cadre.x0),
+        )
+        regles[fichier].append((p, premiere, "page"))
+        regles[fichier].sort()
+
+    trouves, resume = [], []
+    for fichier, cahier in regles.items():
+        numeros = lues[fichier]
         for p, i, regle in cahier:
-            cadre = pages[p][i][1]
+            cadre = lus[fichier][p][0][i].cadre
             trouves.append(
                 {
                     "fichier": fichier,
@@ -203,17 +245,18 @@ def main() -> None:
                     "regle": regle,
                 }
             )
-        regles = Counter(regle for _, _, regle in cahier)
+        compte = Counter(regle for _, _, regle in cahier)
         resume.append(
             {
                 "fichier": fichier,
                 "pages": len(numeros),
                 "contributions": len(cahier),
-                "courriel": regles["courriel"],
-                "gabarit": sum(n for r, n in regles.items() if r.startswith("gabarit")),
-                "lettre": regles["lettre"],
+                "courriel": compte["courriel"],
+                "gabarit": sum(n for r, n in compte.items() if r.startswith("gabarit")),
+                "lettre": compte["lettre"],
+                "page": compte["page"],
                 "gabarit_souple": sum(
-                    n for r, n in regles.items() if r.startswith("gabarit ")
+                    n for r, n in compte.items() if r.startswith("gabarit ")
                 ),
             }
         )
@@ -237,37 +280,27 @@ def main() -> None:
     print(f"  non découpés (aucune règle) : {len(resume) - len(decoupes)} cahiers")
     print(f"Listes à revoir écrites dans {args.annotation / 'listes'}")
 
-    # la référence : les cahiers délimités en entier pour le tirage (tâche
-    # « selection », dernière page vue), sur les pages que les règles lisent
-    carnet = Carnet(args.annotation / "notes.jsonl")
-    qualifications = carnet.qualifications(remarques=False)
-    vues = {
-        cle for cle, s in carnet.statuts(SELECTION, exacte=True).items() if s == "vue"
-    }
-    corpus = Corpus(args.versement, args.typage[0])
-    delimites = cahiers_delimites(
-        lues, {f: corpus.pages(f) for f in lues}, vues, qualifications
-    )
     if not delimites:
         print("Aucun cahier délimité dans l'outil d'annotation : pas de référence.")
         return
-    lues_delimitees = {(f, n) for f in delimites for n in lues[f]}
-    reference = [
-        (n["fichier"], n["page"], min(n["y0"], n["y1"]))
-        for n in carnet.positions()
-        if n["etiquette"] == DEBUT and (n["fichier"], n["page"]) in lues_delimitees
-    ]
     print(
         f"Référence : {len(delimites)} cahiers délimités, {len(reference)} débuts "
         f"sur {len(lues_delimitees)} pages dactylographiées"
     )
     vus = [d for d in trouves if (d["fichier"], d["page"]) in lues_delimitees]
-    for titre, regle in (("toutes règles", None), *((r, r) for r in REGLES)):
-        retenus = [d for d in vus if regle is None or d["regle"].startswith(regle)]
+    for titre, regle in (
+        ("règles et modèle", None),
+        ("règles seules", "sans modèle"),
+        *((r, r) for r in REGLES),
+    ):
+        if regle == "sans modèle":
+            retenus = [d for d in vus if d["regle"] != "page"]
+        else:
+            retenus = [d for d in vus if regle is None or d["regle"].startswith(regle)]
         # une règle se mesure sur les pages où elle a trouvé des débuts
         pages = (
             lues_delimitees
-            if regle is None
+            if regle in (None, "sans modèle")
             else {(d["fichier"], d["page"]) for d in retenus}
         )
         if not pages:
@@ -281,6 +314,52 @@ def main() -> None:
             f"  {titre} : {len(retenus)} débuts, précision {precision:.0%}, "
             f"rappel {rappel:.0%} (sur {len(pages)} pages)"
         )
+
+
+def pages_ouvertes(lus, lues, regles, delimites, notes) -> list[tuple[str, int]]:
+    """(fichier, indice de page) des pages sans début trouvé par les règles
+    que le modèle ouvre. Un cahier délimité est jugé par un modèle entraîné
+    sans lui ; les autres, par un modèle entraîné sur tous les délimités."""
+    candidates, cles = [], []
+    for fichier, pages in lus.items():
+        avec_debut = {p for p, _, _ in regles[fichier]}
+        for p in range(1, len(pages)):
+            if p in avec_debut:
+                continue
+            (precedente, cadre_prec), (page, cadre) = pages[p - 1], pages[p]
+            d = modele.indices(
+                precedente,
+                page,
+                cadre.height,
+                cadre.width,
+                cadre_prec.height,
+                lues[fichier][p] - lues[fichier][p - 1] == 1,
+            )
+            if d:
+                candidates.append(d)
+                cles.append((fichier, p))
+    if not candidates or not delimites:
+        return []
+    x = modele.matrice(candidates, [f for f, _ in cles])
+    connus = np.array([f in delimites for f, _ in cles])
+    y = np.array(
+        [
+            modele.ouvre(
+                lus[f][p][0], lus[f][p][1].height, notes.get((f, lues[f][p]), [])
+            )
+            for f, p in cles
+        ],
+        dtype=float,
+    )
+    probabilites = np.zeros(len(cles))
+    probabilites[connus] = modele.validation_croisee(
+        x[connus], y[connus], [f for (f, _), c in zip(cles, connus) if c]
+    )
+    if (~connus).any():
+        probabilites[~connus] = (
+            modele.Logistique().entrainer(x[connus], y[connus]).probabilites(x[~connus])
+        )
+    return [cle for cle, q in zip(cles, probabilites) if q >= modele.SEUIL]
 
 
 if __name__ == "__main__":
