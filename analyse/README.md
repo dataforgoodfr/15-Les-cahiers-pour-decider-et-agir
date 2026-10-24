@@ -26,6 +26,7 @@ uv run pytest
 | `manquantes` | #43 | Pages manquantes des courriers et formulaires types |
 | `ouvertures` | #5 | Pages d'ouverture imprimées (couverture de l'association des maires…), qui ne sont pas des contributions |
 | `contributions` | #5 | Débuts des contributions (courriels, formulaires, lettres), et pages qui en ouvrent une selon un petit modèle (`contributions.pages`), mesurés sur les notes de l'outil d'annotation |
+| `troncons` | #5 | Référence de test du découpage : un tronçon de 10 pages dans chaque département que les cahiers délimités ne couvrent pas, à délimiter dans l'outil d'annotation |
 | `chabin` | #5 | Référence de découpage : les cahiers de l'édition Chabin, délimités à la main et comparés à ses comptes ; ses contributions imprimées retrouvées dans l'OCR, pour mesurer les règles, et ses manuscrits dans la lecture HTR (`htr/`) |
 | `propositions` | #94 | Contributions de l'édition Chabin (déjà anonymisées) découpées en propositions, l'unité de l'étalon de regroupement ; un échantillon à vérifier par des volontaires |
 | `paires` | #94 | Paires de propositions à annoter (même proposition ou non), tirées par tranches de ressemblance de plongements locaux, plus une part au hasard ; lots de réglage et de test |
