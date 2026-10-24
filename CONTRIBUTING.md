@@ -7,8 +7,12 @@ Data For Good, avec l'association
 ## Rejoindre le projet
 
 Le recrutement officiel des bénévoles a lieu le **samedi 7 novembre 2026**,
-à la journée de lancement de la saison Data For Good : à Paris (13e), dans
-les bureaux de l'école ETHIC, de 11 h à 17 h.
+au lancement de la saison 15 de Data For Good, où les projets présentent
+leurs missions et les compétences qu'ils cherchent :
+
+- à Paris (13e), dans les bureaux de l'école ETHIC, de 11 h à 17 h ;
+- ou [en ligne](https://www.eventbrite.fr/e/en-ligne-lancement-a-distance-de-la-saison-15-de-data-for-good-tickets-2002801591474),
+  de 14 h à 15 h 30 (heure de Paris).
 
 En attendant, rejoignez le Mattermost de Data For Good
 ([inscription](https://authentik.services.dataforgood.fr/if/flow/main-page-enrollment/))
