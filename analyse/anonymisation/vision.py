@@ -44,6 +44,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import defaultdict
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from pathlib import Path
 
 import numpy as np
@@ -219,8 +220,10 @@ def calibrer(args, cle: str) -> None:
     # la page est factice : sa réponse peut s'afficher
     print(reponse)
     trouvees = boites(reponse, m["format"], page.rect.width, page.rect.height)
-    for etiquette, _, (x0, y0, x1, y1) in FACTICES:
-        cadre = {"x0": x0, "y0": y0, "x1": x1, "y1": y1}
+    for etiquette, texte, _ in FACTICES:
+        # le cadre du texte tel qu'il est écrit, plus serré que celui prévu
+        r = page.search_for(texte)[0]
+        cadre = {"x0": r.x0, "y0": r.y0, "x1": r.x1, "y1": r.y1}
         meilleur = max((recouvrement(cadre, b) for b in trouvees), default=0.0)
         print(f"{etiquette:8s} recouvrement {meilleur:.2f}")
 
@@ -251,14 +254,8 @@ def interroger(args, cle: str) -> None:
         if not faites:
             ecrit_p.writeheader()
         restantes = sorted(set(etalon) - faites)
-        for k, (fichier, n) in enumerate(restantes, start=1):
-            with pymupdf.open(chemins[fichier]) as doc:
-                page = doc[n - 1]
-                png, largeur, hauteur = (
-                    image_png(page),
-                    page.rect.width,
-                    page.rect.height,
-                )
+
+        def une_page(png, largeur, hauteur):
             debut, erreur, trouvees = time.monotonic(), "", []
             try:
                 reponse = demander(
@@ -268,28 +265,52 @@ def interroger(args, cle: str) -> None:
             except (ValueError, urllib.error.URLError, TimeoutError) as e:
                 # le type de l'erreur seulement : son message peut citer la réponse
                 erreur = type(e).__name__
-            for b in trouvees:
-                ecrit_b.writerow(
-                    {"fichier": fichier, "page": n}
-                    | {c: round(b[c], 1) for c in CHAMPS}
-                    | {"etiquette": b["etiquette"]}
+            return trouvees, round(time.monotonic() - debut, 1), erreur
+
+        # les pages se rendent ici (pymupdf n'est pas sûr entre fils), les
+        # requêtes partent en parallèle : vLLM les traite par lots
+        en_cours, k = {}, 0
+        with ThreadPoolExecutor(args.paralleles) as pool:
+            for cle_page in [*restantes, None]:
+                if cle_page is not None:
+                    fichier, n = cle_page
+                    with pymupdf.open(chemins[fichier]) as doc:
+                        page = doc[n - 1]
+                        rendu = (image_png(page), page.rect.width, page.rect.height)
+                    en_cours[pool.submit(une_page, *rendu)] = cle_page
+                    if len(en_cours) < args.paralleles:
+                        continue
+                attendues = (
+                    wait(en_cours, return_when=FIRST_COMPLETED)[0]
+                    if cle_page is not None
+                    else list(en_cours)
                 )
-            ecrit_p.writerow(
-                {
-                    "fichier": fichier,
-                    "page": n,
-                    "boites": len(trouvees),
-                    "secondes": round(time.monotonic() - debut, 1),
-                    "erreur": erreur,
-                }
-            )
-            fb.flush()
-            fp.flush()
-            print(
-                f"{k}/{len(restantes)} : {len(trouvees)} boîtes"
-                + (f", {erreur}" if erreur else ""),
-                flush=True,
-            )
+                for futur in attendues:
+                    fichier, n = en_cours.pop(futur)
+                    trouvees, secondes, erreur = futur.result()
+                    for b in trouvees:
+                        ecrit_b.writerow(
+                            {"fichier": fichier, "page": n}
+                            | {c: round(b[c], 1) for c in CHAMPS}
+                            | {"etiquette": b["etiquette"]}
+                        )
+                    ecrit_p.writerow(
+                        {
+                            "fichier": fichier,
+                            "page": n,
+                            "boites": len(trouvees),
+                            "secondes": secondes,
+                            "erreur": erreur,
+                        }
+                    )
+                    fb.flush()
+                    fp.flush()
+                    k += 1
+                    print(
+                        f"{k}/{len(restantes)} : {len(trouvees)} boîtes"
+                        + (f", {erreur}" if erreur else ""),
+                        flush=True,
+                    )
 
 
 def cache(forme: tuple[int, int], cadres: list[dict]) -> np.ndarray:
@@ -367,7 +388,7 @@ def mesurer(args) -> None:
             (
                 "| pages | interrogées | en erreur | boîtes | masques couverts "
                 "| pages où un masque reste visible | encre hors masques cachée "
-                "| aire hors masques cachée | secondes par page |"
+                "| aire hors masques cachée | secondes par requête |"
             ),
             "|---|---|---|---|---|---|---|---|---|",
         ]
@@ -404,6 +425,7 @@ def main() -> None:
     parser.add_argument("action", choices=("calibrer", "interroger", "mesurer"))
     parser.add_argument("--modele", choices=list(MODELES))
     parser.add_argument("--url", default=URL)
+    parser.add_argument("--paralleles", type=int, default=8)
     parser.add_argument(
         "--cle", type=Path, default=Path("data/anonymisation/vision/cle.txt")
     )
