@@ -90,6 +90,42 @@ débuts justes.
 Les listes « Courriels repérés », « Formulaires (gabarits) repérés » et
 « Lettres repérées » montrent les débuts trouvés dans l'outil d'annotation, pour les revoir.
 
+## Les pages sans règle : un modèle
+
+Au 24 octobre 2026, sur les 98 cahiers délimités, 533 débuts restent
+manqués par les règles, et 378 d'entre eux sont en haut d'une page où
+aucune règle ne trouve rien. Sur ces pages, la question est de savoir si la
+page ouvre une contribution ou continue la précédente : 27 % en ouvrent une.
+
+Une régression logistique y répond (`contributions.pages`), sur des
+indices de forme comparés à la page lue précédente : police, taille du
+corps et marge qui changent, mots communs aux deux pages, première ligne
+courte ou en minuscule, date en tête, numéro de page, politesse en fin de
+précédente, page manuscrite ou vierge intercalée. Les indices de mise en
+page comptent aussi par leur rang dans le cahier, car chaque cahier a ses
+habitudes. Le modèle tient en quelques poids, s'entraîne en quelques
+secondes sur CPU, avec numpy seul.
+
+Chaque cahier délimité est jugé par un modèle entraîné sans lui (validation
+croisée en cinq plis, par cahier). Au seuil de 0,5, le modèle ouvre 332
+pages, dont 60 % à raison ; toutes règles et modèle, la précision passe de
+78 % à 74 % et le rappel de 65 % à 78 %. Les cahiers sans aucun début
+trouvé passent de 19 à 10.
+
+| seuil | débuts trouvés | précision | rappel |
+|---|---|---|---|
+| règles seules | 1 285 | 78 % | 65 % |
+| 0,7 | 1 435 | 76 % | 71 % |
+| 0,6 | 1 517 | 76 % | 75 % |
+| 0,5 | 1 617 | 74 % | 78 % |
+| 0,4 | 1 709 | 73 % | 81 % |
+
+Seuls, la taille du corps (AUC 0,77) et la marge (0,71) sont les meilleurs
+indices ; le modèle entier atteint 0,82. Cinq cahiers font la moitié des
+pages ouvertes à tort. Les pages ouvertes sont dans la liste « Pages qui
+ouvrent une contribution selon le modèle ». La mesure sur les tronçons de
+test (`troncons`, départements jamais vus) reste à faire.
+
 ## Mesure sur l'édition Chabin
 
 `uv run python -m chabin` retrouve dans l'OCR les contributions que
