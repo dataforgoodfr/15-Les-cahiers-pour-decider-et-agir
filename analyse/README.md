@@ -38,6 +38,7 @@ uv run pytest
 | `anonymisation.zones` | #128 | Zones de signature d'une contribution (dernières lignes courtes, première ligne courte), à cacher en entier |
 | `anonymisation.delimites` | #128 | La même chaîne (règles, modèle, encre, filtres, zones) mesurée sur les pages dactylographiées des cahiers délimités à la main ; place des données qui restent visibles, à vérifier |
 | `anonymisation.aude` | #128 | La même chaîne mesurée sur l'étalon de l'Aude, pages dactylographiées et manuscrites : masques des Archives couverts, et part des mots et de l'encre cachés hors masques ; synthèse des trois étalons dans `docs/anonymisation.md` |
+| `anonymisation.vision` | #128 | Données personnelles encadrées sur l'image par un modèle de vision servi hors de la machine (vLLM, carte louée en Europe) : calibrage sur une page factice, boîtes sur l'étalon de l'Aude, masques couverts et encre cachée |
 | `aude` | #128 | Pages des cahiers de l'Aude publiés anonymisés par le CESE (`../aude/`) rapprochées de leurs pages BnF par l'image (points SIFT) : commune de chaque page, doublons du versement, cahiers absents du versement |
 | `aude.etalon` | #128 | Étalon d'anonymisation : les rectangles gris des Archives de l'Aude, repérés sur les pages publiées et reportés en points sur les pages BnF rapprochées (recalés localement, avec leur accord), manuscrits compris ; les découpes n'y figurent pas |
 
