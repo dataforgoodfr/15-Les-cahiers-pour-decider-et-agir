@@ -134,6 +134,20 @@ manuscrits (`htr.md`), avec son risque d'invention, et de leur typage
 dactylographiées parce que son score de qualité (wordfreq, 0,57 en médiane
 sur l'échantillon) prend ce bruit pour du texte.
 
+### Le typage corrigé
+
+Ces pages relèvent du typage : il ne rendait une page mixte que sur un
+gabarit de formulaire reconnu. Sur 102 pages dactylographiées des cahiers
+délimités, étiquetées à l'œil après caviardage, la part de l'encre hors des
+mots imprimés (`typage.part_hors_texte`) sépare les pages mixtes (AUC 0,96) ;
+le lexique, non (0,57). Au seuil de 0,5, sans gabarit, elle trouve 40 des 43
+pages mixtes pour 4 fausses alertes. Appliquée aux 128 422 pages typées
+dactylographiées, elle en fait passer 23 454 (18 %) en mixtes, dans 7 475
+cahiers : 53 % à Paris (formulaires de la Ville), 32 % dans les
+Hauts-de-Seine ; et 2 889 des 3 409 pages presque illisibles pour ABBYY.
+Reste à relancer `python -m typage`, puis ce qui en dépend (découpage,
+anonymisation, lecture des manuscrits).
+
 ## Ce qui reste à faire
 
 - Regarder les pages signalées (mots sur du blanc, mots hors lexique) : un
