@@ -3,7 +3,7 @@
 Faute de bénévoles, le corpus ne peut pas être relu page par page avant
 publication (#128). Ce document réunit les mesures de la chaîne
 d'anonymisation automatique sur trois étalons, chacun caviardé par des
-humains. État au 20 octobre 2026.
+humains. État au 25 octobre 2026.
 
 ## La chaîne
 
@@ -21,6 +21,10 @@ humains. État au 20 octobre 2026.
 - **Zones de signature** (`anonymisation.zones`) : les dernières lignes
   courtes et la première ligne courte de chaque contribution, cachées en
   entier. Elles demandent les contributions délimitées.
+- **Vision** (`anonymisation.vision`) : un modèle de vision à poids ouverts,
+  servi sur une carte louée en Europe (Verda), encadre chaque donnée
+  personnelle sur l'image de la page, sans la recopier. On n'en garde que
+  les boîtes.
 - **Liste blanche** (`anonymisation.blanche`) : à l'inverse, on ne garde que
   les mots sûrs (Lexique 3.83, France, Europe, régions, départements, noms
   publics du cahier) et l'on cache tout le reste de la couche texte, si bien
@@ -104,6 +108,42 @@ point de couverture pour cinq points de lexique perdus), et garder les
 nombres sûrs (années, nombres suivis d'une unité), qui ne rend que 15 % des
 nombres cachés et laisse fuir des années dans les blocs de coordonnées.
 
+## Les modèles de vision
+
+L'encre cache l'écriture à la main sans savoir ce qu'elle dit. Un modèle
+de vision regarde la page et n'encadre que les données personnelles :
+noms, signatures, adresses, téléphones, courriels. Deux modèles à poids
+ouverts (Apache 2.0) qui tiennent sur une A100 80 Go, servis par vLLM :
+Qwen3.8-27B (août 2026) et Gemma 4 31B (mars 2026). Une page factice, aux
+fausses coordonnées placées à des endroits connus, vérifie d'abord la forme
+de leurs boîtes : les deux recouvrent chaque fausse donnée à 0,6-0,75
+(intersection sur union).
+
+Sur l'étalon de l'Aude (`anonymisation.aude --vision`, même critère que
+plus haut, filtres jusqu'aux noms répandus), le 25 octobre 2026, Qwen et
+Gemma réunis :
+
+| Chaîne | Dactylographiées : masques couverts | mots, encre cachés | Manuscrites : masques couverts | mots, encre cachés | Pages manuscrites où un masque reste visible |
+|---|---|---|---|---|---|
+| règles + modèle | 30 % | 1 %, 1 % | 4 % | 0 %, 0 % | 191 sur 201 |
+| règles + modèle + encre, toutes variantes | 91 % | 20 %, 25 % | 91 % | 92 %, 66 % | 23 sur 201 |
+| vision seule | 88 % | 1 %, 1 % | 89 % | 2 %, 1 % | 28 sur 201 |
+| règles + modèle + vision | 88 % | 2 %, 2 % | 89 % | 2 %, 1 % | 28 sur 201 |
+| règles + modèle + encre + vision | 91 % | 3 %, 6 % | 95 % | 35 %, 36 % | 13 sur 201 |
+| règles + modèle + encre, toutes variantes, + vision | 95 % | 21 %, 25 % | 98 % | 92 %, 66 % | 6 sur 201 |
+
+Les deux modèles ne se valent pas. Avec un critère sur l'encre seule (80 %
+de l'encre du masque sous une boîte, `anonymisation.vision mesurer`), Qwen
+couvre 81 % des masques des pages dactylographiées et 85 % des manuscrites ;
+Gemma, 61 % et 53 %, mais trois fois plus vite (10 s par requête contre 26,
+huit en parallèle). Réunis, ils couvrent 82 % et 91 % : Gemma rattrape une
+partie de ce que Qwen manque. Chacun cache environ 1 % de l'encre hors
+masques. Une seule réponse illisible sur 1 262 requêtes.
+
+Une passe des deux modèles sur l'étalon (631 pages) a pris environ une
+heure d'A100 louée. Le corpus (276 000 pages écrites) en demanderait de
+l'ordre de 440 heures à ce rythme, pour les deux modèles.
+
 ## Ce que ça dit
 
 - **Le texte seul ne suffit pas.** La chaîne repère 97 % des données dans
@@ -115,13 +155,23 @@ nombres cachés et laisse fuir des années dans les blocs de coordonnées.
   pages dactylographiées porte la couverture à 67-72 %, pour 2 à 6 % des
   mots ; avec toutes les variantes, à 91-94 %, pour un mot sur cinq à un
   sur trois.
-- **Sur un manuscrit, aucune donnée ne se repère : il faut cacher.** Les
+- **Sur un manuscrit, la couche texte ne repère rien : il faut cacher, ou
+  regarder l'image.** Les
   règles et le modèle, sur l'OCR fautif, couvrent 4 % des masques. L'encre
   en couvre 91 % avec toutes les variantes, mais en cachant les deux tiers
   de l'écriture, et laisse un masque visible sur 23 pages sur 201. C'est la
   proposition de #128 (cacher toute l'écriture manuscrite) : sûre, mais le
   manuscrit ne se publie alors qu'en transcription (#6), à anonymiser comme
   un texte.
+- **Un modèle de vision cache presque autant, pour vingt à cinquante fois
+  moins.**
+  Sur l'Aude, Qwen et Gemma réunis couvrent 88 à 89 % des masques en ne
+  cachant que 1 à 2 % du reste, contre 91 % pour 25 à 66 % avec toute
+  l'encre. Les pages manuscrites redeviennent publiables en image, mais un
+  masque reste visible sur une page à masques sur sept (28 sur 201). Jointe à l'encre, la vision couvre
+  95 à 98 % des masques, mais retrouve le coût de l'encre. Cela suppose
+  d'envoyer les pages à un modèle hors de nos machines, sur une carte louée
+  en Europe.
 - **Publié en texte, le corpus se passe presque de repérage.** La liste
   blanche, avec les règles, le modèle et les zones, couvre 92 % des données
   en ne cachant que 3 % des mots du lexique, et vaudra pour les manuscrits
