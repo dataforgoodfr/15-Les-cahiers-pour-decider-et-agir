@@ -10,14 +10,17 @@ Deux signaux, lus dans le PDF sans OCR :
   score du POC. Une page encrée sans texte lisible est manuscrite.
 
 Une page est **mixte** quand une partie de son contenu est manuscrite, donc à
-passer au HTR : en pratique, les formulaires imprimés (AMIF, mairies…) remplis
-à la main. Leur gabarit est reconnu dans la couche texte (« Souhaite que
-soient traités… ») ; la page est mixte si l'essentiel de l'encre est hors des
-mots du gabarit, lignes de champ et pointillés exclus. Signatures, coordonnées,
-tampons et annotations ne font pas une page mixte : sur une page quelconque,
-l'encre hors du texte vient surtout des logos et des bords de scan, et ne
-distingue pas l'écriture. Une page tournée, dont la couche texte est du bruit,
-n'a pas de gabarit reconnu.
+passer au HTR : en pratique, les formulaires imprimés (AMIF, mairies, Ville de
+Paris…) remplis à la main. Le signal est la part de l'encre hors des mots
+connus de la couche texte, lignes de champ et pointillés exclus
+(`part_hors_texte`). Un gabarit reconnu dans la couche texte (« Souhaite que
+soient traités… ») est mixte dès `SEUIL_MIXTE` ; toute autre page lisible,
+dès `SEUIL_MIXTE_LIBRE`. Signatures, coordonnées, tampons et annotations ne
+font pas une page mixte, et restent en deçà : sur 102 pages dactylographiées
+des cahiers délimités, étiquetées à l'œil après caviardage, ce seuil trouve
+40 des 43 pages mixtes, avec 4 fausses alertes (AUC 0,96). Sur les 56 tirées
+au hasard, 10 sont mixtes : toutes trouvées, une fausse alerte. Une page
+tournée, dont la couche texte est du bruit, n'a pas de gabarit reconnu.
 
 Les pages ajoutées à la numérisation sont signalées (`page_de_service`) :
 l'intercalaire « Fin des pages écrites » est vierge, la page de garde garde
@@ -47,6 +50,7 @@ MOTS_MIN = 5
 _GABARIT = re.compile(r"souhaite\s+que\s+soi", re.IGNORECASE)
 _POINTILLES = re.compile(r"[._\-…:·•]{3,}")
 SEUIL_MIXTE = 0.45
+SEUIL_MIXTE_LIBRE = 0.5  # sans gabarit reconnu
 TRAIT_HORIZONTAL = 20  # pixels d'affilée (1 cm à 50 dpi) : une ligne de champ
 
 # Pages ajoutées à la numérisation : intercalaires et pages de garde
@@ -189,7 +193,10 @@ def typer(page: pymupdf.Page) -> Typage:
     elif _GABARIT.search(texte) and part_hors_texte(page) >= SEUIL_MIXTE:
         type_page = MIXTE
     elif mots >= MOTS_MIN and q >= SEUIL_QUALITE:
-        type_page = DACTYLOGRAPHIEE
+        # une page de garde imprimée en grand (commune, codes) n'a guère de
+        # mots connus : elle garde son type
+        manuscrite = not garde and part_hors_texte(page) >= SEUIL_MIXTE_LIBRE
+        type_page = MIXTE if manuscrite else DACTYLOGRAPHIEE
     else:
         type_page = MANUSCRITE
     return Typage(type_page, e, q, mots, intercalaire or garde)

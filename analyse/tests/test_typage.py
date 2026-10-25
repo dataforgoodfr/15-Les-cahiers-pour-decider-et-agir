@@ -109,6 +109,20 @@ def test_formulaire_vide_n_est_pas_mixte(doc):
     assert typer(formulaire(doc)).type_page == DACTYLOGRAPHIEE
 
 
+def test_formulaire_sans_gabarit_reconnu_rempli_a_la_main_est_mixte(doc):
+    page = doc.new_page()
+    for i in range(3):
+        page.insert_text((60, 90 + i * 190), "Quels sont vos problèmes ?", fontsize=12)
+        ecriture(page, 4, y=110 + i * 190, pas=30)
+    assert typer(page).type_page == MIXTE
+
+
+def test_lettre_signee_reste_dactylographiee(doc):
+    page = page_texte(doc, PARAGRAPHE * 3)
+    ecriture(page, 1, x=380, y=760)  # la signature
+    assert typer(page).type_page == DACTYLOGRAPHIEE
+
+
 def test_couche_texte_illisible_est_manuscrite(doc):
     bruit = "rjx'v qzhk ,lmwp tbnd vvqx hjkr zzpl wqxm " * 30
     assert typer(page_texte(doc, bruit)).type_page == MANUSCRITE
