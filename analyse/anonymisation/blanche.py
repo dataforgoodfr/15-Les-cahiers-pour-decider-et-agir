@@ -264,7 +264,7 @@ def rapport(m: dict, seul: dict, fuites_: dict, pages: dict, mots: int) -> str:
         "# Liste blanche sur les cahiers délimités à la main",
         "",
         (
-            f"{len(pages)} pages dactylographiées vues à la délimitation, dans "
+            f"{len(pages)} pages dactylographiées ou mixtes vues à la délimitation, dans "
             f"{len({f for f, _ in pages})} cahiers : {donnees} données "
             f"personnelles ou signatures encadrées à la main, {mots} mots dans "
             "la couche texte."

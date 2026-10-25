@@ -392,7 +392,7 @@ def rapport(m: dict, pages: int, cahiers: int, donnees: int, modele: str) -> str
         "# Repérage sur les cahiers délimités à la main",
         "",
         (
-            f"{pages} pages dactylographiées vues à la délimitation, dans "
+            f"{pages} pages dactylographiées ou mixtes vues à la délimitation, dans "
             f"{cahiers} cahiers : {donnees} données personnelles ou signatures "
             f"encadrées à la main. Modèle : {modele}."
         ),

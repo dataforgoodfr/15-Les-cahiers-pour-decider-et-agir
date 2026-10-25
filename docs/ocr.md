@@ -145,8 +145,11 @@ pages mixtes pour 4 fausses alertes. Appliquée aux 128 422 pages typées
 dactylographiées, elle en fait passer 23 454 (18 %) en mixtes, dans 7 475
 cahiers : 53 % à Paris (formulaires de la Ville), 32 % dans les
 Hauts-de-Seine ; et 2 889 des 3 409 pages presque illisibles pour ABBYY.
-Reste à relancer `python -m typage`, puis ce qui en dépend (découpage,
-anonymisation, lecture des manuscrits).
+Le typage du corpus est corrigé (report des nouveaux types, vérifié sur 300
+pages). Le découpage et l'anonymisation lisent désormais les pages
+dactylographiées et mixtes, qui ont toutes une couche imprimée lisible : une
+page mixte porte en plus de l'écriture à la main, à lire autrement (HTR,
+encre, vision).
 
 ## Ce qui reste à faire
 

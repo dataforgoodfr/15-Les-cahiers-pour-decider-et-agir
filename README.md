@@ -44,8 +44,8 @@ Au 25 octobre 2026 :
   [#7](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/7)).
 - **Le découpage automatique** (règles : courriels, formulaires, lettres ;
   un petit modèle pour les pages qu'elles ne découpent pas) est mesuré sur
-  ces cahiers délimités : sur les pages dactylographiées, 74 % des débuts
-  trouvés sont justes et 78 % des débuts sont trouvés. Une référence de test,
+  ces cahiers délimités : sur les pages dactylographiées et mixtes, 75 %
+  des débuts trouvés sont justes et 81 % des débuts sont trouvés. Une référence de test,
   un tronçon dans chacun des 41 départements qu'ils ne couvrent pas, est en
   cours d'annotation ([`analyse/contributions/`](analyse/contributions/)).
 - **L'anonymisation automatique** est mesurée sur trois étalons caviardés
@@ -96,8 +96,9 @@ On est encore loin de diffuser massivement les cahiers :
   du premier tirage. C'est le rythme d'un lecteur, pas d'une diffusion
   massive.
 - **Découper automatiquement** est le préalable au reste du corpus.
-  Aujourd'hui, règles et modèle ne découpent que les pages
-  dactylographiées, et en manquent un cinquième des débuts.
+  Aujourd'hui, règles et modèle ne découpent que les pages à couche
+  imprimée (dactylographiées et mixtes), et en manquent un cinquième des
+  débuts.
 - **Anonymiser sans tout relire** suppose une décision de l'association
   ([#128](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/128)) : publier le texte des contributions plutôt que les
   images des pages (il resterait à encadrer deux pages par formulaire,
