@@ -49,6 +49,7 @@ par `uv run python -m corpus.typage`.
 | `decoupage.contributions` | #5 | Débuts des contributions (courriels, formulaires, lettres), et pages qui en ouvrent une selon un petit modèle (`decoupage.contributions.pages`), mesurés sur les notes de l'outil d'annotation |
 | `decoupage.delimitation` | #95 | Toutes les contributions délimitées à la main dans les cahiers tirés, en positions sur les pages ; la plateforme les charge |
 | `decoupage.troncons` | #5 | Référence de test du découpage : un tronçon de 10 pages dans chaque département que les cahiers délimités ne couvrent pas, à délimiter dans l'outil d'annotation |
+| `decoupage.vision` | #5 | Débuts de contributions trouvés par un modèle de vision (Claude Haiku, ou Qwen servi par vLLM hors de la machine) sur les pages caviardées des cahiers délimités, dans le sens de lecture qualifié : précision et rappel contre la délimitation à la main et contre les règles |
 | `decoupage.chabin` | #5 | Référence de découpage : les cahiers de l'édition Chabin, délimités à la main et comparés à ses comptes ; ses contributions imprimées retrouvées dans l'OCR, pour mesurer les règles, et ses manuscrits dans la lecture HTR (`htr/`) |
 
 ### Anonymiser : `anonymisation/`

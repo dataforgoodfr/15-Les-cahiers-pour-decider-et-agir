@@ -138,6 +138,56 @@ lisible. Sur les 98 cahiers délimités (2 617 pages lues, dont 685 mixtes,
 1 600 débuts) : règles et modèle, précision 75 %, rappel 81 % ; sur les
 seules pages mixtes, 82 % et 74 % ; formulaires, 92 % et 99 %.
 
+## Un modèle de vision : Claude Haiku
+
+`decoupage.vision` montre les pages caviardées des cahiers délimités à
+Claude Haiku (`claude-haiku-5-5`), une à une et dans l'ordre, avec une règle
+graduée dans la marge ; il note où commence chaque contribution. La mesure
+est la même que pour les règles. La consigne a été réglée sur 10 cahiers
+(136 pages), puis mesurée sur 25 autres (374 pages, cahiers de 4 à 40 pages
+écrites) :
+
+| Pages (test) | Débuts trouvés / notés | Précision | Rappel |
+|---|---|---|---|
+| Dactylographiées et mixtes (165) — Haiku | 92 / 80 | 85 % | 98 % |
+| Mêmes pages — règles et modèle | 53 / 80 | 62 % | 41 % |
+| Manuscrites (209) — Haiku | 153 / 182 | 93 % | 79 % |
+| Toutes (374) — Haiku | 245 / 262 | 90 % | 84 % |
+
+Haiku découpe aussi les manuscrits, que les règles ne lisent pas. Ce qu'il
+manque surtout : plusieurs personnes qui écrivent à la suite sur une même
+page, sans signature ni date entre elles. Ses faux débuts : des courriels de
+transmission de la mairie, des pages photographiées deux fois, une même
+lettre en deux exemplaires. Les règles font moins bien ici que sur
+l'ensemble des cahiers délimités : les cahiers de plus de 40 pages, où les
+formulaires dominent, ne sont pas tirés.
+
+Deux pièges de mesure : les notes sont dans le repère de la page non tournée
+à l'affichage, il faut rendre la page et convertir la référence dans le sens
+de lecture qualifié dans l'outil (avec 9 formulaires tournés, le rappel
+des manuscrits du jeu de réglage passait ainsi de 59 % à 76 %) ; et la consigne doit dire que plusieurs
+personnes écrivent souvent sur une même page manuscrite.
+
+Haiku est hébergé aux États-Unis : il ne peut lire que des pages déjà
+caviardées, alors que le découpage du corpus vient avant l'anonymisation. Il
+sert de référence pour un modèle à poids ouverts servi en Europe, comme pour
+`anonymisation.vision` : Qwen3.8-27B, sur une A100 louée chez Verda
+(Finlande), reçoit chaque page avec la précédente et la même définition. Il
+trouve autant de débuts, mais en ajoute en haut des pages de suite ; une
+seconde question (le haut de la page continue-t-il la précédente ?) en
+retire une partie. Sur les mêmes 374 pages de test :
+
+| Pages (test) | Haiku | Qwen | Qwen vérifié |
+|---|---|---|---|
+| Toutes (374) | 90 % / 84 % | 72 % / 86 % | 81 % / 84 % |
+| Dactylographiées et mixtes (165) | 85 % / 98 % | 76 % / 98 % | 79 % / 98 % |
+| Manuscrites (209) | 93 % / 79 % | 69 % / 81 % | 82 % / 77 % |
+
+(précision / rappel ; règles et modèle sur l'imprimé : 62 % / 41 %). Les 510
+pages du réglage et du test ont pris une vingtaine de minutes, deux requêtes
+au plus par page. Dire à Qwen, dans la consigne, de se méfier du haut des
+pages ne change rien ; le laisser raisonner non plus : il ne s'arrête pas.
+
 ## Mesure sur l'édition Chabin
 
 `uv run python -m decoupage.chabin` retrouve dans l'OCR les contributions que

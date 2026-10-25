@@ -133,18 +133,20 @@ def interroger_modele(
     options: dict,
     max_tokens: int = 2048,
     format_image: str = "png",
+    avant: tuple[bytes, ...] = (),
 ) -> str:
     """La réponse d'un modèle servi par vLLM à une image et une consigne
-    (`texte`, ou l'image seule). Elle peut citer la page : ne jamais
-    l'afficher."""
+    (`texte`, ou l'image seule), les images `avant` d'abord. Elle peut citer
+    la page : ne jamais l'afficher."""
     contenu = [
         {
             "type": "image_url",
             "image_url": {
                 "url": f"data:image/{format_image};base64,"
-                + base64.b64encode(png).decode()
+                + base64.b64encode(image).decode()
             },
         }
+        for image in (*avant, png)
     ]
     if texte:
         contenu.append({"type": "text", "text": texte})
