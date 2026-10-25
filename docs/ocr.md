@@ -155,43 +155,40 @@ encre, vision).
 
 `ocr.tirage` compare ABBYY à une lecture par Claude Haiku
 (`claude-haiku-5-5`), sur les exports caviardés et relus des contributions
-tirées : une contribution entièrement imprimée par département, dans dix
-départements (Hérault, Oise, Rhône, Saône-et-Loire, Seine-et-Marne,
-Seine-Saint-Denis, Haute-Garonne, Paris, Essonne, Val-d'Oise), 42 pages.
-Sans transcription humaine, Haiku sert de référence ; on a d'abord vérifié
-qu'elle tient.
+tirées : les 38 contributions entièrement imprimées du tirage, dans 30
+départements, 102 pages. Sans transcription humaine, Haiku sert de
+référence ; on a vérifié qu'elle tient.
 
 - **Haiku a raison quand les deux lectures diffèrent.** Sur 48 désaccords
   courts (un ou deux mots) tirés au hasard, vérifiés à l'œil sur l'image :
-  Haiku a raison 47 fois, un cas est neutre. Un premier tirage, avant de
-  recoller les mots coupés en fin de ligne, donnait 39 fois Haiku, 2 fois
-  ABBYY (Haiku corrige une faute d'orthographe, et saute un mot),
-  6 neutres. Les erreurs d'ABBYY sont des lettres confondues (y et v, l et
-  1, i et l), des numéros de page manqués, et du bruit sur les photos. Haiku n'a inventé aucun mot.
-- **Sur l'imprimé, ABBYY lit bien partout.** 35 pages sans écriture à la
-  main, 10 700 mots : les deux lectures diffèrent de 2,2 % des mots, 0,4 %
-  des caractères en médiane. C'est l'ordre de grandeur de la mesure sur
-  Chabin (médiane de 1,5 % contre une transcription humaine).
+  Haiku a raison 40 fois, ABBYY 2 fois (Haiku corrige un accord, et saute
+  un bandeau de réseaux sociaux), 5 cas sont neutres (ponctuation, numéros
+  de page écrits à la main), 1 indécidable. Sur un premier échantillon de
+  dix contributions, Haiku avait raison 47 fois sur 48. Les erreurs
+  d'ABBYY sont des lettres confondues (y et v, l et 1, i et l), des mots
+  collés ou coupés, des numéros de page manqués, et du bruit sur les photos
+  et les reliures. Haiku n'a inventé aucun mot.
+- **Sur l'imprimé, ABBYY lit bien partout.** 82 pages sans écriture à la
+  main, 21 400 mots : les deux lectures diffèrent de 1,9 % des mots, 0,4 %
+  des caractères en médiane, et de 0 à 3,3 % des mots selon le
+  département. C'est l'ordre de grandeur de la mesure sur Chabin (médiane de
+  1,5 % contre une transcription humaine) : la couche texte imprimée est
+  aussi bonne ailleurs qu'en Charente-Maritime.
 - **L'ordre de lecture, lui, peut tout changer.** Sur les pages en colonnes
   d'un magazine municipal, 60 à 70 % des caractères diffèrent quand l'ordre
   compte, 2 à 7 % des mots sans l'ordre : les deux lectures ne parcourent pas
   les colonnes de la même façon. Un texte ABBYY de page en colonnes ne se lit
   pas d'un trait.
-- **Sur l'écriture à la main, ABBYY produit du bruit.** Les 7 pages qui en
-  portent (dont 4 mixtes) diffèrent de 32 % : ABBYY rend des lettres là où
-  Haiku lit de la main. Une page typée dactylographiée est surtout
-  manuscrite.
-
-Dix contributions, c'est peu : le banc tourne sur les 38 contributions
-entièrement imprimées du tirage, une fois Haiku passé sur toutes.
+- **Sur l'écriture à la main, ABBYY produit du bruit.** Les 20 pages qui en
+  portent diffèrent de 32 % des mots : ABBYY rend des lettres là où Haiku lit
+  de la main. Une page typée dactylographiée est surtout manuscrite.
 
 ## Ce qui reste à faire
 
 - Regarder les pages signalées (mots sur du blanc, mots hors lexique) : un
   travail humain, les pages n'étant pas anonymisées.
-- Étendre `ocr.tirage` aux 38 contributions entièrement imprimées du
-  tirage, et passer un OCR moderne sur les pages signalées : ses désaccords
-  avec ABBYY pointeraient les pages à problème.
+- Passer un OCR moderne sur les pages signalées : ses désaccords avec ABBYY
+  pointeraient les pages à problème.
 - Mesurer les cadres de mots d'OvisOCR3 contre ceux d'ABBYY, avant de
   penser à remplacer la couche texte.
 - Une petite vérité terrain humaine (mode « transcrire » de l'outil
