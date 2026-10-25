@@ -33,7 +33,7 @@ livraison au premier trimestre 2027. Le détail est dans l'issue
 
 ## Où on en est
 
-Au 20 octobre 2026 :
+Au 25 octobre 2026 :
 
 - **Le corpus est mesuré** : type de chaque page, communes, panel
   ([`analyse/`](analyse/)).
@@ -42,17 +42,31 @@ Au 20 octobre 2026 :
   en entier à la main, soit 4 228 contributions
   ([#5](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/5),
   [#7](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/7)).
-- **Le découpage automatique** (règles : courriels, formulaires, lettres)
-  est mesuré sur ces cahiers délimités : sur les pages dactylographiées, 78 %
-  des débuts trouvés sont justes et 65 % des débuts sont trouvés.
+- **Le découpage automatique** (règles : courriels, formulaires, lettres ;
+  un petit modèle pour les pages qu'elles ne découpent pas) est mesuré sur
+  ces cahiers délimités : sur les pages dactylographiées, 74 % des débuts
+  trouvés sont justes et 78 % des débuts sont trouvés. Une référence de test,
+  un tronçon dans chacun des 41 départements qu'ils ne couvrent pas, est en
+  cours d'annotation ([`analyse/contributions/`](analyse/contributions/)).
 - **L'anonymisation automatique** est mesurée sur trois étalons caviardés
   par des humains ([`docs/anonymisation.md`](docs/anonymisation.md)).
   Publié en texte seul, le corpus est couvert à 92 % en ne cachant que 3 %
   des mots du lexique, à 94 % si l'on encadre deux pages par formulaire ;
   1 333 cahiers en ont un
   ([#128](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/128)).
+  Sur l'image, des modèles de vision à poids ouverts, servis sur une carte
+  louée en Europe, couvrent 88 à 89 % des données de l'étalon de l'Aude en
+  ne cachant que 1 à 2 % du reste, manuscrits compris.
+- **L'OCR du versement** (ABBYY FineReader 11) est mesuré
+  ([`docs/ocr.md`](docs/ocr.md)) : une contribution imprimée typique a 1,5 %
+  d'erreurs par caractère, 0,6 % avec un OCR récent à poids ouverts. La
+  couche texte n'est pas décalée de l'image. Environ 3 000 pages typées
+  dactylographiées lui sont presque illisibles : celles qu'on a regardées
+  sont des formulaires remplis à la main.
 - **La lecture des manuscrits** a son banc d'essai, sur deux étalons
   (Charente-Maritime, Dole) ([`docs/htr.md`](docs/htr.md)).
+- **Les thèmes** suivent la grille V2 de l'association : 8 thèmes et 42
+  sous-thèmes, repérés par mots-clés ([#24](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/24)).
 - **Le regroupement des propositions** est outillé : découpage des
   contributions de l'édition Chabin en propositions, paires tirées et outil
   pour les juger ([#94](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/94)).
@@ -82,12 +96,14 @@ On est encore loin de diffuser massivement les cahiers :
   du premier tirage. C'est le rythme d'un lecteur, pas d'une diffusion
   massive.
 - **Découper automatiquement** est le préalable au reste du corpus.
-  Aujourd'hui, les règles ne découpent que les pages dactylographiées
-  (courriels, formulaires, lettres) et en manquent un tiers des débuts.
-- **Anonymiser sans tout relire** suppose une décision de l'association :
-  publier le texte des contributions plutôt que les images des pages
-  ([#128](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/128)). Il resterait à encadrer deux pages par formulaire
-  (environ 2 700 pages) et un audit par échantillon.
+  Aujourd'hui, règles et modèle ne découpent que les pages
+  dactylographiées, et en manquent un cinquième des débuts.
+- **Anonymiser sans tout relire** suppose une décision de l'association
+  ([#128](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/128)) : publier le texte des contributions plutôt que les
+  images des pages (il resterait à encadrer deux pages par formulaire,
+  environ 2 700 pages), ou les images, en confiant leurs pages à des
+  modèles de vision servis hors de nos machines. Dans les deux cas, un audit
+  par échantillon.
 - **La moitié des pages écrites sont manuscrites** (142 000 sur 276 000) et
   ne sont pas encore lues
   ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)) :
