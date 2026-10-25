@@ -132,6 +132,7 @@ def interroger_modele(
     texte: str | None,
     options: dict,
     max_tokens: int = 2048,
+    format_image: str = "png",
 ) -> str:
     """La réponse d'un modèle servi par vLLM à une image et une consigne
     (`texte`, ou l'image seule). Elle peut citer la page : ne jamais
@@ -140,7 +141,8 @@ def interroger_modele(
         {
             "type": "image_url",
             "image_url": {
-                "url": "data:image/png;base64," + base64.b64encode(png).decode()
+                "url": f"data:image/{format_image};base64,"
+                + base64.b64encode(png).decode()
             },
         }
     ]

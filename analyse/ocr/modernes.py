@@ -152,9 +152,14 @@ def texte_brut(reponse: str, modele: str) -> str:
     return html.unescape(texte)
 
 
-def image_png(page: pymupdf.Page, dpi: int, cote: int) -> bytes:
+def image(page: pymupdf.Page, dpi: int, cote: int, format_: str = "jpeg") -> bytes:
+    """La page en image : en JPEG pour les modèles servis (sept fois moins
+    lourd qu'en PNG à envoyer par le tunnel), en PNG pour Tesseract."""
     plus_long = max(page.rect.width, page.rect.height)
-    return page.get_pixmap(dpi=min(dpi, int(cote * 72 / plus_long))).tobytes("png")
+    pix = page.get_pixmap(dpi=min(dpi, int(cote * 72 / plus_long)))
+    if format_ == "jpeg":
+        return pix.tobytes("jpg", jpg_quality=90)
+    return pix.tobytes("png")
 
 
 def tesseract(png: bytes) -> str:
@@ -241,6 +246,7 @@ def transcrire(args) -> None:
                     m["consigne"],
                     m["options"],
                     m["max_tokens"],
+                    "jpeg",
                 )
                 texte = texte_brut(reponse, args.modele)
         except (
@@ -263,7 +269,12 @@ def transcrire(args) -> None:
                 if cle_page is not None:
                     fichier, n = cle_page
                     with pymupdf.open(chemins[fichier]) as doc:
-                        png = image_png(doc[n - 1], m["dpi"], m["cote"])
+                        png = image(
+                            doc[n - 1],
+                            m["dpi"],
+                            m["cote"],
+                            "png" if args.modele == "tesseract" else "jpeg",
+                        )
                     en_cours[pool.submit(une_page, png)] = cle_page
                     if len(en_cours) < args.paralleles:
                         continue

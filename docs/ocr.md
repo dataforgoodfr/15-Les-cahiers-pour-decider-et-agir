@@ -72,13 +72,53 @@ taux d'erreur (corrélation de rang de 0,22 au plus, pour les mots hors
 lexique et les mots mêlant chiffres et lettres) : ils trouvent des pages
 cassées, pas les fautes de lecture courantes.
 
+## OCR modernes contre ABBYY
+
+`ocr.modernes` relit les mêmes pages (725 pages dactylographiées des 286
+contributions) avec des OCR récents à poids ouverts, servis par vLLM sur
+une A100 louée en Europe (Verda), et avec Tesseract sur CPU. Chaque source
+est alignée sur la transcription Chabin (début et fin libres) ; les écarts
+mot à mot sont classés comme au banc HTR, pour 100 mots de la référence.
+
+| Source | Taille, licence | CER sans accents | Mal lus | Inventés | Charabia | Omis |
+|---|---|---|---|---|---|---|
+| ABBYY FineReader 11 | — | 6,5 % (1,5 %) | 2,5 | 3,0 | 0,6 | 5,1 |
+| Tesseract (CPU) | Apache 2.0 | 6,7 % (1,7 %) | 1,7 | 2,6 | 0,7 | 5,6 |
+| OvisOCR3 | 0,8 Md, Apache 2.0 | 4,7 % (0,6 %) | 1,4 | 1,2 | 0,2 | 4,1 |
+| OvisOCR3, mots et cadres | id. | 5,0 % (0,8 %) | 1,5 | 1,4 | 0,3 | 4,5 |
+| LightOnOCR-2 | 1 Md, Apache 2.0 | 5,7 % (0,7 %) | 1,3 | 1,8 | 0,3 | 4,6 |
+| Chandra OCR 2 | 5 Md, OpenRAIL-M modifiée | 4,8 % (0,6 %) | 1,2 | 1,3 | 0,2 | 4,2 |
+
+- **Les OCR modernes divisent par deux ou plus l'erreur de la contribution
+  typique** (médiane 1,5 % → 0,6 %), et **inventent deux fois moins** de
+  mots qu'ABBYY. Sur l'imprimé, ils ne complètent pas le texte comme les
+  modèles le font sur les manuscrits. Une part de l'écart peut venir de la
+  forme (lignes rejointes, coupures de mots), plus proche d'une
+  transcription humaine : la mesure sans ponctuation l'atténue.
+- **OvisOCR3, le plus petit (0,8 Md), fait jeu égal avec Chandra (5 Md).**
+  Tesseract ne fait pas mieux qu'ABBYY.
+- **La queue est surtout du texte absent des pages lues.** Sur les 27
+  contributions où ABBYY dépasse 10 %, les modèles modernes omettent encore
+  32 à 35 mots sur 100 (ABBYY 40) : ce texte n'est pas sur les pages
+  dactylographiées lues (pages typées manuscrites ou vierges, ou absentes du
+  scan). Ils n'y gagnent que sur les fautes de lecture.
+- **Le mode « mots » d'OvisOCR3 ne rend pas toujours des mots** : sur une
+  page factice, il donne un cadre par ligne ou par paragraphe. Ses cadres
+  ne sont pas encore mesurés sur les vraies pages ; 13 réponses sur 725
+  n'étaient pas du JSON valide.
+- **Coût** : avec 32 requêtes en parallèle et des images en JPEG (sept fois
+  moins lourdes à envoyer que le PNG), OvisOCR3 lit environ 100 pages par
+  minute sur une A100 : le corpus dactylographié (128 000 pages) en
+  demanderait une vingtaine d'heures.
+
 ## Ce qui reste à faire
 
 - Regarder les pages signalées (mots sur du blanc, mots hors lexique) : un
   travail humain, les pages n'étant pas anonymisées.
-- Comparer à un OCR moderne à poids ouverts sur un échantillon stratifié
-  par département, comme le banc de vision de l'anonymisation : ses
-  désaccords avec ABBYY pointeraient les pages à problème ailleurs qu'en
-  Charente-Maritime.
+- Passer un OCR moderne sur un échantillon stratifié par département, et
+  sur les pages signalées : ses désaccords avec ABBYY pointeraient les pages
+  à problème ailleurs qu'en Charente-Maritime.
+- Mesurer les cadres de mots d'OvisOCR3 contre ceux d'ABBYY, avant de
+  penser à remplacer la couche texte.
 - Une petite vérité terrain humaine (mode « transcrire » de l'outil
   d'annotation), sur les départements signalés.
