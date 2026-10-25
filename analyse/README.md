@@ -24,6 +24,7 @@ uv run pytest
 | `orientation` | #43 | Pages tournées d'un quart de tour |
 | `inventaires` | #43 | Documents inventoriés sans fichier, fichiers sans inventaire |
 | `manquantes` | #43 | Pages manquantes des courriers et formulaires types |
+| `ocr.chabin` | #12 | Qualité de l'OCR du versement (ABBYY FineReader Engine 11) : taux d'erreur par caractère et par mot sur les contributions imprimées de l'édition Chabin |
 | `ouvertures` | #5 | Pages d'ouverture imprimées (couverture de l'association des maires…), qui ne sont pas des contributions |
 | `contributions` | #5 | Débuts des contributions (courriels, formulaires, lettres), et pages qui en ouvrent une selon un petit modèle (`contributions.pages`), mesurés sur les notes de l'outil d'annotation |
 | `troncons` | #5 | Référence de test du découpage : un tronçon de 10 pages dans chaque département que les cahiers délimités ne couvrent pas, à délimiter dans l'outil d'annotation |
