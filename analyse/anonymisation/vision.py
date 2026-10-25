@@ -121,25 +121,36 @@ def demander(
     url: str, cle: str, modele: str, png: bytes, format_: str, options: dict
 ) -> str:
     """La réponse du modèle (à ne jamais afficher : elle peut citer la page)."""
+    return interroger_modele(url, cle, modele, png, consigne(format_), options)
+
+
+def interroger_modele(
+    url: str,
+    cle: str,
+    modele: str,
+    png: bytes,
+    texte: str | None,
+    options: dict,
+    max_tokens: int = 2048,
+) -> str:
+    """La réponse d'un modèle servi par vLLM à une image et une consigne
+    (`texte`, ou l'image seule). Elle peut citer la page : ne jamais
+    l'afficher."""
+    contenu = [
+        {
+            "type": "image_url",
+            "image_url": {
+                "url": "data:image/png;base64," + base64.b64encode(png).decode()
+            },
+        }
+    ]
+    if texte:
+        contenu.append({"type": "text", "text": texte})
     corps = {
         "model": modele,
         "temperature": 0,
-        "max_tokens": 2048,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": "data:image/png;base64,"
-                            + base64.b64encode(png).decode()
-                        },
-                    },
-                    {"type": "text", "text": consigne(format_)},
-                ],
-            }
-        ],
+        "max_tokens": max_tokens,
+        "messages": [{"role": "user", "content": contenu}],
         **options,
     }
     requete = urllib.request.Request(

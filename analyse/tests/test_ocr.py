@@ -5,6 +5,7 @@ import pytest
 
 from ocr.anomalies import signaux
 from ocr.chabin import distance_semi_globale, erreurs
+from ocr.modernes import alignement_local, comparer, nature_des_ecarts, texte_brut
 
 
 def test_distance_semi_globale():
@@ -62,3 +63,21 @@ def test_mot_pose_sur_du_blanc():
     # un mot invisible (couche texte seule), comme une couche décalée
     page.insert_text((50, 600), "services publics", fontsize=11, render_mode=3)
     assert signaux(page, LEXIQUE)["mots_sans_encre"] > 0.2
+
+
+def test_alignement_local_et_nature_des_ecarts():
+    assert alignement_local("chat", "le chat dort") == (0, 3, 7)
+    assert alignement_local("chat", "le cht dort")[0] == 1
+    ecarts = nature_des_ecarts(["le", "chat", "dort", "ici"], ["le", "chot", "mange"])
+    assert ecarts == {"mal_lu": 1, "invente": 1, "charabia": 0, "omis": 1}
+    assert comparer("Le chat dort.", "xxx yyy le chat dort zzz")["cer"] == 0
+
+
+def test_texte_brut():
+    assert texte_brut("<p>Le &amp; chat</p>", "chandra-2").split() == [
+        "Le",
+        "&",
+        "chat",
+    ]
+    mots = '[{"bbox": [1, 2, 3, 4], "text": "Le"}, {"text": "chat"}]'
+    assert texte_brut(mots, "ovisocr3-mots") == "Le chat"
