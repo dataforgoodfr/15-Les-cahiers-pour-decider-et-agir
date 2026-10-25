@@ -22,13 +22,13 @@ Les modèles du POC y sont repris un à un. Pour l'instant :
   (`--analyse`, par défaut `../analyse/data`) : type, rotation, pages de
   service et d'ouverture, rattachements à une autre commune. Les types et
   rotations vérifiés dans l'outil d'annotation l'emportent sur les mesures.
-  Les contributions délimitées à la main (sortie de `python -m delimitation`
+  Les contributions délimitées à la main (sortie de `python -m decoupage.delimitation`
   dans `analyse/`) sont chargées par `uv run python manage.py
   charger_contributions`, sous un run de délimitation « à la main » : un
   début et une fin en (page, x, y), et `publiable` à faux pour ce qui est « à
   écarter », jamais montré.
   Leur extrait, le PDF de la contribution seule caviardé et relu (sortie de
-  `python -m selection`), est rattaché par `uv run python manage.py
+  `python -m panels.selection`), est rattaché par `uv run python manage.py
   charger_extraits` : c'est le seul fichier que le public voit. La page
   d'accueil en tire une au sort (#30), parmi les contributions publiables du
   run actif qui ont un extrait ; le PDF d'un cahier n'a aucune adresse
@@ -36,7 +36,7 @@ Les modèles du POC y sont repris un à un. Pour l'instant :
   Les contributions de l'édition de Marie-Anne Chabin (Charente-Maritime)
   sont chargées par `uv run python manage.py charger_chabin`, sous un run de
   délimitation « édition Chabin », jamais activé : celles, dactylographiées
-  ou courriels, dont `python -m chabin` retrouve le début dans l'OCR du scan,
+  ou courriels, dont `python -m decoupage.chabin` retrouve le début dans l'OCR du scan,
   avec leur texte anonymisé par l'édition. Les manuscrits, sans position, ne
   sont pas chargés.
 
@@ -90,9 +90,9 @@ uv sync
 uv run python manage.py migrate
 uv run python manage.py charger_communes
 uv run python manage.py charger_corpus  # si les sorties d'analyse/ sont là
-uv run python manage.py charger_contributions  # après python -m delimitation
-uv run python manage.py charger_extraits  # après python -m selection
-uv run python manage.py charger_chabin  # après python -m chabin
+uv run python manage.py charger_contributions  # après python -m decoupage.delimitation
+uv run python manage.py charger_extraits  # après python -m panels.selection
+uv run python manage.py charger_chabin  # après python -m decoupage.chabin
 uv run python manage.py createsuperuser
 uv run python manage.py runserver
 ```

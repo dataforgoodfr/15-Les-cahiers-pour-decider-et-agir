@@ -39,7 +39,7 @@ class Command(BaseCommand):
     def handle(self, *args, data: Path, **options):
         chemin = data / "selection" / "selection.csv"
         if not chemin.is_file():
-            raise CommandError(f"pas de {chemin} : lancer python -m selection")
+            raise CommandError(f"pas de {chemin} : lancer python -m panels.selection")
         run = Run.objects.filter(genre=Run.Genre.DELIMITATION, libelle=LIBELLE).first()
         if run is None:
             raise CommandError("pas de délimitation à la main : charger_contributions")

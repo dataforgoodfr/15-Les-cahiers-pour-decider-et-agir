@@ -55,7 +55,7 @@ function afficher() {
   jugements.replaceChildren();
   $("avis").hidden = true;
   if (!etat.paires.length) {
-    $("info").textContent = "Aucune paire : lancer d'abord « uv run python -m paires ».";
+    $("info").textContent = "Aucune paire : lancer d'abord « uv run python -m classement.paires ».";
     vider();
     return;
   }

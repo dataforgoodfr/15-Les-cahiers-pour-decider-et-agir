@@ -3,7 +3,7 @@
 import pymupdf
 import pytest
 
-from concatenes.concatenes import (
+from corpus.concatenes.concatenes import (
     A_VERIFIER,
     COMMUNE_RETROUVEE,
     CONCATENE,

@@ -18,7 +18,7 @@ citoyens, combien sont vraiment écrites, et comment.
 
 ## Le type des pages
 
-Le typage (`analyse/typage`, #17) lit deux signaux dans le PDF, sans
+Le typage (`analyse/corpus/typage`, #17) lit deux signaux dans le PDF, sans
 refaire d'OCR : la part d'encre de la page, et la part de mots français
 connus dans sa couche texte.
 
@@ -48,26 +48,26 @@ sont passées en mixtes, surtout à Paris et dans les Hauts-de-Seine
   les pages mixtes, sur 102 pages dactylographiées des cahiers délimités :
   40 des 43 pages mixtes trouvées, 4 fausses alertes.
 - Une page tournée d'un quart de tour a une couche texte qui n'est que du
-  bruit (`analyse/orientation`).
+  bruit (`analyse/corpus/orientation`).
 
 ## Les autres mesures du corpus
 
 Dans [`analyse/`](../analyse/), même étape de la chaîne
-([`chaine.md`](chaine.md)) : pages tournées (`orientation`), fichiers qui
-contiennent le cahier d'une autre commune (`concatenes`), documents
-inventoriés sans fichier (`inventaires`), pages manquantes des courriers
-types (`manquantes`), pages d'ouverture imprimées (`ouvertures`), communes
-et leurs variables INSEE (`communes`).
+([`chaine.md`](chaine.md)) : pages tournées (`corpus.orientation`), fichiers qui
+contiennent le cahier d'une autre commune (`corpus.concatenes`), documents
+inventoriés sans fichier (`corpus.inventaires`), pages manquantes des courriers
+types (`corpus.manquantes`), pages d'ouverture imprimées (`corpus.ouvertures`), communes
+et leurs variables INSEE (`corpus.communes`).
 
 ## Refaire la figure
 
 Depuis `analyse/` :
 
 ```bash
-uv run python -m typage <racine du versement>/B[nN][fF]_GDN_*_PDF/CC --sortie data/typage/pages.csv
-uv run python -m cascade <racine du versement> --typage data/typage/pages.csv
+uv run python -m corpus.typage <racine du versement>/B[nN][fF]_GDN_*_PDF/CC --sortie data/typage/pages.csv
+uv run python -m corpus.cascade <racine du versement> --typage data/typage/pages.csv
 ```
 
 La figure, `docs/cascade.svg`, est versionnée : elle ne contient que des
 comptes. Le détail des commandes est dans
-[`analyse/cascade/`](../analyse/cascade/).
+[`analyse/corpus/cascade/`](../analyse/corpus/cascade/).

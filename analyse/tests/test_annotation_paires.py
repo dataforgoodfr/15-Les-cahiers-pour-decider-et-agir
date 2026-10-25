@@ -14,8 +14,8 @@ from annotation.carnet import Carnet
 from annotation.corpus import Corpus
 from annotation.metadonnees import Metadonnees
 from annotation.paires import Journal, etat, kappa, litiges, retenus
-from paires.__main__ import COLONNES
-from paires.accord import couples
+from classement.paires.__main__ import COLONNES
+from classement.paires.accord import couples
 
 MEME, SUJET, SANS = "même proposition", "même sujet, mesure différente", "sans rapport"
 

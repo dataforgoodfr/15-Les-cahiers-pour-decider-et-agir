@@ -1,6 +1,6 @@
 import pytest
 
-from communes.representativite import comparer, tranche
+from corpus.communes.representativite import comparer, tranche
 
 
 @pytest.mark.parametrize(

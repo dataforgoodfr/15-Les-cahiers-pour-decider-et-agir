@@ -27,7 +27,7 @@ def image(page: pymupdf.Page, facteur: float) -> Image.Image:
 
 def cadre(polygone, facteur: float) -> list[float]:
     """Rectangle d'un polygone en pixels, en points de la page affichée : le
-    repère des lignes de la couche texte (`contributions.lignes`)."""
+    repère des lignes de la couche texte (`decoupage.contributions.lignes`)."""
     xs = [p[0] for p in polygone]
     ys = [p[1] for p in polygone]
     return [

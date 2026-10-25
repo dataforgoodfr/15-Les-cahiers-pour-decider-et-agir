@@ -4,7 +4,7 @@ import csv
 
 import pytest
 
-from panel.panel import (
+from panels.panel.panel import (
     cahiers,
     code_insee,
     communes_du_panel,

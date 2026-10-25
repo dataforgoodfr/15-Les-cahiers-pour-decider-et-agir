@@ -1,6 +1,6 @@
 """Débuts de contributions, sur des pages construites pour le test."""
 
-from contributions.regles import (
+from decoupage.contributions.regles import (
     courriels,
     debuts,
     evaluer,

@@ -3,9 +3,9 @@
 import random
 from collections import defaultdict
 
-from panel.panel import dans_panel
-from tirage import profil
-from tirage.tirage import (
+from panels.panel.panel import dans_panel
+from panels.tirage import profil
+from panels.tirage.tirage import (
     allouer,
     arrondir,
     caler,

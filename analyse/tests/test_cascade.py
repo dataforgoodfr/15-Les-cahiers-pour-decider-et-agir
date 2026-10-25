@@ -6,7 +6,7 @@ from itertools import pairwise
 
 import pymupdf
 
-from cascade.cascade import (
+from corpus.cascade.cascade import (
     DACTYLOGRAPHIEES,
     MANUSCRITES,
     MIXTES,

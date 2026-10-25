@@ -2,7 +2,7 @@
 
 import random
 
-from troncons.troncons import tirer
+from decoupage.troncons.troncons import tirer
 
 D, M = "dactylographiée", "manuscrite"
 

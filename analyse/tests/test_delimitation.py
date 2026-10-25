@@ -1,7 +1,7 @@
 """Toutes les contributions d'un cahier, ramenées au repère du PDF."""
 
-from delimitation.__main__ import lignes_du_cahier
-from selection.contribution import Sens, en_colonnes, toutes, vers_pdf
+from decoupage.delimitation.__main__ import lignes_du_cahier
+from panels.selection.contribution import Sens, en_colonnes, toutes, vers_pdf
 
 
 def test_vers_pdf_defait_la_rotation_et_les_colonnes():

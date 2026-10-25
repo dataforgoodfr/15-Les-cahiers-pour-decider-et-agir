@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from inventaires.inventaires import (
+from corpus.inventaires.inventaires import (
     Entree,
     departement,
     entree,

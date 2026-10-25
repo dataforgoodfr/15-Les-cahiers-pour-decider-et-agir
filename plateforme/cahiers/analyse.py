@@ -24,10 +24,10 @@ TYPES = {
     "mixte": Page.Type.MIXTE,
     "manuscrite": Page.Type.MANUSCRITE,
 }
-# `orientation` ne dit pas le sens du quart de tour ; l'outil d'annotation
+# `corpus.orientation` ne dit pas le sens du quart de tour ; l'outil d'annotation
 # applique le sens horaire, le plus fréquent à la main.
 ROTATION_DETECTEE = 90
-# Catégories de `concatenes` dont une page de garde désigne une autre commune.
+# Catégories de `corpus.concatenes` dont une page de garde désigne une autre commune.
 RATTACHES = {"concatene", "mal_rattache", "commune_retrouvee"}
 
 

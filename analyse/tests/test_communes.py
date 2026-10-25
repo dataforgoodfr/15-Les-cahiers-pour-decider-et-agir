@@ -5,7 +5,7 @@ Les lignes reprennent de vrais cas du COG, sans aucune donnée des cahiers.
 
 import pytest
 
-from communes.rattachement import (
+from corpus.communes.rattachement import (
     COLONNES,
     Referentiel,
     raison_non_rattache,

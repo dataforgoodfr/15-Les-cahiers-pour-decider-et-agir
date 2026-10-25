@@ -3,8 +3,8 @@
 import pymupdf
 import pytest
 
-from selection.__main__ import caviarder, changements
-from selection.contribution import (
+from panels.selection.__main__ import caviarder, changements
+from panels.selection.contribution import (
     MARGE,
     Sens,
     coupure,
@@ -195,7 +195,7 @@ def test_delimite_quand_une_page_vue_atteint_la_derniere_montree():
 
 
 def test_ordre_commence_par_ce_qui_manque():
-    from selection.ordre import ordre
+    from panels.selection.ordre import ordre
 
     tirage = [
         {"fichier": "a", "region": "Bretagne", "taille": "petite"},
@@ -210,7 +210,7 @@ def test_ordre_commence_par_ce_qui_manque():
 
 
 def test_reordonner_garde_les_elements_et_met_les_faits_a_la_fin():
-    from selection.ordre import reordonner
+    from panels.selection.ordre import reordonner
 
     tirage = [
         {"fichier": f, "region": r, "taille": "t"}

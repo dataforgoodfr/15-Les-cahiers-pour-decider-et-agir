@@ -34,7 +34,7 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   la donnée dans le texte de la note. Une note ouverte se déplace en la glissant, et
   se redimensionne par les poignées de ses coins.
 - **Contours des contributions** : une fois sa fin notée, chaque contribution
-  est entourée de pointillés, comme `selection` la découpe ; un côté proche du
+  est entourée de pointillés, comme `panels.selection` la découpe ; un côté proche du
   bord colle à la page. Un clic sur une arête y ajoute un sommet, qu'on glisse
   aussitôt : le contour devient un polygone, gardé au carnet pour cette page,
   et l'export grise tout ce qui en sort. Un sommet se glisse, un double-clic
@@ -50,10 +50,10 @@ la machine : les pages, les notes et les listes ne la quittent pas.
 - **Pivoter l'affichage** d'un quart de tour (`t`), page par page, pour lire
   une page numérisée de travers. Les notes restent justes : elles sont
   gardées dans le repère du PDF. La rotation est gardée dans le carnet : elle
-  donne l'ordre de lecture des notes de la page (`selection`).
+  donne l'ordre de lecture des notes de la page (`panels.selection`).
 - **Voir les métadonnées de la page**, à droite : son typage (type, encre,
   qualité, mots, page de service) et ce que les analyses y ont détecté
-  (`orientation`, `manquantes`, `concatenes`, inventaire), lus dans `data/`.
+  (`corpus.orientation`, `corpus.manquantes`, `corpus.concatenes`, inventaire), lus dans `data/`.
 - **Qualifier la page** : ses problèmes (tournée, ordre des pages, page
   manquante, illisible, coupée, doublon, à écarter) arrivent cochés d'avance quand une
   analyse les a détectés, avec la mention « détecté » ; décocher un faux
@@ -61,7 +61,7 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   besoin ; une page marquée vue sans correction confirme son typage. Une page
   à problème porte ⚠ dans les vignettes, un type corrigé ✓. « À écarter »
   met de côté un contenu qu'on ne publie pas au nom de l'association
-  (propos haineux ou illicites) : `selection` ne l'exporte pas.
+  (propos haineux ou illicites) : `panels.selection` ne l'exporte pas.
 - **Écrire des remarques libres** sur la page ou sur le cahier.
 - **Afficher la couche texte** (« Texte OCR ») : les cadres des lignes
   reconnues par l'OCR du versement ; survoler une ligne montre son texte.
@@ -106,13 +106,13 @@ la machine : les pages, les notes et les listes ne la quittent pas.
 
 - **Juger des paires de propositions** (http://127.0.0.1:8765/paires) :
   deux propositions de l'édition Chabin côte à côte (sortie de
-  `python -m paires`), à juger « même proposition », « même sujet, mesure
+  `python -m classement.paires`), à juger « même proposition », « même sujet, mesure
   différente », « sans rapport » ou « pas une proposition » (touches 1 à 4 ;
   Suppr retire le jugement, `n` va à la prochaine paire à faire). Chacun
   juge seul, sous son prénom, sans voir la tranche, la similarité ni les
   jugements des autres. En mode « Adjuger », un troisième annotateur tranche
   les paires où les deux premiers ne sont pas d'accord.
-  `uv run python -m paires.accord` donne l'accord (kappa de Cohen) ; il lit
+  `uv run python -m classement.paires.accord` donne l'accord (kappa de Cohen) ; il lit
   plusieurs journaux si chacun a annoté sur sa machine.
 
 Raccourcis : ← → page, n p élément de liste, v vue puis élément suivant, r à
@@ -130,7 +130,7 @@ Tout reste dans `data/annotation/`, hors de git :
   positions, les étiquettes et les qualifications sans remarques
   (`Carnet.positions`, `Carnet.qualifications(remarques=False)`). Les
   transcriptions (`Carnet.transcriptions`) citent le cahier entier.
-- `paires.jsonl` : les jugements des paires (`paires.py`), en ajout seul.
+- `classement.paires.jsonl` : les jugements des paires (`classement.paires.py`), en ajout seul.
 - `listes/*.json` : les listes à revoir (`listes.py`), qui ne contiennent que
   des positions, des étiquettes et des commentaires sur la méthode. Une liste
   « à masquer » identifie chaque repérage ; ses rétablissements vont au

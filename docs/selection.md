@@ -48,5 +48,5 @@ le recensement et Filosofi 2017.
 L'ensemble des cahiers est plus âgé et plus retraité que la France ; la
 sélection corrige cet écart.
 
-Méthode et rapport complet : `cd analyse && uv run python -m tirage`
-(module `analyse/tirage`).
+Méthode et rapport complet : `cd analyse && uv run python -m panels.tirage`
+(module `analyse/panels/tirage`).

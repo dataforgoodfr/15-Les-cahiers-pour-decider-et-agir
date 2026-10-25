@@ -18,7 +18,7 @@ Trois sources de repérages, que l'annotation fait vérifier à la main :
   toujours au même endroit. Les rectangles de données personnelles posés à
   la main sur quelques exemplaires, rapportés à l'en-tête du formulaire, se
   reportent sur tous les exemplaires du cahier. L'en-tête vient des règles
-  de `contributions`, qui ne lisent que les pages dactylographiées ; un
+  de `decoupage.contributions`, qui ne lisent que les pages dactylographiées ; un
   formulaire rempli à la main se reconnaît plutôt à ses lignes imprimées,
   apprises sur les pages annotées (`modele_appris`) ;
 - **l'encre sans texte** : sur une page dactylographiée, l'écriture à la
@@ -44,7 +44,7 @@ from statistics import median
 
 import numpy as np
 
-from contributions.regles import PUBLIC
+from decoupage.contributions.regles import PUBLIC
 
 EXTENSIONS = r"(?:fr|com|net|org|eu|be|ch|info|biz|io|de|uk|it|es|lu|re)"
 COURRIEL = re.compile(

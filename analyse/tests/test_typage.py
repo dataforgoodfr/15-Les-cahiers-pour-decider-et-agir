@@ -3,7 +3,7 @@
 import pymupdf
 import pytest
 
-from typage.typage import (
+from corpus.typage.typage import (
     DACTYLOGRAPHIEE,
     MANUSCRITE,
     MIXTE,

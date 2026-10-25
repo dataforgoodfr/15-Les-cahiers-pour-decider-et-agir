@@ -2,8 +2,8 @@
 
 import pytest
 
-from manquantes import manquantes
-from manquantes.manquantes import (
+from corpus.manquantes import manquantes
+from corpus.manquantes.manquantes import (
     COMPLET_,
     INCOMPLET,
     VERSION,

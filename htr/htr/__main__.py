@@ -7,7 +7,7 @@
         [--types manuscrite] [--modele manicule-2026]
         [--sortie ../data/htr] [--modeles ../data/htr/modeles] [--processus 2]
 
-Lit les pages des scans demandés que `analyse/typage` a classées dans l'un
+Lit les pages des scans demandés que `analyse/corpus/typage` a classées dans l'un
 des types donnés. Écrit, pour chaque scan, `<sortie>/<modèle>/<scan>.jsonl` :
 une ligne par page lue, avec ses lignes de texte et leur cadre en points de
 la page affichée. Un scan déjà lu n'est pas relu : la commande reprend où
@@ -52,7 +52,7 @@ def pages_typees(
     typage: Path, fichiers: set[str], types: set[str]
 ) -> dict[str, list[int]]:
     """Numéros (à partir de 1) des pages de chaque scan dont le type est
-    retenu, d'après les CSV de `analyse/typage`."""
+    retenu, d'après les CSV de `analyse/corpus/typage`."""
     sortie: dict[str, list[int]] = {}
     for csv_ in sorted(typage.glob("*.csv")):
         with csv_.open(encoding="utf-8") as f:

@@ -71,9 +71,9 @@ from anonymisation.publics import (
     publics,
 )
 from anonymisation.zones import zones
-from communes import sources
-from contributions.__main__ import pages_lues
-from panel.panel import code_insee
+from corpus.communes import sources
+from decoupage.contributions.__main__ import pages_lues
+from panels.panel.panel import code_insee
 
 TACHE = "selection"  # la délimitation, où l'on encadre aussi les données
 DEDANS = 0.5  # part d'un mot dans un cadre pour qu'il y soit

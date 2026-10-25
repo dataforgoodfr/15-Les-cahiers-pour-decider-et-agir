@@ -1,6 +1,6 @@
 """Pages d'ouverture imprimées, sur des lignes construites pour le test."""
 
-from ouvertures.ouvertures import lignes_de_page, modele, porte
+from corpus.ouvertures.ouvertures import lignes_de_page, modele, porte
 
 COUVERTURE = "Cahier de doléances\net de propositions\nAssociation des maires 17"
 

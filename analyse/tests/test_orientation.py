@@ -3,8 +3,13 @@
 import pymupdf
 import pytest
 
-from orientation.orientation import pages_tournees, rapport, rapport_brut, tournee
-from typage.typage import _zone
+from corpus.orientation.orientation import (
+    pages_tournees,
+    rapport,
+    rapport_brut,
+    tournee,
+)
+from corpus.typage.typage import _zone
 
 PARAGRAPHE = (
     "Nous demandons le retour des services publics dans les petites communes, "

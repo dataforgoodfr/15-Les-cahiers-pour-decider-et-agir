@@ -240,7 +240,7 @@ class Contribution(models.Model):
     # Le texte, quand une transcription l'a lu. Vide pour le manuscrit non lu.
     texte = models.TextField(blank=True)
     publiable = models.BooleanField(default=True)
-    # Le PDF de la contribution seule, caviardé et relu (`selection` dans
+    # Le PDF de la contribution seule, caviardé et relu (`panels.selection` dans
     # analyse/) : le seul fichier qu'on peut montrer au public. Vide tant
     # qu'il n'a pas été relu.
     extrait = models.FileField(upload_to="extraits/", blank=True)

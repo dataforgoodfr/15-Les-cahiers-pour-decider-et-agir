@@ -7,7 +7,7 @@
         [--sortie data/anonymisation/mesure.md]
 
 Pages mesurées : les pages dactylographiées des contributions exportées par
-`selection`, toutes relues avant export, dans les cahiers où `anonymisation`
+`panels.selection`, toutes relues avant export, dans les cahiers où `anonymisation`
 a tourné. Sur ces pages, la référence est ce qui a été caviardé : les
 repérages que la relecture n'a pas rétablis, et les données encadrées à la
 main qu'aucun d'eux ne couvrait (les oublis).
@@ -26,7 +26,7 @@ from pathlib import Path
 from annotation.carnet import Carnet
 from anonymisation.__main__ import PERSONNELLES, _ordonner
 from anonymisation.masquage import CHAMPS, dans, est_retabli, fusionner
-from contributions.__main__ import pages_lues
+from decoupage.contributions.__main__ import pages_lues
 
 A_CACHER = PERSONNELLES | {"signature"}
 TOUCHE = 0.5  # part d'un cadre dans l'autre pour qu'un repérage couvre une donnée

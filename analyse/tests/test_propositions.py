@@ -1,7 +1,7 @@
 """Découpage des contributions de l'édition Chabin en propositions."""
 
-from propositions.__main__ import echantillon, lignes
-from propositions.decoupage import Proposition, decouper
+from classement.propositions.__main__ import echantillon, lignes
+from classement.propositions.decoupage import Proposition, decouper
 
 
 def textes(texte: str) -> list[str]:
