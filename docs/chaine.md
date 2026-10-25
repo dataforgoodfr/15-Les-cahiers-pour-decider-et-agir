@@ -64,13 +64,19 @@ réécrire l'ancien.
 
 | Étape | Modules | Mesure | Où en lire plus |
 |---|---|---|---|
-| **Mesurer le corpus** : type de chaque page (vierge, dactylographiée, mixte, manuscrite), pages tournées, fichiers concaténés ou incomplets, pages d'ouverture imprimées | `typage`, `cascade`, `orientation`, `concatenes`, `inventaires`, `manquantes`, `ouvertures`, `communes` | 276 000 pages écrites, dont 142 000 manuscrites | [`analyse/cascade/`](../analyse/cascade/), #17, #41, #43 |
+| **Mesurer le corpus** : type de chaque page (vierge, dactylographiée, mixte, manuscrite), pages tournées, fichiers concaténés ou incomplets, pages d'ouverture imprimées | `typage`, `cascade`, `orientation`, `concatenes`, `inventaires`, `manquantes`, `ouvertures`, `communes` | 276 000 pages écrites : 38 % dactylographiées, 11 % mixtes, 51 % manuscrites | [`docs/corpus.md`](corpus.md), #17, #41, #43 |
 | **Lire le texte imprimé** (OCR) | couche texte du versement ; `ocr.chabin`, `ocr.anomalies`, `ocr.modernes` | 1,5 % d'erreurs par caractère (médiane) ; 0,6 % avec un OCR récent | [`docs/ocr.md`](ocr.md), #12 |
 | **Lire les manuscrits** (HTR) | [`htr/`](../htr/) | Aucun modèle local n'est encore assez fidèle pour publier | [`docs/htr.md`](htr.md), #6 |
 | **Découper** les cahiers en contributions | `contributions` (règles et modèle) ; références : `delimitation`, `chabin`, `troncons` | Pages dactylographiées et mixtes : 75 % des débuts trouvés sont justes, 81 % des débuts sont trouvés ; les manuscrits ne sont pas découpés | [`analyse/contributions/`](../analyse/contributions/), #5, #64 |
 | **Anonymiser** | `anonymisation` et ses sous-modules ; étalon `aude` | Texte seul : 92 à 94 % des données cachées ; image et modèle de vision : 88 à 89 % | [`docs/anonymisation.md`](anonymisation.md), #7, #128 |
 | **Modérer** : écarter les contenus haineux ou illicites | Aucun : à la main, dans l'outil d'annotation (« à écarter ») | Pas d'étalon | #166 |
 | **Charger** dans la base | `manage.py charger_corpus`, `charger_contributions`, `charger_extraits`, `charger_chabin` ([`plateforme/`](../plateforme/)) | — | [`plateforme/README.md`](../plateforme/README.md), #34 |
+
+La lecture des manuscrits est un sous-projet à part, [`htr/`](../htr/),
+pour une raison technique : kraken demande Python 3.12 et numpy 1, quand
+`analyse/` est en Python 3.14 et numpy 2. Les modules `ocr` restent dans
+`analyse/` : ils mesurent la couche texte du versement et interrogent des
+modèles servis ailleurs, sans dépendance lourde.
 
 Aujourd'hui, la couche « or » ne contient que les contributions délimitées à
 la main (les cahiers des 100 contributions tirées) et celles de l'édition

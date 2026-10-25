@@ -1,5 +1,11 @@
 # Les cahiers pour décider et agir
 
+<p align="center">
+  <a href="https://www.decider-agir.fr/"><img src="docs/images/logo-cahiers.png" alt="Des cahiers pour décider et agir" height="90"></a>
+  &nbsp;&nbsp;
+  <a href="https://dataforgood.fr/"><img src="docs/images/logo-dataforgood.svg" alt="Data For Good" height="90"></a>
+</p>
+
 Projet [Data For Good](https://dataforgood.fr/), saison 2026-2027, avec
 l'association [Des cahiers pour décider et agir](https://www.decider-agir.fr/).
 
@@ -36,7 +42,9 @@ livraison au premier trimestre 2027. Le détail est dans l'issue
 Au 25 octobre 2026 :
 
 - **Le corpus est mesuré** : type de chaque page, communes, panel
-  ([`analyse/`](analyse/)).
+  ([`docs/corpus.md`](docs/corpus.md)). Sur 276 000 pages écrites, 38 %
+  sont dactylographiées, 11 % mixtes (imprimées et remplies à la main) et
+  51 % manuscrites.
 - **Les 100 contributions tirées sont prêtes** : exportées en PDF caviardés,
   réunies dans un recueil pour l'association. Leurs cahiers sont délimités
   en entier à la main, soit 4 228 contributions
@@ -60,9 +68,9 @@ Au 25 octobre 2026 :
 - **L'OCR du versement** (ABBYY FineReader 11) est mesuré
   ([`docs/ocr.md`](docs/ocr.md)) : une contribution imprimée typique a 1,5 %
   d'erreurs par caractère, 0,6 % avec un OCR récent à poids ouverts. La
-  couche texte n'est pas décalée de l'image. Environ 3 000 pages typées
-  dactylographiées lui sont presque illisibles : celles qu'on a regardées
-  sont des formulaires remplis à la main.
+  couche texte n'est pas décalée de l'image. Les pages qu'il ne lit presque
+  pas étaient surtout des formulaires remplis à la main : elles sont
+  désormais typées mixtes.
 - **La lecture des manuscrits** a son banc d'essai, sur deux étalons
   (Charente-Maritime, Dole) ([`docs/htr.md`](docs/htr.md)).
 - **Les thèmes** suivent la grille V2 de l'association : 8 thèmes et 42
@@ -148,7 +156,8 @@ Les étapes du traitement et le module qui fait chacune sont dans
   Clever Cloud. Pour l'instant un squelette, qui reprendra les modèles de
   `backend/`.
 - [`docs/`](docs/) : la chaîne de traitement, des PDF à la plateforme
-  ([`docs/chaine.md`](docs/chaine.md)), règles sur les données, et les bancs
+  ([`docs/chaine.md`](docs/chaine.md)), le corpus
+  ([`docs/corpus.md`](docs/corpus.md)), règles sur les données, et les bancs
   d'essai de chaque étape (OCR, manuscrits, anonymisation).
 
 Chaque sous-projet utilise [uv](https://docs.astral.sh/uv/) : par exemple `cd analyse && uv sync`,

@@ -6,7 +6,7 @@ Trois niveaux, chacun ne garde qu'une partie du précédent :
    IL), comptées dans les PDF ;
 2. les **cahiers citoyens** (CC) : leurs pages, moins celles ajoutées à la
    numérisation et les pages vierges, d'après le typage (issue #17) ;
-3. les **pages écrites** : dactylographiées, mixtes (formulaires remplis à la
+3. les **pages écrites** : dactylographiées, mixtes (pages imprimées remplies à la
    main) ou manuscrites.
 
 Des comptes, jamais de texte.
@@ -257,8 +257,8 @@ def svg(cascade: list[Niveau], date: str) -> str:
     y = HAUT + PAS * len(cascade) + 10
     morceaux.append(
         f'<text class="note" x="16" y="{y}">Pages comptées dans les PDF du versement ; '
-        "types de page par l'outil de typage (issue #17) ; mixtes : formulaires "
-        f"remplis à la main. État au {date}.</text>"
+        "types de page par l'outil de typage (issue #17) ; mixtes : pages imprimées "
+        f"remplies à la main. État au {date}.</text>"
     )
     morceaux.append("</svg>")
     return "\n".join(morceaux) + "\n"

@@ -1,10 +1,7 @@
 # Cascade : du versement BnF aux pages écrites
 
-Ce que devient chaque page numérisée, niveau par niveau. Premier état du
-corpus pour le travail d'archive : combien de pages le versement contient,
-combien relèvent des cahiers citoyens, combien sont vraiment écrites.
-
-![Cascade du corpus](../docs/cascade.svg)
+Ce que devient chaque page numérisée, niveau par niveau. La figure et sa
+lecture sont dans [`docs/corpus.md`](../../docs/corpus.md).
 
 ```bash
 uv run python -m typage <racine du versement>/B[nN][fF]_GDN_*_PDF/CC --sortie data/typage/pages.csv
@@ -20,26 +17,5 @@ Sorties :
 
 - `data/cascade/cascade.csv` (hors git) : pages et part de chaque segment,
   documents par catégorie ;
-- `docs/cascade.svg` : la figure, versionnée. Elle ne contient que des
+- `../docs/cascade.svg` : la figure, versionnée. Elle ne contient que des
   comptes.
-
-## Les niveaux
-
-1. **Versement BnF** : toutes les pages des PDF, par catégorie de la BnF.
-   Les inventaires et documents d'accompagnement (`A_lire/`) sont exclus.
-2. **Cahiers citoyens** (CC) : les pages ajoutées à la numérisation
-   (intercalaires, pages de garde) et les pages vierges sont écartées.
-3. **Pages écrites** : dactylographiées, mixtes (formulaires remplis à la
-   main) ou manuscrites.
-
-## Limites
-
-- Seuls les CC sont typés. Les courriers (CO) sont dans le périmètre des
-  doléances, mais leurs pages ne sont pas encore typées ; CR et IL sont hors
-  périmètre.
-- Les pages mixtes reconnues sont les formulaires imprimés remplis à la main.
-  Une page dactylographiée complétée à la main hors formulaire reste
-  dactylographiée.
-- Vérification à la main du typage sur 100 pages tirées au hasard : aucune
-  page vierge manquée (0 sur 48), 3 pages mixtes sur 3 reconnues, 2 inversions
-  entre dactylographiée et manuscrite (issue #17).

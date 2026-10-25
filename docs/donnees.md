@@ -16,7 +16,8 @@ PR, captures d'écran) est publié.
 ## Garde-fous
 
 Le hook `pas-de-donnees` refuse tout fichier de données (PDF, images, tables,
-bases, archives, texte brut, dossiers `data/`) avant le commit. Il ne protège
+bases, archives, texte brut, dossiers `data/`) avant le commit. Seuls les logos des
+deux associations (`docs/images/logo-*.png`) y échappent. Il ne protège
 que si pre-commit est installé, une fois après le clone :
 
 ```bash
