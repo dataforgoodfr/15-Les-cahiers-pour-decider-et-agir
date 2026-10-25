@@ -56,6 +56,10 @@ Au 25 octobre 2026 :
   des débuts trouvés sont justes et 81 % des débuts sont trouvés. Une référence de test,
   un tronçon dans chacun des 41 départements qu'ils ne couvrent pas, est en
   cours d'annotation ([`analyse/decoupage/contributions/`](analyse/decoupage/contributions/)).
+  Un modèle de vision à poids ouverts (Qwen), servi sur une carte louée en
+  Europe, découpe aussi les manuscrits : sur 25 cahiers de test, 81 % des
+  débuts trouvés sont justes et 84 % sont trouvés, toutes pages confondues
+  (Claude Haiku, pris pour référence : 90 % et 84 %).
 - **L'anonymisation automatique** est mesurée sur trois étalons caviardés
   par des humains ([`docs/anonymisation.md`](docs/anonymisation.md)).
   Publié en texte seul, le corpus est couvert à 92 % en ne cachant que 3 %
@@ -67,7 +71,9 @@ Au 25 octobre 2026 :
   ne cachant que 1 à 2 % du reste, manuscrits compris.
 - **L'OCR du versement** (ABBYY FineReader 11) est mesuré
   ([`docs/ocr.md`](docs/ocr.md)) : une contribution imprimée typique a 1,5 %
-  d'erreurs par caractère, 0,6 % avec un OCR récent à poids ouverts. La
+  d'erreurs par caractère, 0,6 % avec un OCR récent à poids ouverts ; sur
+  les contributions imprimées du tirage, dans 30 départements, le texte
+  d'ABBYY ne diffère que de 2 % des mots d'une relecture par Claude Haiku. La
   couche texte n'est pas décalée de l'image. Les pages qu'il ne lit presque
   pas étaient surtout des formulaires remplis à la main : elles sont
   désormais typées mixtes.
@@ -106,7 +112,9 @@ On est encore loin de diffuser massivement les cahiers :
 - **Découper automatiquement** est le préalable au reste du corpus.
   Aujourd'hui, règles et modèle ne découpent que les pages à couche
   imprimée (dactylographiées et mixtes), et en manquent un cinquième des
-  débuts.
+  débuts. Un modèle de vision servi en Europe découpe toutes les pages, mais
+  il lit des pages non anonymisées hors de nos machines : la même décision
+  que pour l'anonymisation par l'image.
 - **Anonymiser sans tout relire** suppose une décision de l'association
   ([#128](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/128)) : publier le texte des contributions plutôt que les
   images des pages (il resterait à encadrer deux pages par formulaire,
@@ -114,8 +122,11 @@ On est encore loin de diffuser massivement les cahiers :
   modèles de vision servis hors de nos machines. Dans les deux cas, un audit
   par échantillon.
 - **La modération** des contenus haineux ou illicites se fait à la main,
-  pendant la délimitation : rien ne la mesure ni ne l'automatise encore
-  ([#166](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/166)).
+  pendant la délimitation, et n'a pas d'étalon
+  ([#166](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/166)) :
+  un premier essai avec un modèle de vision confond propositions restrictives
+  légales et provocation à la haine, et ne voit pas qu'un même auteur peut
+  être écarté en bloc. Le critère est à fixer avec l'association.
 - **La moitié des pages écrites sont manuscrites** (142 000 sur 276 000) et
   ne sont pas encore lues
   ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)) :
