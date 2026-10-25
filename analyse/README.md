@@ -11,13 +11,13 @@ uv run pytest
 ```
 
 Les modules suivent la chaîne décrite dans [`docs/chaine.md`](../docs/chaine.md) :
-les uns constituent la couche « or » (contributions délimitées, lues,
+les uns constituent la base des contributions (délimitées, lues,
 anonymisées), les autres l'exploitent pour l'association.
 
 Un dossier par étape, un sous-dossier par module : `corpus/typage` se lance
 par `uv run python -m corpus.typage`.
 
-## Constituer la couche « or »
+## Constituer la base des contributions
 
 ### Mesurer le corpus : `corpus/`
 

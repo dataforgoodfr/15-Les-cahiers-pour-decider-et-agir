@@ -2,14 +2,14 @@
 
 Le travail se partage en deux parties, qui avancent chacune de leur côté :
 
-- **Constituer la couche « or »** : des PDF du versement BnF, tirer des
-  contributions délimitées, lues, anonymisées et modérées, prêtes à être
-  indexées. Cette partie **ajoute** des données à la base.
-- **Exploiter la couche « or »**, pour l'association : thèmes, propositions
+- **Constituer la base des contributions** : des PDF du versement BnF,
+  tirer des contributions délimitées, lues, anonymisées et modérées, prêtes
+  à être indexées. Cette partie **ajoute** des données à la base.
+- **Exploiter la base**, pour l'association : thèmes, propositions
   qui se ressemblent, fréquence des sujets, panels, votes des citoyens sur
   la plateforme. Cette partie **lit** la base.
 
-Entre les deux, la base de la plateforme ([`plateforme/`](../plateforme/),
+Entre les deux, la base des contributions, celle de la plateforme ([`plateforme/`](../plateforme/),
 application `cahiers`) sert de contrat. Une étape de la première partie peut
 s'améliorer sans rien changer à la seconde, du moment qu'elle remplit les
 mêmes tables. Une exploitation peut se construire sur les contributions déjà
@@ -24,7 +24,7 @@ flowchart LR
         D --> A[Anonymiser]
         D --> Mo[Modérer]
     end
-    A --> O[(Couche or<br>base de la plateforme)]
+    A --> O[(Base des<br>contributions)]
     Mo --> O
     subgraph E[Exploiter]
         T[Thèmes, fréquence<br>des sujets]
@@ -42,7 +42,7 @@ Les modules sont dans [`analyse/`](../analyse/), sauf mention contraire ;
 chacun lit et écrit dans `analyse/data/`, hors git. Une commande par module :
 `uv run python -m <module>`, décrite dans sa docstring ou son README.
 
-## La couche « or »
+## La base des contributions
 
 Ce que la base garde de chaque cahier (`plateforme/cahiers/models.py`) :
 
@@ -78,7 +78,7 @@ pour une raison technique : kraken demande Python 3.12 et numpy 1, quand
 `analyse/` : ils mesurent la couche texte du versement et interrogent des
 modèles servis ailleurs, sans dépendance lourde.
 
-Aujourd'hui, la couche « or » ne contient que les contributions délimitées à
+Aujourd'hui, la base ne contient que les contributions délimitées à
 la main (les cahiers des 100 contributions tirées) et celles de l'édition
 Chabin. Le découpage et l'anonymisation automatiques sont mesurés, mais leurs
 sorties ne sont pas encore chargées.
@@ -100,7 +100,7 @@ qu'on note, à la main, les vérités terrain contre lesquelles tout est mesuré
 
 Les modules d'exploitation lisent encore les sorties d'`analyse/` (par
 exemple `classement.themes` lit `data/delimitation/`) plutôt que la base. À mesure que
-la couche « or » s'étoffe, ils devraient la lire directement.
+la base s'étoffe, ils devraient la lire directement.
 
 ## Les références
 
@@ -124,8 +124,10 @@ Chaque mesure se fait contre un travail humain :
 
 - **Versement** : les PDF des cahiers déposés à la BnF, un dossier par
   département (`BnF_GDN_XX_PDF`).
-- **Couche « or »** : les données prêtes à l'exploitation (contributions
-  délimitées, anonymisées, modérées), dans la base de la plateforme.
+- **Base des contributions** : la base de la plateforme, où la constitution
+  écrit les contributions délimitées, anonymisées et modérées, et où
+  l'exploitation les lit. Elle garde aussi ce qui ne sera pas publié
+  (contributions à écarter, pages non anonymisées pour les administrateurs).
 - **Cahier** : un fichier du versement ; une **contribution** : le texte d'un
   auteur (ou d'un groupe) dans un cahier ; une **proposition** : une idée
   dans une contribution.
