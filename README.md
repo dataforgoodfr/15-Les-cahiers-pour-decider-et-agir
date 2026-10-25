@@ -105,6 +105,9 @@ On est encore loin de diffuser massivement les cahiers :
   environ 2 700 pages), ou les images, en confiant leurs pages à des
   modèles de vision servis hors de nos machines. Dans les deux cas, un audit
   par échantillon.
+- **La modération** des contenus haineux ou illicites se fait à la main,
+  pendant la délimitation : rien ne la mesure ni ne l'automatise encore
+  ([#166](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/166)).
 - **La moitié des pages écrites sont manuscrites** (142 000 sur 276 000) et
   ne sont pas encore lues
   ([#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6)) :
@@ -129,6 +132,10 @@ Pour commencer, voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Organisation du dépôt
 
+Les étapes du traitement et le module qui fait chacune sont dans
+[`docs/chaine.md`](docs/chaine.md).
+
+
 - [`analyse/`](analyse/) : mesures sur le corpus (typage des pages, communes,
   panel, tirage), outil d'annotation, découpage et caviardage des
   contributions. Sous-projet autonome, avec son `pyproject.toml`.
@@ -140,8 +147,9 @@ Pour commencer, voir [CONTRIBUTING.md](CONTRIBUTING.md).
 - [`plateforme/`](plateforme/) : l'application de production, en Django sur
   Clever Cloud. Pour l'instant un squelette, qui reprendra les modèles de
   `backend/`.
-- [`docs/`](docs/) : règles sur les données, banc d'essai de la lecture des
-  manuscrits ([`docs/htr.md`](docs/htr.md)).
+- [`docs/`](docs/) : la chaîne de traitement, des PDF à la plateforme
+  ([`docs/chaine.md`](docs/chaine.md)), règles sur les données, et les bancs
+  d'essai de chaque étape (OCR, manuscrits, anonymisation).
 
 Chaque sous-projet utilise [uv](https://docs.astral.sh/uv/) : par exemple `cd analyse && uv sync`,
 puis `uv run ...`.

@@ -19,9 +19,11 @@ bienvenus.
 
 1. Lisez [le README](README.md), surtout « Où on en est » et « Avant la
    diffusion sur la plateforme » : ce qui est fait, ce qui bloque.
-2. Lisez [docs/donnees.md](docs/donnees.md) : les cahiers contiennent des
+2. Lisez [docs/chaine.md](docs/chaine.md) : les étapes du traitement, des
+   PDF à la plateforme, et le module qui fait chacune.
+3. Lisez [docs/donnees.md](docs/donnees.md) : les cahiers contiennent des
    opinions politiques signées, et ce dépôt est public.
-3. Choisissez un chantier ci-dessous et dites-le sur Mattermost avant de
+4. Choisissez un chantier ci-dessous et dites-le sur Mattermost avant de
    vous lancer, pour ne pas doubler quelqu'un.
 
 ## Les chantiers
@@ -32,7 +34,9 @@ Chaque chantier est une issue qui regroupe ses sous-issues.
 |---|---|---|
 | Découper les cahiers en contributions | Python, règles, petits modèles de classification | [#5](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/5), [#64](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/64) |
 | Anonymiser | Python, reconnaissance d'entités nommées, rigueur | [#7](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/7), [#128](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/128) |
+| Lire le texte imprimé (OCR) | Vision, mesure de qualité | [#12](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/12), [docs/ocr.md](docs/ocr.md) |
 | Lire les manuscrits (HTR) | Vision, modèles légers sur CPU | [#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6), [docs/htr.md](docs/htr.md) |
+| Modérer | Règles, petits modèles de classification, annotation | [#166](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/166) |
 | Classer et regrouper les propositions | Traitement de la langue, statistiques | [#4](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/4), [#94](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/94) |
 | La plateforme | Django, PostgreSQL, front | [#29](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/29), [#38](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/38) |
 | Restitution et valorisation | Produit, design, rédaction | [#10](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/10) |

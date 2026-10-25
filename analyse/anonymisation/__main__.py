@@ -6,8 +6,9 @@
         [--sortie data/anonymisation] [--modele ollama:qwen3.5:9b ...]
         [--seulement-vues]
 
-Méthodes dans `anonymisation.detection`. Lit les pages dactylographiées des
-cahiers, et les en-têtes de formulaire trouvés par `contributions`. Écrit :
+Méthodes dans `anonymisation.detection`. Lit les pages dactylographiées et
+mixtes des cahiers, et les en-têtes de formulaire trouvés par
+`contributions`. Écrit :
 
 - `reperes.csv` dans la sortie : une ligne par repérage (fichier, page,
   cadre en points PDF, étiquette, source) ;
