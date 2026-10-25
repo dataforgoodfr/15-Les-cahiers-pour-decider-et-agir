@@ -5,7 +5,11 @@
     uv run python -m decoupage.vision preparer --sortie data/decoupage/vision/test
         --nombre 25 --exclure data/decoupage/vision/reglage
     (lecture par le modèle : voir plus bas)
+    uv run python -m decoupage.vision interroger --sortie data/decoupage/vision/test
+        --modele qwen3.8-27b [--url …] [--paralleles 8]
+    uv run python -m decoupage.vision verifier --sortie data/decoupage/vision/test
     uv run python -m decoupage.vision mesurer --sortie data/decoupage/vision/test
+        [--lecteur sorties-qwen3.8-27b-verifie]
 
 Les cahiers délimités à la main (`panels.selection`) sont caviardés : leurs
 pages peuvent être montrées à un modèle hébergé. `preparer` tire des cahiers
@@ -26,7 +30,23 @@ consigne a été réglée sur le premier (`reglage`), on la mesure sur un autre
 dossier par lot : des agents qui écrivent dans les mêmes fichiers se
 marchent dessus.
 
-`mesurer` compare ces débuts à la référence avec la mesure du découpage
+`interroger` pose la même question à un modèle servi par vLLM hors de la
+machine (`anonymisation.vision.MODELES`, carte louée en Europe, jointe par un
+tunnel) : chaque page est envoyée avec la page précédente du cahier, pour le
+contexte, et `CONSIGNE_PAGE` (la même définition d'une contribution) ; le
+modèle répond `{"debuts": [12, 58]}`. Les pages sont indépendantes, donc
+interrogées en parallèle ; une page déjà lue n'est pas redemandée. Les
+réponses vont dans `sorties-<modèle>/`, au même format.
+
+`verifier` repose une question fermée pour chaque début lu en haut de page
+(sous la graduation `HAUT`) : avec la page précédente, le haut de la page
+continue-t-il sa contribution ? Si oui, le début est retiré
+(`sorties-<modèle>-verifie/`). Servi page à page, Qwen prend volontiers le
+haut d'une page de suite pour un début ; le lui dire dans la consigne, ou le
+laisser raisonner (il ne s'arrête plus), n'y change rien.
+
+`mesurer` compare les débuts d'un lecteur (`--lecteur` : `sorties`, Haiku,
+par défaut, ou `sorties-<modèle>`) à la référence avec la mesure du découpage
 (`decoupage.contributions.regles.evaluer`), par type de page, et, sur les pages
 dactylographiées et mixtes, à la chaîne actuelle (`data/contributions/debuts.csv`).
 Aussi à la page : une page ouvre-t-elle au moins une contribution ?
@@ -36,15 +56,19 @@ Les pages restent dans `data/` ; la sortie ne donne que des comptes.
 
 import argparse
 import csv
+import json
 import random
 import re
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from itertools import pairwise
 from pathlib import Path
 
 import pymupdf
 
 from annotation.carnet import Carnet
 from anonymisation.masquage import CHAMPS, a_masquer, fusionner
+from anonymisation.vision import MODELES, URL, interroger_modele
 from decoupage.contributions.regles import evaluer
 from panels.selection.__main__ import A_CACHER, cadre
 
@@ -109,6 +133,40 @@ Réponds seulement : le nombre de pages traitées par dossier, les pages non \
 vues, et les difficultés rencontrées.
 """
 LIGNE = re.compile(r"\s*\d+_p(\d+)\.jpg\s*:\s*(.*)")
+# la définition d'une contribution, la même pour tous les lecteurs
+DEFINITION = CONSIGNE[
+    CONSIGNE.index("Une contribution est") : CONSIGNE.index("Pour chaque dossier")
+]
+CONSIGNE_PAGE = (
+    "Ces images sont des pages d'un cahier de doléances (2019), déjà "
+    "anonymisées : les rectangles noirs sont des parties cachées. {contexte}"
+    "La page à analyser porte une règle rouge graduée de 0 (haut de la page) "
+    "à 100 (bas) dans sa marge gauche.\n\n"
+    + DEFINITION
+    + "Sur la page à analyser, repère chaque endroit où une NOUVELLE "
+    "contribution commence (pas la suite de la page précédente), et lis sur "
+    "la règle rouge la graduation (de 0 à 100) de son tout premier élément : "
+    "en-tête, logo ou titre d'un formulaire, date ou formule d'appel d'une "
+    "lettre, en-tête d'un courriel, ou première ligne.\n\n"
+    'Réponds uniquement par un objet JSON : {{"debuts": [12, 58]}}, les '
+    'graduations du haut vers le bas, ou {{"debuts": []}} si aucune '
+    "contribution ne commence sur cette page. Ne recopie aucun texte."
+)
+CONTEXTE_AVANT = (
+    "La première image est la page précédente du même cahier, pour le "
+    "contexte seulement ; la seconde est la page à analyser. "
+)
+CONTEXTE_PREMIERE = "C'est la première page écrite du cahier. "
+HAUT = 15  # graduation sous laquelle un début est « en haut de page »
+QUESTION_SUITE = (
+    "Ces deux images sont deux pages successives d'un cahier de doléances "
+    "(2019), déjà anonymisées : les rectangles noirs sont des parties "
+    "cachées. Le texte tout en haut de la seconde page continue-t-il la "
+    "contribution (lettre, liste, texte, formulaire) du bas de la première "
+    "page : même auteur, même écriture, ou texte qui se poursuit ? Ou "
+    "commence-t-il une nouvelle contribution ? Réponds uniquement par un "
+    'objet JSON : {"suite": true} ou {"suite": false}. Ne recopie aucun texte.'
+)
 
 
 def types_des_pages(typage: Path, fichiers: set[str], qualifications: dict) -> dict:
@@ -336,6 +394,139 @@ def mesure(predits: list, reference: list, ensemble: set) -> dict:
     }
 
 
+def graduations(reponse: str) -> list[float]:
+    """Les graduations de la réponse du modèle (à ne jamais afficher)."""
+    reponse = re.sub(r"<think>.*?</think>", "", reponse, flags=re.DOTALL)
+    debut, fin = reponse.find("{"), reponse.rfind("}")
+    if debut < 0 or fin <= debut:
+        raise ValueError("pas d'objet JSON")
+    valeurs = json.loads(reponse[debut : fin + 1]).get("debuts")
+    if not isinstance(valeurs, list):
+        raise TypeError("pas de liste de débuts")
+    return sorted(
+        float(v) for v in valeurs if isinstance(v, int | float) and 0 <= v <= 100
+    )
+
+
+def interroger(args) -> None:
+    m = MODELES[args.modele]
+    cle = args.cle.read_text().strip()
+    sorties = args.sortie / f"sorties-{args.modele}"
+    sorties.mkdir(exist_ok=True)
+    taches = []
+    for dossier in sorted((args.sortie / "cahiers").iterdir()):
+        deja = {}
+        if (sorties / f"{dossier.name}.txt").exists():
+            for ligne in (
+                (sorties / f"{dossier.name}.txt")
+                .read_text(encoding="utf-8")
+                .splitlines()
+            ):
+                nom, _, reste = ligne.partition(" : ")
+                if NON_VUE not in reste:
+                    deja[nom] = ligne
+        images = sorted(dossier.glob("*.jpg"))
+        for k, image in enumerate(images):
+            avant = images[k - 1] if k else None
+            taches.append((dossier.name, image, avant, deja.get(image.name)))
+
+    def lire(tache):
+        cahier, image, avant, deja = tache
+        if deja:
+            return cahier, deja
+        texte = CONSIGNE_PAGE.format(
+            contexte=CONTEXTE_AVANT if avant else CONTEXTE_PREMIERE
+        )
+        try:
+            reponse = interroger_modele(
+                args.url,
+                cle,
+                args.modele,
+                image.read_bytes(),
+                texte,
+                m["options"],
+                max_tokens=512,
+                format_image="jpeg",
+                avant=(avant.read_bytes(),) if avant else (),
+            )
+            valeurs = graduations(reponse)
+        # une page sans réponse, ou sans réponse lisible, compte comme non vue
+        except (OSError, ValueError, TypeError, AttributeError, KeyError) as e:
+            print(f"  {image.name} : {type(e).__name__}")
+            return cahier, f"{image.name} : {NON_VUE}"
+        texte_valeurs = ", ".join(f"{v:g}" for v in valeurs) or "aucun"
+        return cahier, f"{image.name} : {texte_valeurs}"
+
+    par_cahier = defaultdict(list)
+    with ThreadPoolExecutor(args.paralleles) as pool:
+        for k, (cahier, ligne) in enumerate(pool.map(lire, taches), 1):
+            par_cahier[cahier].append(ligne)
+            if k % 50 == 0:
+                print(f"  {k}/{len(taches)} pages", flush=True)
+    for cahier, lignes in par_cahier.items():
+        (sorties / f"{cahier}.txt").write_text(
+            "\n".join(sorted(lignes)) + "\n", encoding="utf-8"
+        )
+    non_vues = sum(NON_VUE in x for ls in par_cahier.values() for x in ls)
+    print(f"{len(taches)} pages, {non_vues} sans réponse lisible, dans {sorties}")
+
+
+def verifier(args) -> None:
+    """Repose la question des débuts en haut de page : un modèle servi page à
+    page prend volontiers le haut d'une page de suite pour un début. Lit
+    `sorties-<modèle>/`, écrit `sorties-<modèle>-verifie/`."""
+    m = MODELES[args.modele]
+    cle = args.cle.read_text().strip()
+    source = args.sortie / f"sorties-{args.modele}"
+    sorties = args.sortie / f"sorties-{args.modele}-verifie"
+    sorties.mkdir(exist_ok=True)
+    taches = []
+    for chemin in sorted(source.glob("*.txt")):
+        images = sorted((args.sortie / "cahiers" / chemin.stem).glob("*.jpg"))
+        precedentes = {b.name: a for a, b in pairwise(images)}
+        for ligne in chemin.read_text(encoding="utf-8").splitlines():
+            nom, _, reste = ligne.partition(" : ")
+            taches.append((chemin.stem, nom, reste, precedentes.get(nom)))
+
+    def lire(tache):
+        cahier, nom, reste, avant = tache
+        valeurs = [float(v) for v in re.findall(r"\d+(?:\.\d+)?", reste)]
+        if NON_VUE in reste or avant is None or not valeurs or valeurs[0] >= HAUT:
+            return cahier, f"{nom} : {reste}", 0
+        image = args.sortie / "cahiers" / cahier / nom
+        try:
+            reponse = interroger_modele(
+                args.url,
+                cle,
+                args.modele,
+                image.read_bytes(),
+                QUESTION_SUITE,
+                m["options"],
+                max_tokens=64,
+                format_image="jpeg",
+                avant=(avant.read_bytes(),),
+            )
+        except OSError as e:  # sans réponse, le début reste
+            print(f"  {nom} : {type(e).__name__}")
+            return cahier, f"{nom} : {reste}", 0
+        suite = re.search(r'"suite"\s*:\s*true', reponse) is not None
+        if suite:
+            valeurs = valeurs[1:]
+        texte = ", ".join(f"{v:g}" for v in valeurs) or "aucun"
+        return cahier, f"{nom} : {texte}", int(suite)
+
+    par_cahier, retires = defaultdict(list), 0
+    with ThreadPoolExecutor(args.paralleles) as pool:
+        for cahier, ligne, retire in pool.map(lire, taches):
+            par_cahier[cahier].append(ligne)
+            retires += retire
+    for cahier, lignes in par_cahier.items():
+        (sorties / f"{cahier}.txt").write_text(
+            "\n".join(sorted(lignes)) + "\n", encoding="utf-8"
+        )
+    print(f"{retires} débuts en haut de page jugés une suite, retirés : {sorties}")
+
+
 def mesurer(args) -> None:
     with (args.sortie / "pages.csv").open(encoding="utf-8", newline="") as f:
         pages = list(csv.DictReader(f))
@@ -350,7 +541,10 @@ def mesurer(args) -> None:
         reference = [
             (x["fichier"], int(x["page"]), float(x["y"])) for x in csv.DictReader(f)
         ]
-    modele, vues, non_vues = lire_sorties(args.sortie / "sorties", hauteurs)
+    modele, vues, non_vues = lire_sorties(args.sortie / args.lecteur, hauteurs)
+    source = (
+        MODELE if args.lecteur == "sorties" else args.lecteur.removeprefix("sorties-")
+    )
     # la chaîne actuelle, dans le même repère
     chaine = []
     with (args.contributions / "debuts.csv").open(encoding="utf-8", newline="") as f:
@@ -366,14 +560,14 @@ def mesurer(args) -> None:
             par_type[p["type"]].add(cle)
     imprimees = set().union(*(par_type[t] for t in IMPRIMEES))
     lignes = [
-        {"ensemble": "toutes", "source": MODELE, **mesure(modele, reference, vues)},
+        {"ensemble": "toutes", "source": source, **mesure(modele, reference, vues)},
         *(
-            {"ensemble": t, "source": MODELE, **mesure(modele, reference, ens)}
+            {"ensemble": t, "source": source, **mesure(modele, reference, ens)}
             for t, ens in sorted(par_type.items())
         ),
         {
             "ensemble": "imprimées",
-            "source": MODELE,
+            "source": source,
             **mesure(modele, reference, imprimees),
         },
         {
@@ -397,7 +591,19 @@ def mesurer(args) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("action", choices=("preparer", "consigne", "mesurer"))
+    parser.add_argument(
+        "action",
+        choices=("preparer", "consigne", "interroger", "verifier", "mesurer"),
+    )
+    parser.add_argument("--modele", choices=list(MODELES), default="qwen3.8-27b")
+    parser.add_argument("--url", default=URL)
+    parser.add_argument(
+        "--cle", type=Path, default=Path("data/anonymisation/vision/cle.txt")
+    )
+    parser.add_argument("--paralleles", type=int, default=8)
+    parser.add_argument(
+        "--lecteur", default="sorties", help="mesurer : dossier des réponses"
+    )
     parser.add_argument(
         "--sortie", type=Path, default=Path("data/decoupage/vision/reglage")
     )
@@ -416,6 +622,10 @@ def main() -> None:
     args = parser.parse_args()
     if args.action == "preparer":
         preparer(args)
+    elif args.action == "interroger":
+        interroger(args)
+    elif args.action == "verifier":
+        verifier(args)
     elif args.action == "consigne":
         print(consigne(args.sortie, args.lot))
     else:

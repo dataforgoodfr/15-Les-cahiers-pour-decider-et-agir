@@ -169,10 +169,24 @@ des manuscrits du jeu de réglage passait ainsi de 59 % à 76 %) ; et la consign
 personnes écrivent souvent sur une même page manuscrite.
 
 Haiku est hébergé aux États-Unis : il ne peut lire que des pages déjà
-caviardées, alors que le découpage du corpus vient avant l'anonymisation. Ce
-banc dit ce qu'un modèle de vision sait faire ; pour le corpus, il faudrait
-un modèle à poids ouverts servi en Europe (comme pour `anonymisation.vision`),
-à mesurer sur le même banc.
+caviardées, alors que le découpage du corpus vient avant l'anonymisation. Il
+sert de référence pour un modèle à poids ouverts servi en Europe, comme pour
+`anonymisation.vision` : Qwen3.8-27B, sur une A100 louée chez Verda
+(Finlande), reçoit chaque page avec la précédente et la même définition. Il
+trouve autant de débuts, mais en ajoute en haut des pages de suite ; une
+seconde question (le haut de la page continue-t-il la précédente ?) en
+retire une partie. Sur les mêmes 374 pages de test :
+
+| Pages (test) | Haiku | Qwen | Qwen vérifié |
+|---|---|---|---|
+| Toutes (374) | 90 % / 84 % | 72 % / 86 % | 81 % / 84 % |
+| Dactylographiées et mixtes (165) | 85 % / 98 % | 76 % / 98 % | 79 % / 98 % |
+| Manuscrites (209) | 93 % / 79 % | 69 % / 81 % | 82 % / 77 % |
+
+(précision / rappel ; règles et modèle sur l'imprimé : 62 % / 41 %). Les 510
+pages du réglage et du test ont pris une vingtaine de minutes, deux requêtes
+au plus par page. Dire à Qwen, dans la consigne, de se méfier du haut des
+pages ne change rien ; le laisser raisonner non plus : il ne s'arrête pas.
 
 ## Mesure sur l'édition Chabin
 

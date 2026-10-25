@@ -47,3 +47,23 @@ def test_mesure_a_la_page():
     )
     assert (m["precision"], m["rappel"]) == (0.5, 0.5)
     assert (m["precision_page"], m["rappel_page"]) == (0.5, 0.5)
+
+
+def test_graduations_de_la_reponse():
+    from decoupage.vision.__main__ import graduations
+
+    assert graduations('<think>…</think>{"debuts": [58, 12]}') == [12.0, 58.0]
+    assert graduations('Voici : {"debuts": []}') == []
+    # hors de la règle : ignoré
+    assert graduations('{"debuts": [120, -3, 40]}') == [40.0]
+    with pytest.raises(ValueError):
+        graduations("aucun début")
+
+
+def test_la_consigne_par_page_reprend_la_definition():
+    from decoupage.vision.__main__ import CONSIGNE, CONSIGNE_PAGE, DEFINITION
+
+    assert DEFINITION.startswith("Une contribution est")
+    assert "plusieurs personnes écrivent" in DEFINITION
+    assert DEFINITION in CONSIGNE
+    assert DEFINITION in CONSIGNE_PAGE.format(contexte="")
