@@ -40,6 +40,7 @@ par `uv run python -m corpus.typage`.
 | `ocr.chabin` | #12 | Qualité de l'OCR du versement (ABBYY FineReader Engine 11) : taux d'erreur par caractère et par mot sur les contributions imprimées de l'édition Chabin |
 | `ocr.anomalies` | #12 | Anomalies de l'OCR page par page sur tout le corpus (encre non lue, mots sur du blanc, ordre de lecture, mots hors lexique, texte mal décodé), par département ; synthèse dans `docs/ocr.md` |
 | `ocr.modernes` | #12 | OCR récents à poids ouverts (OvisOCR3, LightOnOCR-2, Chandra 2, servis par vLLM hors de la machine) et Tesseract contre ABBYY, sur les contributions de l'édition Chabin : CER, mots mal lus, inventés, omis |
+| `ocr.tirage` | #12 | ABBYY contre Claude Haiku (`claude-haiku-5-5`) sur les exports caviardés des contributions tirées, hors Charente-Maritime : désaccord par mot et par caractère, désaccords courts en planches à vérifier à l'œil |
 
 ### Découper les cahiers en contributions : `decoupage/`
 

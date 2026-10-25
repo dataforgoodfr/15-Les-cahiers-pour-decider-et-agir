@@ -81,3 +81,32 @@ def test_texte_brut():
     ]
     mots = '[{"bbox": [1, 2, 3, 4], "text": "Le"}, {"text": "chat"}]'
     assert texte_brut(mots, "ovisocr3-mots") == "Le chat"
+
+
+def test_tirage_recolle_les_mots_coupes_par_abbyy():
+    from ocr.tirage import recoller
+
+    assert recoller("le gou\xad\nvernement") == "le gouvernement"
+    # un tiret de liste ou de mot composé en fin de ligne reste
+    assert recoller("Saint-\nDenis") == "Saint-\nDenis"
+
+
+def test_tirage_lecture_haiku_retire_la_main_et_les_marques():
+    from ocr.tirage import lecture_haiku
+
+    texte, main = lecture_haiku("Nom : [manuscrit]Jean[/manuscrit]\nLe [?] chat")
+    assert texte.split() == ["Nom", ":", "Le", "chat"]
+    assert main == len("jean")
+
+
+def test_tirage_comparer():
+    from ocr.tirage import comparer, desaccord_sans_ordre, levenshtein
+
+    assert levenshtein("kitten", "sitting") == 3
+    assert levenshtein("", "abc") == 3
+    assert desaccord_sans_ordre(["a", "b", "c"], ["c", "b", "d"]) == 2
+    # l'ordre des colonnes compte par caractère, pas par mot
+    c = comparer("un deux\ntrois quatre", "trois quatre\nun deux")
+    assert c["ecart_mots"] == 0
+    assert c["ecart_caracteres"] > 0
+    assert comparer("L'État paie", "L'Etat pa1e")["ecart_caracteres"] == 1
