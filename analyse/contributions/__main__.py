@@ -5,8 +5,9 @@
         [--annotation data/annotation] [--ouvertures data/ouvertures/ouvertures.csv]
         [--sortie data/contributions]
 
-Règles dans `contributions.regles`. Seules les pages dactylographiées sont
-lues, hors pages de service et pages d'ouverture imprimées (sortie de
+Règles dans `contributions.regles`. Seules les pages dactylographiées et
+mixtes sont lues (celles qui ont une couche imprimée lisible ; l'écriture à
+la main d'une page mixte n'y est que du bruit), hors pages de service et pages d'ouverture imprimées (sortie de
 `python -m ouvertures`, si elle existe). Sur les pages où aucune règle ne
 trouve de début, un modèle dit si la page en ouvre un en son haut
 (`contributions.pages`) : il s'entraîne sur les cahiers délimités, et chacun
@@ -23,7 +24,7 @@ d'eux est jugé par un modèle qui ne l'a pas vu (validation croisée). Écrit :
 La référence est le carnet de l'outil d'annotation : les notes « début de
 contribution » des cahiers délimités en entier pour le tirage (tâche
 « selection », dernière page vue). Affiche la précision et le rappel des
-débuts sur leurs pages dactylographiées. Des positions et des comptes,
+débuts sur leurs pages lues, et à part sur les seules pages mixtes. Des positions et des comptes,
 jamais de texte.
 """
 
@@ -45,6 +46,9 @@ from panel.panel import lire_typage
 from selection.contribution import delimites as cahiers_delimites
 
 DACTYLOGRAPHIEE = "dactylographiée"
+MIXTE = "mixte"
+# les pages qui ont une couche imprimée lisible
+IMPRIMEES = {DACTYLOGRAPHIEE, MIXTE}
 VIERGE = "vierge"
 DEBUT = "début de contribution"
 TACHE = "contributions"
@@ -81,13 +85,15 @@ def pages_lues(
     fichiers: set[str],
     ouvertures: set[tuple[str, int]] = frozenset(),
 ) -> dict[str, list[int]]:
-    """Numéros des pages dactylographiées de chaque cahier, hors service et
-    hors pages d'ouverture imprimées (`python -m ouvertures`)."""
+    """Numéros des pages dactylographiées ou mixtes de chaque cahier (une
+    couche imprimée lisible), hors service et hors pages d'ouverture
+    imprimées (`python -m ouvertures`). Une page mixte porte aussi de
+    l'écriture à la main, que la couche texte ne lit pas."""
     pages = defaultdict(list)
     for ligne in lire_typage(typage):
         if (
             ligne["fichier"] in fichiers
-            and ligne["type_page"] == DACTYLOGRAPHIEE
+            and ligne["type_page"] in IMPRIMEES
             and ligne["page_de_service"] != "1"
             and (ligne["fichier"], int(ligne["page"])) not in ouvertures
         ):
@@ -213,6 +219,11 @@ def main() -> None:
         lues, {f: corpus.pages(f) for f in lues}, vues, qualifications
     )
     lues_delimitees = {(f, n) for f in delimites for n in lues[f]}
+    mixtes = {
+        (t["fichier"], int(t["page"]))
+        for t in lire_typage(args.typage)
+        if t["type_page"] == MIXTE
+    } & lues_delimitees
     notes = defaultdict(list)
     for n in carnet.positions():
         if n["etiquette"] == DEBUT and (n["fichier"], n["page"]) in lues_delimitees:
@@ -285,24 +296,28 @@ def main() -> None:
         return
     print(
         f"Référence : {len(delimites)} cahiers délimités, {len(reference)} débuts "
-        f"sur {len(lues_delimitees)} pages dactylographiées"
+        f"sur {len(lues_delimitees)} pages lues, dont {len(mixtes)} mixtes"
     )
     vus = [d for d in trouves if (d["fichier"], d["page"]) in lues_delimitees]
     for titre, regle in (
         ("règles et modèle", None),
+        ("règles et modèle, pages mixtes", "mixtes"),
         ("règles seules", "sans modèle"),
         *((r, r) for r in REGLES),
     ):
         if regle == "sans modèle":
             retenus = [d for d in vus if d["regle"] != "page"]
+        elif regle == "mixtes":
+            retenus = [d for d in vus if (d["fichier"], d["page"]) in mixtes]
         else:
             retenus = [d for d in vus if regle is None or d["regle"].startswith(regle)]
         # une règle se mesure sur les pages où elle a trouvé des débuts
-        pages = (
-            lues_delimitees
-            if regle in (None, "sans modèle")
-            else {(d["fichier"], d["page"]) for d in retenus}
-        )
+        if regle in (None, "sans modèle"):
+            pages = lues_delimitees
+        elif regle == "mixtes":
+            pages = mixtes
+        else:
+            pages = {(d["fichier"], d["page"]) for d in retenus}
         if not pages:
             print(f"  {titre} : aucun début trouvé dans les cahiers délimités")
             continue
