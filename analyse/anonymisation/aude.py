@@ -4,6 +4,7 @@
         [--etalon data/aude] [--versement data/versement]
         [--communes data/communes/communes.csv] [--cache data/sources]
         [--modeles data/anonymisation/modeles] [--modele gliner]
+        [--vision data/anonymisation/vision/<modele>.csv ...]
         [--sortie data/anonymisation/aude]
 
 La chaîne de `anonymisation.delimites` (règles, modèle, encre sans texte et
@@ -20,6 +21,11 @@ rappel est un peu surestimé, et la précision (« touchent un masque ») n'est
 qu'un minorant. Seuls comptent les masques au report sûr (accord d'au moins
 ACCORD_SUR, ou entourage blanc) : une page où un masque est douteux est
 écartée, comme une page publiée deux fois n'est comptée qu'une fois.
+
+Avec `--vision`, les boîtes d'un ou plusieurs modèles de vision
+(`anonymisation.vision`) s'ajoutent comme une source de plus, « vision » :
+comme l'encre, ce sont des zones d'écriture sans texte, que les filtres
+gardent.
 
 Le coût se mesure aussi en encre : la part de l'encre hors masques que la
 chaîne cache, seule mesure qui ait un sens sur un manuscrit, dont la couche
@@ -66,6 +72,14 @@ SOURCES = {
     "règles + modèle": {"règles", "modèle"},
     SANS_ZONES: {"règles", "modèle", "encre"},
     **{f"règles + modèle + {v}": {"règles", "modèle", v} for v in VARIANTES},
+}
+LARGE = "encre pâle, raturée, sous OCR"
+# avec `--vision` : les boîtes des modèles de vision, seules et jointes
+AVEC_VISION = {
+    "vision": {"vision"},
+    "règles + modèle + vision": {"règles", "modèle", "vision"},
+    f"{SANS_ZONES} + vision": {"règles", "modèle", "encre", "vision"},
+    f"règles + modèle + {LARGE} + vision": {"règles", "modèle", LARGE, "vision"},
 }
 
 
@@ -116,10 +130,12 @@ def encre_cachee(p: dict, gardes: list[dict]) -> tuple[int, int]:
     return int((hors & cache).sum()), int(hors.sum())
 
 
-def cout_en_encre(pages: dict, noms: dict, repandus_: set[str]) -> dict:
+def cout_en_encre(
+    pages: dict, noms: dict, repandus_: set[str], sources: dict = SOURCES
+) -> dict:
     """Par source et étape : la part de l'encre hors masques cachée."""
     sortie = {}
-    for source, gardees in SOURCES.items():
+    for source, gardees in sources.items():
         etapes = range(len(ETAPES)) if source in FILTRAGE else [len(ETAPES) - 1]
         for etape in etapes:
             caches = total = 0
@@ -154,7 +170,13 @@ def _ligne(m: dict, encre: dict, source: str, etape: int) -> str:
 
 
 def rapport(
-    mesures: dict, pages: dict, cahiers: int, douteuses: int, modele: str
+    mesures: dict,
+    pages: dict,
+    cahiers: int,
+    douteuses: int,
+    modele: str,
+    sources: dict = SOURCES,
+    vision: list[str] = (),
 ) -> str:
     derniere = len(ETAPES) - 1
     lignes = [
@@ -165,6 +187,7 @@ def rapport(
             "publiées anonymisées par le CESE de l'Aude (`aude.etalon`) ; "
             f"{douteuses} pages écartées pour un masque au report douteux. "
             f"Modèle : {modele}."
+            + (f" Vision : {', '.join(vision)}." if vision else "")
         ),
         "",
         (
@@ -191,7 +214,7 @@ def rapport(
             ENTETE,
             "|---|---|---|---|---|---|---|---|",
             *(_ligne(m, encre, s, e) for s in FILTRAGE for e in range(len(ETAPES))),
-            *(_ligne(m, encre, s, derniere) for s in SOURCES if s not in FILTRAGE),
+            *(_ligne(m, encre, s, derniere) for s in sources if s not in FILTRAGE),
         ]
     return "\n".join(lignes)
 
@@ -208,6 +231,13 @@ def charger_pages(args: argparse.Namespace) -> tuple[dict, dict, str, int]:
         return _simple(texte) in lexique
 
     modele, nom_modele, cache = modele_et_cache(args)
+    # `anonymisation.vision` importe ce module : import ici, sans cycle
+    from anonymisation.vision import lire_boites
+
+    vision = defaultdict(list)
+    for chemin in args.vision:
+        for cle_page, cadres in lire_boites(chemin).items():
+            vision[cle_page] += cadres
     par_fichier = defaultdict(list)
     for fichier, n in etalon:
         par_fichier[fichier].append(n)
@@ -236,7 +266,12 @@ def charger_pages(args: argparse.Namespace) -> tuple[dict, dict, str, int]:
                     "gris": gris,
                     "reperes": reperes_de_la_page(
                         mots, gris, commune, prenoms, imprime, passages
-                    ),
+                    )
+                    + [
+                        {c: b[c] for c in CHAMPS}
+                        | {"etiquette": "écriture", "texte": "", "source": "vision"}
+                        for b in vision.get((fichier, n), [])
+                    ],
                     "donnees": donnees,
                 }
         print(f"{fichier} : {len(numeros)} pages", flush=True)
@@ -255,19 +290,29 @@ def main() -> None:
         "--modeles", type=Path, default=Path("data/anonymisation/modeles")
     )
     parser.add_argument("--modele", default="gliner")
+    parser.add_argument("--vision", type=Path, nargs="*", default=[])
     parser.add_argument("--sortie", type=Path, default=Path("data/anonymisation/aude"))
     args = parser.parse_args()
     pages, noms, nom_modele, douteuses = charger_pages(args)
+    sources = SOURCES | (AVEC_VISION if args.vision else {})
     textes = [{"insee": f, "reperes": p["reperes"]} for (f, _), p in pages.items()]
     repandus_ = repandus(textes)
     mesures = {}
     for type_page in TYPES:
         de_ce_type = {k: p for k, p in pages.items() if p["type"] == type_page}
         mesures[type_page] = (
-            mesurer(de_ce_type, noms, repandus_, sources=SOURCES),
-            cout_en_encre(de_ce_type, noms, repandus_),
+            mesurer(de_ce_type, noms, repandus_, sources=sources),
+            cout_en_encre(de_ce_type, noms, repandus_, sources),
         )
-    texte = rapport(mesures, pages, len({f for f, _ in pages}), douteuses, nom_modele)
+    texte = rapport(
+        mesures,
+        pages,
+        len({f for f, _ in pages}),
+        douteuses,
+        nom_modele,
+        sources,
+        [c.stem for c in args.vision],
+    )
     args.sortie.mkdir(parents=True, exist_ok=True)
     (args.sortie / "mesure.md").write_text(texte + "\n", encoding="utf-8")
     print(texte)
