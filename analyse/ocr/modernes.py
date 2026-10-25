@@ -36,6 +36,7 @@ import argparse
 import csv
 import html
 import json
+import random
 import re
 import subprocess
 import time
@@ -50,7 +51,9 @@ import pymupdf
 from wordfreq import zipf_frequency
 
 from anonymisation.vision import URL, interroger_modele
+from communes import sources
 from contributions.__main__ import lignes
+from ocr.anomalies import ALPHA, LEXIQUE, _simple
 from ocr.chabin import CROCHETS, flux, lire_alignement, normalisee, sans_accents
 from panel.panel import lire_typage
 
@@ -138,6 +141,8 @@ MODELES = {
 }
 CATEGORIES = ("mal_lu", "invente", "charabia", "omis")
 QUEUE = 0.10  # CER d'ABBYY au-delà duquel une contribution est dans la queue
+HORS_LEXIQUE = 0.5  # part des mots hors lexique d'une page presque illisible
+MOTS_MIN = 20  # mots lus au moins par ABBYY pour juger une page
 
 
 def texte_brut(reponse: str, modele: str) -> str:
@@ -221,7 +226,10 @@ def transcrire(args) -> None:
         if args.modele != "tesseract"
         else ""
     )
-    pages = sorted({p for c in contributions_de_chabin(args) for p in c["pages"]})
+    if args.pages:
+        pages = lire_pages(args.pages)
+    else:
+        pages = sorted({p for c in contributions_de_chabin(args) for p in c["pages"]})
     chemins = {p.name: p for p in args.versement.rglob("*.pdf")}
     restantes = [
         (f, n)
@@ -456,9 +464,98 @@ def rapport(resultats: dict, queue: set, total: int) -> str:
     return "\n".join(lignes_)
 
 
+def lire_pages(chemin: Path) -> list[tuple[str, int]]:
+    with chemin.open(encoding="utf-8", newline="") as f:
+        return [(p["fichier"], int(p["page"])) for p in csv.DictReader(f)]
+
+
+def illisibles(args) -> None:
+    """Tire `--nombre` pages presque illisibles pour ABBYY (`ocr.anomalies` :
+    plus de la moitié des mots hors lexique, au moins `MOTS_MIN` mots) et les
+    écrit dans `illisibles.csv` de la sortie."""
+    with (args.sortie / "anomalies.csv").open(encoding="utf-8", newline="") as f:
+        candidates = [
+            p
+            for p in csv.DictReader(f)
+            if float(p["hors_lexique"]) > HORS_LEXIQUE and float(p["mots"]) >= MOTS_MIN
+        ]
+    tirees = random.Random(args.graine).sample(candidates, args.nombre)
+    with (args.sortie / "illisibles.csv").open("w", encoding="utf-8", newline="") as f:
+        ecrivain = csv.DictWriter(f, ["fichier", "page", "departement"])
+        ecrivain.writeheader()
+        ecrivain.writerows({k: p[k] for k in ecrivain.fieldnames} for p in tirees)
+    print(f"{len(tirees)} pages tirées sur {len(candidates)}")
+
+
+def lexique(args) -> None:
+    """Sur les pages de `--pages`, ABBYY contre chaque modèle qui les a lues :
+    mots lus, et part des mots alphabétiques hors du lexique. Sans référence,
+    c'est un indice de lisibilité, pas un taux d'erreur. Écrit
+    `<pages>.md` à côté de la liste."""
+    mots_du_lexique = {
+        _simple(ligne.split("\t", 1)[0])
+        for ligne in sources.telecharger(LEXIQUE, args.cache).decode().splitlines()[1:]
+    }
+    pages = lire_pages(args.pages)
+    chemins = {p.name: p for p in args.versement.rglob("*.pdf")}
+    textes = {"abbyy": {}}
+    for f, n in pages:
+        with pymupdf.open(chemins[f]) as doc:
+            textes["abbyy"][f, n] = " ".join(t for t, _ in lignes(doc[n - 1]))
+    for m in MODELES:
+        lus = {
+            (f, n): chemin_texte(args.sortie, m, f, n).read_text(encoding="utf-8")
+            for f, n in pages
+            if chemin_texte(args.sortie, m, f, n).exists()
+        }
+        if lus:
+            textes[m] = lus
+
+    def hors(texte):
+        mots = [x for x in texte.split() if ALPHA.match(x.strip(".,;:!?()«»\"'"))]
+        if not mots:
+            return 1.0, 0
+        dehors = sum(
+            _simple(x.strip(".,;:!?()«»\"'")) not in mots_du_lexique for x in mots
+        )
+        return dehors / len(mots), len(texte.split())
+
+    lignes_ = [
+        f"# Pages de {args.pages.name} : ABBYY et les OCR modernes",
+        "",
+        (
+            f"{len(pages)} pages. Mots alphabétiques hors du lexique (médiane), "
+            "pages où ils restent plus de la moitié, et mots lus (médiane). Un "
+            "indice de lisibilité, sans référence : une page manuscrite bien lue "
+            "garde des noms propres hors lexique."
+        ),
+        "",
+        "| source | pages lues | hors lexique | pages > 50 % | mots lus |",
+        "|---|---|---|---|---|",
+    ]
+    for source, lus in textes.items():
+        mesures = [hors(t) for t in lus.values()]
+        lignes_.append(
+            f"| {source} | {len(lus)} | {np.median([h for h, _ in mesures]):.0%} "
+            f"| {sum(h > HORS_LEXIQUE for h, _ in mesures)} "
+            f"| {np.median([n for _, n in mesures]):.0f} |"
+        )
+    texte = "\n".join(lignes_)
+    args.pages.with_suffix(".md").write_text(texte + "\n", encoding="utf-8")
+    print(texte)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("action", choices=("transcrire", "mesurer"))
+    parser.add_argument(
+        "action", choices=("transcrire", "mesurer", "illisibles", "lexique")
+    )
+    parser.add_argument(
+        "--pages", type=Path, help="liste de pages (fichier, page) au lieu de Chabin"
+    )
+    parser.add_argument("--nombre", type=int, default=100)
+    parser.add_argument("--graine", type=int, default=2026)
+    parser.add_argument("--cache", type=Path, default=Path("data/sources"))
     parser.add_argument("--modele", choices=list(MODELES))
     parser.add_argument("--url", default=URL)
     parser.add_argument(
@@ -483,6 +580,10 @@ def main() -> None:
     args = parser.parse_args()
     if args.action == "mesurer":
         mesurer(args)
+    elif args.action == "illisibles":
+        illisibles(args)
+    elif args.action == "lexique":
+        lexique(args)
     elif not args.modele:
         parser.error("--modele est requis")
     else:

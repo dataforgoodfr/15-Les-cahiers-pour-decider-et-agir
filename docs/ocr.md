@@ -111,6 +111,29 @@ mot à mot sont classés comme au banc HTR, pour 100 mots de la référence.
   minute sur une A100 : le corpus dactylographié (128 000 pages) en
   demanderait une vingtaine d'heures.
 
+### Sur les pages presque illisibles
+
+`ocr.modernes illisibles` tire 100 pages où ABBYY laisse plus de la moitié
+des mots hors du lexique (au moins 20 mots), parmi 3 060 ; `ocr.modernes
+lexique` compare, faute de référence, la part de mots hors lexique.
+
+| Source | Mots hors lexique (médiane) | Pages au-delà de 50 % | Mots lus (médiane) |
+|---|---|---|---|
+| ABBYY | 78 % | 98 | 260 |
+| OvisOCR3 | 15 % | 17 | 186 |
+
+**Cet indice est trompeur.** Les trois pages de Paris de l'échantillon,
+regardées à l'œil, sont des formulaires imprimés remplis à la main, dont
+une tournée : les deux problèmes déjà connus. OvisOCR3 lit l'imprimé sans
+faute, même sur la page tournée ; mais à la place de l'écriture à la main,
+il écrit souvent du français plausible sans rapport avec la page, et perd
+l'état des cases cochées. Un mot inventé est dans le lexique : l'indice
+le compte comme une réussite. Ces pages relèvent de la lecture des
+manuscrits (`htr.md`), avec son risque d'invention, et de leur typage
+(mixtes, non dactylographiées). Le typage les avait classées
+dactylographiées parce que son score de qualité (wordfreq, 0,57 en médiane
+sur l'échantillon) prend ce bruit pour du texte.
+
 ## Ce qui reste à faire
 
 - Regarder les pages signalées (mots sur du blanc, mots hors lexique) : un
