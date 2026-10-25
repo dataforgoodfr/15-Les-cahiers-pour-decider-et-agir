@@ -1,8 +1,8 @@
 """Référence Chabin : liste à relire et comparaison des comptes."""
 
-from chabin.__main__ import DEBUT, lecture_htr, mesurer_manuscrits
-from chabin.alignement import genre, localiser, normaliser
-from chabin.reference import Cahier, cahiers, comparer, elements
+from decoupage.chabin.__main__ import DEBUT, lecture_htr, mesurer_manuscrits
+from decoupage.chabin.alignement import genre, localiser, normaliser
+from decoupage.chabin.reference import Cahier, cahiers, comparer, elements
 
 EXTRACTION = [
     None,

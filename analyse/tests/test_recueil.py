@@ -1,6 +1,6 @@
 """Recueil : index des contributions exportées et représentativité."""
 
-from recueil.recueil import comparaison, forme, index, page_de_titre
+from panels.recueil.recueil import comparaison, forme, index, page_de_titre
 
 SELECTION = [
     {

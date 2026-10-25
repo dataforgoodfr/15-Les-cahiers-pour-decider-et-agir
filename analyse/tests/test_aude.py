@@ -6,8 +6,8 @@ import pytest
 
 cv2 = pytest.importorskip("cv2")
 
-from aude.__main__ import _plages, commune
-from aude.rapprochement import (
+from anonymisation.aude.__main__ import _plages, commune
+from anonymisation.aude.rapprochement import (
     SEUIL,
     Index,
     Rapprochement,

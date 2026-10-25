@@ -8,7 +8,7 @@
 
 Méthodes dans `anonymisation.detection`. Lit les pages dactylographiées et
 mixtes des cahiers, et les en-têtes de formulaire trouvés par
-`contributions`. Écrit :
+`decoupage.contributions`. Écrit :
 
 - `reperes.csv` dans la sortie : une ligne par repérage (fichier, page,
   cadre en points PDF, étiquette, source) ;
@@ -18,7 +18,7 @@ mixtes des cahiers, et les en-têtes de formulaire trouvés par
   les oublis ;
 - les zones de formulaire : les blocs posés à la main sur au moins deux
   exemplaires d'un formulaire, reportés sur les autres. Les exemplaires se
-  reconnaissent à l'en-tête trouvé par `contributions`, ou à leurs lignes
+  reconnaissent à l'en-tête trouvé par `decoupage.contributions`, ou à leurs lignes
   imprimées apprises sur les pages annotées (`detection.modele_appris`),
   y compris sur les pages remplies à la main ;
 - `masques.csv` dans la sortie : ce qu'il faut masquer après relecture
@@ -61,10 +61,10 @@ from anonymisation.detection import (
 )
 from anonymisation.masquage import a_masquer, fusionner, mesurer_relecture
 from anonymisation.modeles import Cache, charger, localiser, texte_de_la_page
-from communes import sources
-from contributions.__main__ import pages_lues
-from ouvertures.ouvertures import LONGUEUR_LIGNE, normaliser
-from panel.panel import code_insee
+from corpus.communes import sources
+from corpus.ouvertures.ouvertures import LONGUEUR_LIGNE, normaliser
+from decoupage.contributions.__main__ import pages_lues
+from panels.panel.panel import code_insee
 
 COUVERTE = 0.9  # part d'une note recouverte par une zone pour être couverte
 TACHE = "anonymisation"  # relecture à l'ancienne : accepter les repérages

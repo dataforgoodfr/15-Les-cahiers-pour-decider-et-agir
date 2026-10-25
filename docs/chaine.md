@@ -64,11 +64,11 @@ réécrire l'ancien.
 
 | Étape | Modules | Mesure | Où en lire plus |
 |---|---|---|---|
-| **Mesurer le corpus** : type de chaque page (vierge, dactylographiée, mixte, manuscrite), pages tournées, fichiers concaténés ou incomplets, pages d'ouverture imprimées | `typage`, `cascade`, `orientation`, `concatenes`, `inventaires`, `manquantes`, `ouvertures`, `communes` | 276 000 pages écrites : 38 % dactylographiées, 11 % mixtes, 51 % manuscrites | [`docs/corpus.md`](corpus.md), #17, #41, #43 |
+| **Mesurer le corpus** : type de chaque page (vierge, dactylographiée, mixte, manuscrite), pages tournées, fichiers concaténés ou incomplets, pages d'ouverture imprimées | `corpus.typage`, `corpus.cascade`, `corpus.orientation`, `corpus.concatenes`, `corpus.inventaires`, `corpus.manquantes`, `corpus.ouvertures`, `corpus.communes` | 276 000 pages écrites : 38 % dactylographiées, 11 % mixtes, 51 % manuscrites | [`docs/corpus.md`](corpus.md), #17, #41, #43 |
 | **Lire le texte imprimé** (OCR) | couche texte du versement ; `ocr.chabin`, `ocr.anomalies`, `ocr.modernes` | 1,5 % d'erreurs par caractère (médiane) ; 0,6 % avec un OCR récent | [`docs/ocr.md`](ocr.md), #12 |
 | **Lire les manuscrits** (HTR) | [`htr/`](../htr/) | Aucun modèle local n'est encore assez fidèle pour publier | [`docs/htr.md`](htr.md), #6 |
-| **Découper** les cahiers en contributions | `contributions` (règles et modèle) ; références : `delimitation`, `chabin`, `troncons` | Pages dactylographiées et mixtes : 75 % des débuts trouvés sont justes, 81 % des débuts sont trouvés ; les manuscrits ne sont pas découpés | [`analyse/contributions/`](../analyse/contributions/), #5, #64 |
-| **Anonymiser** | `anonymisation` et ses sous-modules ; étalon `aude` | Texte seul : 92 à 94 % des données cachées ; image et modèle de vision : 88 à 89 % | [`docs/anonymisation.md`](anonymisation.md), #7, #128 |
+| **Découper** les cahiers en contributions | `decoupage.contributions` (règles et modèle) ; références : `decoupage.delimitation`, `decoupage.chabin`, `decoupage.troncons` | Pages dactylographiées et mixtes : 75 % des débuts trouvés sont justes, 81 % des débuts sont trouvés ; les manuscrits ne sont pas découpés | [`analyse/decoupage/contributions/`](../analyse/decoupage/contributions/), #5, #64 |
+| **Anonymiser** | `anonymisation` et ses sous-modules ; étalon `anonymisation.aude` | Texte seul : 92 à 94 % des données cachées ; image et modèle de vision : 88 à 89 % | [`docs/anonymisation.md`](anonymisation.md), #7, #128 |
 | **Modérer** : écarter les contenus haineux ou illicites | Aucun : à la main, dans l'outil d'annotation (« à écarter ») | Pas d'étalon | #166 |
 | **Charger** dans la base | `manage.py charger_corpus`, `charger_contributions`, `charger_extraits`, `charger_chabin` ([`plateforme/`](../plateforme/)) | — | [`plateforme/README.md`](../plateforme/README.md), #34 |
 
@@ -92,14 +92,14 @@ qu'on note, à la main, les vérités terrain contre lesquelles tout est mesuré
 
 | Usage | Modules | État | Où en lire plus |
 |---|---|---|---|
-| **Thèmes** : rattacher chaque contribution aux thèmes de l'association, compter la place de chaque sujet | `themes` | Grille V2 (8 thèmes, 42 sous-thèmes), repérage par mots-clés | #24 |
+| **Thèmes** : rattacher chaque contribution aux thèmes de l'association, compter la place de chaque sujet | `classement.themes` | Grille V2 (8 thèmes, 42 sous-thèmes), repérage par mots-clés | #24 |
 | **Types de discours** : témoignage, constat, revendication, proposition… | — | Typologie proposée | #25 |
-| **Propositions regroupées** : retrouver la même idée d'un cahier à l'autre | `propositions`, `paires`, `paires.accord` | Étalon de paires en cours d'annotation | #4, #94 |
-| **Panels et tirages** : des contributions représentatives des habitants | `tirage`, `panel`, `communes.representativite` ; `selection` et `recueil` pour les exporter | 100 contributions tirées, exportées et réunies en recueil | [`docs/selection.md`](selection.md), #21, #22 |
+| **Propositions regroupées** : retrouver la même idée d'un cahier à l'autre | `classement.propositions`, `classement.paires`, `classement.paires.accord` | Étalon de paires en cours d'annotation | #4, #94 |
+| **Panels et tirages** : des contributions représentatives des habitants | `panels.tirage`, `panels.panel`, `corpus.communes.representativite` ; `panels.selection` et `panels.recueil` pour les exporter | 100 contributions tirées, exportées et réunies en recueil | [`docs/selection.md`](selection.md), #21, #22 |
 | **Plateforme publique** : lire, voter, s'informer | [`plateforme/`](../plateforme/) | Page d'accueil qui tire une contribution au sort ; votes à venir | #29, #30, #38 |
 
 Les modules d'exploitation lisent encore les sorties d'`analyse/` (par
-exemple `themes` lit `data/delimitation/`) plutôt que la base. À mesure que
+exemple `classement.themes` lit `data/delimitation/`) plutôt que la base. À mesure que
 la couche « or » s'étoffe, ils devraient la lire directement.
 
 ## Les références
@@ -107,17 +107,17 @@ la couche « or » s'étoffe, ils devraient la lire directement.
 Chaque mesure se fait contre un travail humain :
 
 - **Les cahiers délimités** : les cahiers des 100 contributions tirées,
-  délimités en entier dans l'outil d'annotation (`delimitation`). Référence
+  délimités en entier dans l'outil d'annotation (`decoupage.delimitation`). Référence
   du découpage et de l'anonymisation des pages imprimées. Le tirage les a
   choisis : c'est le seul endroit où l'exploitation a nourri la constitution.
-- **Les tronçons** (`troncons`) : dix pages dans chacun des départements que
+- **Les tronçons** (`decoupage.troncons`) : dix pages dans chacun des départements que
   les cahiers délimités ne couvrent pas. Jeu de test du découpage, à ne pas
   regarder pour régler les règles.
 - **L'édition Chabin** : les cahiers de Charente-Maritime transcrits et
   anonymisés par Marie-Anne Chabin ([`extraction/`](../extraction/)).
   Référence du découpage, de l'OCR, de la HTR et de l'anonymisation.
 - **L'Aude** : les cahiers caviardés par les Archives départementales
-  (`aude`, `aude.etalon`). Seul étalon d'anonymisation avec des manuscrits.
+  (`anonymisation.aude`, `anonymisation.aude.etalon`). Seul étalon d'anonymisation avec des manuscrits.
 - **Dole** : une transcription XML-TEI de manuscrits, étalon de la HTR.
 
 ## Lexique
@@ -132,14 +132,14 @@ Chaque mesure se fait contre un travail humain :
 - **Run** : une production de la chaîne (un découpage, une transcription),
   datée, avec son auteur ou son modèle et ses paramètres.
 - **Découpage** : trouver où commence chaque contribution d'un cahier
-  (`contributions`). À ne pas confondre avec le découpage d'une contribution
-  en propositions (`propositions`).
+  (`decoupage.contributions`). À ne pas confondre avec le découpage d'une contribution
+  en propositions (`classement.propositions`).
 - **Délimiter** : faire le découpage à la main, dans l'outil d'annotation.
 - **Page mixte** : une page imprimée remplie à la main (un formulaire, le plus
   souvent). Sa couche texte lit l'imprimé, pas l'écriture.
 - **Chabin** : trois modules portent ce nom. `extraction/chabin` télécharge
-  et extrait l'édition ; `analyse/chabin` en fait une référence de
+  et extrait l'édition ; `analyse/decoupage/chabin` en fait une référence de
   découpage ; `ocr.chabin` y mesure l'OCR.
 - **Tirage** et **sélection** : le tirage choisit les 100 contributions
-  (`tirage`) ; la sélection les exporte, caviardées, une fois leur cahier
-  délimité (`selection`).
+  (`panels.tirage`) ; la sélection les exporte, caviardées, une fois leur cahier
+  délimité (`panels.selection`).

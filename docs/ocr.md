@@ -21,7 +21,7 @@ dactylographiées.
 
 `ocr.chabin` compare l'OCR aux transcriptions de Marie-Anne Chabin : 286
 contributions imprimées de 76 communes de Charente-Maritime, retrouvées dans
-l'OCR par `chabin`, soit un million de caractères. L'OCR est lu de la ligne
+l'OCR par `decoupage.chabin`, soit un million de caractères. L'OCR est lu de la ligne
 où la contribution commence jusqu'au début de la suivante, et sa fin est
 celle qui ressemble le plus à la transcription (distance d'édition
 semi-globale). Taux pondérés par la longueur, médiane par contribution entre
@@ -38,7 +38,7 @@ parenthèses :
 - **Une queue tire la moyenne** : 28 contributions dépassent 10 %, dans 21
   communes. Pour un tiers d'entre elles, l'OCR a trop peu de texte (3 à
   75 % de la transcription) : une zone non lue, ou une contribution
-  suivante mal placée par `chabin`. Pour les autres, le texte est là, mal
+  suivante mal placée par `decoupage.chabin`. Pour les autres, le texte est là, mal
   lu ou dans le désordre. Deux seulement commencent sur une page tournée.
 - Un nom anonymisé par l'édition reste dans l'OCR et compte comme erreur :
   la mesure est un peu pessimiste. Un seul département, une seule
@@ -139,7 +139,7 @@ sur l'échantillon) prend ce bruit pour du texte.
 Ces pages relèvent du typage : il ne rendait une page mixte que sur un
 gabarit de formulaire reconnu. Sur 102 pages dactylographiées des cahiers
 délimités, étiquetées à l'œil après caviardage, la part de l'encre hors des
-mots imprimés (`typage.part_hors_texte`) sépare les pages mixtes (AUC 0,96) ;
+mots imprimés (`corpus.typage.part_hors_texte`) sépare les pages mixtes (AUC 0,96) ;
 le lexique, non (0,57). Au seuil de 0,5, sans gabarit, elle trouve 40 des 43
 pages mixtes pour 4 fausses alertes. Appliquée aux 128 422 pages typées
 dactylographiées, elle en fait passer 23 454 (18 %) en mixtes, dans 7 475

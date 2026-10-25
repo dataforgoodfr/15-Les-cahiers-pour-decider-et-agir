@@ -1,6 +1,6 @@
 """Charge les contributions délimitées à la main dans `analyse/` (#95).
 
-Lit `delimitation/contributions.csv` (sortie de `python -m delimitation`) :
+Lit `delimitation/contributions.csv` (sortie de `python -m decoupage.delimitation`) :
 toutes les contributions des cahiers du tirage délimités dans l'outil
 d'annotation. Elles forment un run de délimitation « à la main », l'étalon
 du découpage automatique. La commande peut être relancée : elle remplace les
@@ -40,7 +40,7 @@ class Command(BaseCommand):
     def handle(self, *args, data: Path, **options):
         chemin = data / "delimitation" / "contributions.csv"
         if not chemin.is_file():
-            raise CommandError(f"pas de {chemin} : lancer python -m delimitation")
+            raise CommandError(f"pas de {chemin} : lancer python -m decoupage.delimitation")
         with chemin.open(encoding="utf-8", newline="") as f:
             lignes = list(csv.DictReader(f))
         ids = dict(

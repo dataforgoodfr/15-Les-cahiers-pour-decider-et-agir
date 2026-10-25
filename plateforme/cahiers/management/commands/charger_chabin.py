@@ -2,7 +2,7 @@
 
 Lit l'extraction de ses transcriptions (`cahiers_chabin-extraction.json`,
 sortie d'`extraction/chabin`) et `chabin/alignement.csv` (sortie de
-`python -m chabin` dans `analyse/`), qui retrouve dans l'OCR des scans BnF
+`python -m decoupage.chabin` dans `analyse/`), qui retrouve dans l'OCR des scans BnF
 le début des contributions dactylographiées et des courriels. Seules
 celles-là sont chargées : un manuscrit n'a pas de position dans le scan.
 Elles forment un run de délimitation « édition Chabin », avec leur texte
@@ -55,7 +55,7 @@ class Command(BaseCommand):
     def handle(self, *args, data: Path, extraction: Path, **options):
         chemin = data / "chabin" / "alignement.csv"
         if not chemin.is_file():
-            raise CommandError(f"pas de {chemin} : lancer python -m chabin")
+            raise CommandError(f"pas de {chemin} : lancer python -m decoupage.chabin")
         if not extraction.is_file():
             raise CommandError(f"pas de {extraction} : lancer extraction/chabin")
         textes = {

@@ -5,7 +5,7 @@ import pytest
 
 cv2 = pytest.importorskip("cv2")
 
-from aude.masques import _composer, masques, recaler, reporter
+from anonymisation.aude.masques import _composer, masques, recaler, reporter
 
 
 def papier(graine: int = 0) -> np.ndarray:

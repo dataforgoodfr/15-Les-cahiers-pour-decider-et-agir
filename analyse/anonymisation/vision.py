@@ -19,7 +19,7 @@ boîtes et des catégories, jamais de texte.
 - `calibrer` : une page factice, aux fausses coordonnées placées à des
   endroits connus, vérifie l'ordre des axes et l'échelle des boîtes du
   modèle (recouvrement de chaque fausse donnée) ;
-- `interroger` : les pages de l'étalon de l'Aude (`aude.etalon`), boîtes
+- `interroger` : les pages de l'étalon de l'Aude (`anonymisation.aude.etalon`), boîtes
   écrites en points dans `<sortie>/<modele>.csv`, une ligne par page dans
   `<sortie>/<modele>.pages.csv` (durée, erreur). Une page déjà interrogée
   est sautée : la passe reprend où elle s'est arrêtée ;
@@ -28,7 +28,7 @@ boîtes et des catégories, jamais de texte.
   s'ils n'ont presque pas d'encre), les pages où un masque reste visible,
   l'encre et l'aire hors masques cachées. Écrit `<sortie>/mesure.md`.
 
-Le critère de couverture n'est pas tout à fait celui de `anonymisation.aude`
+Le critère de couverture n'est pas tout à fait celui de `anonymisation.aude.mesure`
 (tous les mots de la couche texte du masque, et 80 % de l'encre hors mots) :
 sur un manuscrit, la couche texte n'a pas de sens, seule l'encre compte.
 
@@ -50,7 +50,7 @@ from pathlib import Path
 import numpy as np
 import pymupdf
 
-from anonymisation.aude import TYPES, charger_etalon
+from anonymisation.aude.mesure import TYPES, charger_etalon
 from anonymisation.masquage import CHAMPS
 
 URL = "http://127.0.0.1:8000/v1"

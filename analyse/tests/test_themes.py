@@ -1,7 +1,7 @@
 """Repérage des sous-thèmes, sur des phrases construites pour le test."""
 
-from themes.lecture import lignes_imprimees
-from themes.sous_themes import normaliser, sous_themes
+from classement.themes.lecture import lignes_imprimees
+from classement.themes.sous_themes import normaliser, sous_themes
 
 
 def test_normaliser_sans_accents_ni_ponctuation():

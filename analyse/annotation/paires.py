@@ -1,4 +1,4 @@
-"""Jugements des paires de propositions (issue #94), sortie de `python -m paires`.
+"""Jugements des paires de propositions (issue #94), sortie de `python -m classement.paires`.
 
 Chaque annotateur juge seul chaque paire : il ne voit ni la tranche, ni la
 similarité, ni les jugements des autres. Une paire est en litige quand ses

@@ -37,7 +37,7 @@ humains. État au 25 octobre 2026.
 |---|---|---:|---:|---|
 | Édition Chabin (Charente-Maritime) | crochets de l'éditrice, remplacés par de fausses données | 1 692 contributions | 2 445 | `anonymisation.factices` |
 | 100 cahiers délimités à la main | encadrés de la délimitation et de la relecture | 2 482 dactylographiées et mixtes | 1 938 | `anonymisation.delimites` |
-| Aude | rectangles gris des Archives départementales, reportés sur nos pages BnF (`aude.etalon`) | 223 dactylographiées, 408 manuscrites | 88 et 285 | `anonymisation.aude` |
+| Aude | rectangles gris des Archives départementales, reportés sur nos pages BnF (`anonymisation.aude.etalon`) | 223 dactylographiées, 408 manuscrites | 88 et 285 | `anonymisation.aude.mesure` |
 
 Chacun mesure autre chose :
 
@@ -187,7 +187,7 @@ Encadrer deux exemplaires d'un formulaire en fait reporter les zones sur
 les autres (`detection.modele_appris`). Encore faut-il savoir quels cahiers
 en portent. Sur 174 cahiers jugés à l'œil, sur des planches de vignettes
 anonymisées (tirage caviardé, Paris, scans de l'Aude), 74 ont un
-formulaire. La règle de `contributions` n'en trouve que 46 (62 %) : elle
+formulaire. La règle de `decoupage.contributions` n'en trouve que 46 (62 %) : elle
 ne lit que les pages dactylographiées et veut une ligne sur un tiers des
 pages. `anonymisation.formulaires` lit toutes les pages écrites, avec un
 seuil absolu (quatre pages portant chacune trois lignes imprimées qui

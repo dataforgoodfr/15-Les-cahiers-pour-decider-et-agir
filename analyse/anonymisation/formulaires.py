@@ -7,7 +7,7 @@
 
 Un relecteur qui encadre deux exemplaires d'un formulaire en fait reporter
 les zones sur les autres (`detection.modele_appris`) : il faut savoir quels
-cahiers en portent. La règle `contributions.regles.gabarit` n'en trouvait
+cahiers en portent. La règle `decoupage.contributions.regles.gabarit` n'en trouvait
 que 62 % sur les cahiers jugés à l'œil : elle ne lit que les pages
 dactylographiées (un formulaire rempli à la main est typé manuscrit) et
 veut une ligne sur un tiers des pages (un formulaire noyé parmi des lettres
@@ -32,10 +32,10 @@ from pathlib import Path
 
 import pymupdf
 
-from contributions.__main__ import lignes
-from ouvertures.__main__ import lire as lire_ouvertures
-from ouvertures.ouvertures import normaliser
-from panel.panel import lire_typage
+from corpus.ouvertures.__main__ import lire as lire_ouvertures
+from corpus.ouvertures.ouvertures import normaliser
+from decoupage.contributions.__main__ import lignes
+from panels.panel.panel import lire_typage
 
 LONGUEUR = 10  # caractères au moins d'une ligne imprimée
 PAR_PAGE = 3  # lignes imprimées au moins sur une page de formulaire

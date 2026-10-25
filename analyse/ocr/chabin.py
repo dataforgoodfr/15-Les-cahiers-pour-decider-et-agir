@@ -8,7 +8,7 @@
 La couche texte des PDF du versement vient d'ABBYY FineReader Engine 11
 (métadonnées des fichiers). Marie-Anne Chabin a transcrit à la main les
 contributions de Charente-Maritime : pour celles qu'elle dit dactylographiées
-ou imprimées d'une messagerie, `python -m chabin` a retrouvé dans l'OCR la
+ou imprimées d'une messagerie, `python -m decoupage.chabin` a retrouvé dans l'OCR la
 ligne où elles commencent (`alignement.csv`). On en tire le taux d'erreur de
 l'OCR par caractère (CER) et par mot (WER).
 
@@ -23,8 +23,8 @@ l'édition (anonymisation, [sic]) sont retirés de la référence ; le nom
 qu'ils cachent reste dans l'OCR et compte comme erreur : la mesure est
 un peu pessimiste.
 
-Écrit `chabin.csv` (une ligne par contribution : commune, rang, forme,
-longueur, erreurs) et `chabin.md` dans la sortie. Des codes et des taux,
+Écrit `decoupage.chabin.csv` (une ligne par contribution : commune, rang, forme,
+longueur, erreurs) et `decoupage.chabin.md` dans la sortie. Des codes et des taux,
 jamais de texte.
 """
 
@@ -39,7 +39,7 @@ from pathlib import Path
 import numpy as np
 import pymupdf
 
-from contributions.__main__ import lignes
+from decoupage.contributions.__main__ import lignes
 
 CROCHETS = re.compile(r"\[[^\]]*\]")
 MARGE = 1.5  # longueur d'OCR lue au plus, rapportée à la transcription

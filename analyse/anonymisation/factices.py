@@ -65,7 +65,7 @@ from anonymisation.publics import (
     publics,
 )
 from anonymisation.zones import MOTS, zones
-from communes import sources
+from corpus.communes import sources
 
 BAN = "https://adresse.data.gouv.fr/data/ban/adresses/latest/csv/adresses-{}.csv.gz"
 NAISSANCES = (1930, 2000)  # années de naissance des prénoms tirés

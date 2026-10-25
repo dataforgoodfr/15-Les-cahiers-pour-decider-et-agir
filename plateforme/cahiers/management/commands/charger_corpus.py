@@ -1,6 +1,6 @@
 """Charge les documents et les pages mesurés par `analyse/`.
 
-Les cahiers citoyens typés par `analyse/typage`, leurs pages (type, rotation,
+Les cahiers citoyens typés par `analyse/corpus/typage`, leurs pages (type, rotation,
 page de service ou d'ouverture) et les rattachements à une autre commune. La
 couche texte n'est pas chargée. La commande peut être relancée : elle met à
 jour ce qui existe déjà, sans toucher aux couches des runs.

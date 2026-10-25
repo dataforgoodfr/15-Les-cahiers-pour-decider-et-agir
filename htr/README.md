@@ -29,7 +29,7 @@ uv run pytest
 uv run python -m htr --extraction ../data/cahiers_chabin-extraction.json
 ```
 
-Les pages à lire sont celles que `analyse/typage` a classées manuscrites
+Les pages à lire sont celles que `analyse/corpus/typage` a classées manuscrites
 (`--types` pour en changer). Pour chaque scan, la commande écrit
 `../data/htr/<modèle>/<scan>.jsonl` : une ligne par page lue,
 

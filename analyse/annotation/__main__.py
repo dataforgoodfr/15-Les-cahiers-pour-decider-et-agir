@@ -13,14 +13,14 @@ Dans le dossier (hors git, comme tout `data/`) :
 - `notes.jsonl` : le carnet des notes et des statuts (`annotation.carnet`) ;
 - `listes/` : les listes de pages à revoir (`annotation.listes`), écrites par
   les modules d'analyse ;
-- `paires.jsonl` : les jugements des paires de propositions.
+- `classement.paires.jsonl` : les jugements des paires de propositions.
 
 Le panneau de chaque page montre son typage et ce que les analyses y ont
 détecté (`annotation.metadonnees`, lu dans `--donnees`).
 
-Une page qu'`orientation` détecte tournée d'un quart de tour s'affiche
+Une page qu'`corpus.orientation` détecte tournée d'un quart de tour s'affiche
 tournée de ROTATION_DETECTEE : à l'ouverture du cahier, la rotation entre au
-carnet (l'ordre de lecture des notes en dépend, `selection` la relit), sauf
+carnet (l'ordre de lecture des notes en dépend, `panels.selection` la relit), sauf
 si la page a déjà une rotation, même remise à 0, ou des notes.
 """
 
@@ -59,7 +59,7 @@ ETIQUETTES = {
 }
 
 
-# `orientation` ne dit pas le sens du quart de tour ; à la main, 36 des 38
+# `corpus.orientation` ne dit pas le sens du quart de tour ; à la main, 36 des 38
 # pages détectées tournées l'ont été de 90° (sens horaire)
 ROTATION_DETECTEE = 90
 

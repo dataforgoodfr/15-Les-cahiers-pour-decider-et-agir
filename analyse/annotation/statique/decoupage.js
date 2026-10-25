@@ -1,5 +1,5 @@
 // Découpage d'un cahier en contributions, d'après les débuts et fins notés :
-// la même règle que `selection.contribution`, pour dessiner les contours.
+// la même règle que `panels.selection.contribution`, pour dessiner les contours.
 // Tout est dans le sens de lecture (la page telle qu'affichée), en points.
 "use strict";
 

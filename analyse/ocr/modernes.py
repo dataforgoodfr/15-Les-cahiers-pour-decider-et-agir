@@ -19,7 +19,7 @@ Les modèles sont servis par vLLM sur une carte louée en Europe, jointe par
 un tunnel (`--url`), comme pour `anonymisation.vision`. Chaque page est
 envoyée en image ; sa transcription est gardée dans `data/` (jamais dans
 git, jamais affichée). Les pages lues sont, pour chaque contribution
-dactylographiée ou imprimée d'une messagerie retrouvée par `chabin`, sa
+dactylographiée ou imprimée d'une messagerie retrouvée par `decoupage.chabin`, sa
 première page et les pages dactylographiées jusqu'à la contribution
 suivante.
 
@@ -51,11 +51,11 @@ import pymupdf
 from wordfreq import zipf_frequency
 
 from anonymisation.vision import URL, interroger_modele
-from communes import sources
-from contributions.__main__ import lignes
+from corpus.communes import sources
+from decoupage.contributions.__main__ import lignes
 from ocr.anomalies import ALPHA, LEXIQUE, _simple
 from ocr.chabin import CROCHETS, flux, lire_alignement, normalisee, sans_accents
-from panel.panel import lire_typage
+from panels.panel.panel import lire_typage
 
 DACTYLOGRAPHIEE = "dactylographiée"
 CONSIGNE_OVIS = (
@@ -177,7 +177,7 @@ def tesseract(png: bytes) -> str:
 
 
 def contributions_de_chabin(args) -> list[dict]:
-    """Les contributions imprimées retrouvées par `chabin`, avec leur
+    """Les contributions imprimées retrouvées par `decoupage.chabin`, avec leur
     transcription et les pages à lire : (fichier, numéro)."""
     extraction = json.loads(args.extraction.read_text(encoding="utf-8"))
     alignement = lire_alignement(args.alignement)

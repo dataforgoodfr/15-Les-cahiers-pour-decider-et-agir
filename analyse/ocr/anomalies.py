@@ -41,7 +41,7 @@ from pathlib import Path
 import numpy as np
 import pymupdf
 
-from communes import sources
+from corpus.communes import sources
 
 LEXIQUE = "https://www.lexique.org/databases/Lexique383/Lexique383.tsv"
 _DEPARTEMENT = re.compile(r"GDN_(\w+?)_PDF")

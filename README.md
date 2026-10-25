@@ -55,7 +55,7 @@ Au 25 octobre 2026 :
   ces cahiers délimités : sur les pages dactylographiées et mixtes, 75 %
   des débuts trouvés sont justes et 81 % des débuts sont trouvés. Une référence de test,
   un tronçon dans chacun des 41 départements qu'ils ne couvrent pas, est en
-  cours d'annotation ([`analyse/contributions/`](analyse/contributions/)).
+  cours d'annotation ([`analyse/decoupage/contributions/`](analyse/decoupage/contributions/)).
 - **L'anonymisation automatique** est mesurée sur trois étalons caviardés
   par des humains ([`docs/anonymisation.md`](docs/anonymisation.md)).
   Publié en texte seul, le corpus est couvert à 92 % en ne cachant que 3 %

@@ -3,7 +3,7 @@
 import numpy as np
 import pymupdf
 
-from contributions.pages import (
+from decoupage.contributions.pages import (
     INDICES,
     RANGS,
     Ligne,

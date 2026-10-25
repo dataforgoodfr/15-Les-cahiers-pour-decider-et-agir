@@ -59,7 +59,7 @@ from anonymisation.detection import (
 from anonymisation.factices import pourcent, repandus
 from anonymisation.masquage import dans
 from anonymisation.publics import Publics, _jetons
-from communes import sources
+from corpus.communes import sources
 
 LIEUX = ("France", "Europe")
 FIN_DE_PHRASE = re.compile(r"[.!?…]$")

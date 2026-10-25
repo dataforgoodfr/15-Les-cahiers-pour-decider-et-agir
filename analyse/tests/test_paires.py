@@ -3,7 +3,15 @@
 import numpy as np
 import pytest
 
-from paires.tirage import HASARD, REGLAGE, TEST, lots, normaliser, tirer, voisins
+from classement.paires.tirage import (
+    HASARD,
+    REGLAGE,
+    TEST,
+    lots,
+    normaliser,
+    tirer,
+    voisins,
+)
 
 
 def normes(n: int, graine: int = 0) -> np.ndarray:

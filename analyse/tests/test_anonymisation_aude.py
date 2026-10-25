@@ -4,7 +4,7 @@ import csv
 
 import numpy as np
 
-from anonymisation.aude import charger_etalon, encre_cachee, sur
+from anonymisation.aude.mesure import charger_etalon, encre_cachee, sur
 
 
 def cadre(x0, y0, x1, y1, **reste):
