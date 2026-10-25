@@ -1,7 +1,7 @@
 """Cascade du corpus : du versement BnF aux pages écrites des cahiers citoyens.
 
     uv run python -m cascade <racine du versement> --typage <csv ou dossier>...
-        [--sortie data/cascade] [--figure docs/cascade.svg]
+        [--sortie data/cascade] [--figure ../docs/cascade.svg]
 
 La racine du versement contient les dossiers `BnF_GDN_XX_PDF` ; le typage est
 la sortie de `python -m typage` (un fichier, ou un dossier de fichiers). Écrit
@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument("racine", type=Path)
     parser.add_argument("--typage", type=Path, nargs="+", required=True)
     parser.add_argument("--sortie", type=Path, default=Path("data/cascade"))
-    parser.add_argument("--figure", type=Path, default=Path("docs/cascade.svg"))
+    parser.add_argument("--figure", type=Path, default=Path("../docs/cascade.svg"))
     args = parser.parse_args()
 
     documents, pages = compter_versement(args.racine)
