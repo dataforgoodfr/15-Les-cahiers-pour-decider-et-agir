@@ -36,7 +36,7 @@ humains. État au 25 octobre 2026.
 | Étalon | Ce qui est caché | Pages | Données | Mesure |
 |---|---|---:|---:|---|
 | Édition Chabin (Charente-Maritime) | crochets de l'éditrice, remplacés par de fausses données | 1 692 contributions | 2 445 | `anonymisation.factices` |
-| 100 cahiers délimités à la main | encadrés de la délimitation et de la relecture | 2 413 dactylographiées | 1 935 | `anonymisation.delimites` |
+| 100 cahiers délimités à la main | encadrés de la délimitation et de la relecture | 2 482 dactylographiées et mixtes | 1 938 | `anonymisation.delimites` |
 | Aude | rectangles gris des Archives départementales, reportés sur nos pages BnF (`aude.etalon`) | 223 dactylographiées, 408 manuscrites | 88 et 285 | `anonymisation.aude` |
 
 Chacun mesure autre chose :

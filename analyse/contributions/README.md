@@ -126,6 +126,18 @@ pages ouvertes à tort. Les pages ouvertes sont dans la liste « Pages qui
 ouvrent une contribution selon le modèle ». La mesure sur les tronçons de
 test (`troncons`, départements jamais vus) reste à faire.
 
+## Les pages mixtes
+
+Au 25 octobre 2026, le typage rend mixte toute page lisible dont la moitié
+de l'encre est hors des mots imprimés (#165) : 18 % des pages jusqu'ici
+dactylographiées, surtout des formulaires remplis à la main. Ne lire que
+les pages dactylographiées aurait privé la règle des formulaires de
+l'essentiel de ses débuts (540 → 197) : le découpage lit donc les pages
+dactylographiées et mixtes, toutes celles qui ont une couche imprimée
+lisible. Sur les 98 cahiers délimités (2 617 pages lues, dont 685 mixtes,
+1 600 débuts) : règles et modèle, précision 75 %, rappel 81 % ; sur les
+seules pages mixtes, 82 % et 74 % ; formulaires, 92 % et 99 %.
+
 ## Mesure sur l'édition Chabin
 
 `uv run python -m chabin` retrouve dans l'OCR les contributions que
