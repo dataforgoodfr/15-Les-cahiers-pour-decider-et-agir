@@ -1,31 +1,6 @@
 # Architecture
 
-```mermaid
-C4Context
-  Person(RespEdit, "Responsable éditorial")
-  Person_Ext(Utilisateur, "Utilisateur externe")
-  Person(Benevole, "Analyste bénévole")
-  System_Boundary(c1, "Cahiers pour décider et agir") {
-    Container_Boundary(django, "Containeur Django") {
-      Container(frontend_app, "Gestion et présentation du contenu éditorial", "Application Django")
-      Container(api_cahier_app, "API Cahiers citoyen", "Application Django")
-      ContainerDb(frontend_db, "Contenu éditorial", "PostgreSQL")
-      ContainerDb(cahier_db, "Meta-données cahiers citoyen", "PostgreSQL")
-      ContainerDb(cahier_cellar, "PDF des cahiers citoyen", "Cellar")
-      Rel(api_cahier_app, cahier_db, "lecture/écriture", "SQL")
-      Rel(api_cahier_app, cahier_cellar, "lecture/écriture", "S3")
-      Rel(frontend_app, frontend_db, "stockage et lecture", "SQL")
-      Rel(frontend_app, cahier_db, "Lecture", "SQL")
-      Rel(frontend_app, cahier_cellar, "Lecture", "S3")
-      Container(ihm_analyse, "Interface d'analyse et de contribution")
-    }
-  }
-  Rel(ihm_analyse, api_cahier_app, "Recherche des cahiers à analyser / enregistrement des résultats d'analyse")
-  Rel(ihm_analyse, "cahier_cellar", "Lecture des PDF pour affichage")
-  Rel(Utilisateur, frontend_app, "HTTPS")
-  Rel(RespEdit, frontend_app, "HTTPS")
-  Rel(Benevole, ihm_analyse, "Analyse des cahiers citoyens")
-```
+![Architecture technique](architecture.png)
 
 ## Description des composants
 
