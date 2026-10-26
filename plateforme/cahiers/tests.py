@@ -292,6 +292,45 @@ class ChargerContributionsTests(TestCase):
         self.assertEqual(self.document.contributions.count(), 3)
 
 
+DECOUPAGE = (
+    "fichier,rang,page_debut,x_debut,y_debut,page_fin,x_fin,y_fin,fin,publiable,regle\n"
+    f"{FICHIER},1,1,40.0,100.0,2,300.0,50.0,début suivant,1,début du cahier\n"
+    f"{FICHIER},2,2,300.0,50.0,2,,,avant le manuscrit,1,lettre\n"
+    "CC_99999_190304_99999_MD_00001.pdf,1,1,40.0,100.0,1,,,fin du cahier,1,page\n"
+)
+
+
+class ChargerDecoupageTests(TestCase):
+    def setUp(self):
+        self.document = Document.objects.create(fichier=FICHIER, categorie="CC")
+
+    def charger(self):
+        with tempfile.TemporaryDirectory() as dossier:
+            (Path(dossier) / "decoupage" / "corpus").mkdir(parents=True)
+            (Path(dossier) / "decoupage" / "corpus" / "contributions.csv").write_text(
+                DECOUPAGE, encoding="utf-8"
+            )
+            sortie = StringIO()
+            call_command("charger_decoupage", "--analyse", dossier, stdout=sortie)
+        return sortie.getvalue()
+
+    def test_un_run_jamais_actif(self):
+        sortie = self.charger()
+        premiere, seconde = self.document.contributions.all()
+        self.assertEqual(
+            (premiere.origine, seconde.origine), ("début du cahier", "lettre")
+        )
+        self.assertIsNone(seconde.y_fin)
+        self.assertFalse(premiere.run.actif)
+        self.assertFalse(Contribution.objects.montrables().exists())
+        self.assertIn("1 documents absents", sortie)
+
+    def test_relancer_remplace_le_run(self):
+        self.charger()
+        self.charger()
+        self.assertEqual(self.document.contributions.count(), 2)
+
+
 EXTRACTION = [
     {
         "city": {"insee": "17008", "commune": "Andilly"},

@@ -19,7 +19,9 @@ d'eux est jugé par un modèle qui ne l'a pas vu (validation croisée). Écrit :
 - `cahiers.csv` dans la sortie : par cahier, ses pages lues, ses
   contributions et les règles qui s'y appliquent ;
 - une liste à revoir par règle dans `listes/` du dossier d'annotation, à
-  ouvrir avec `python -m annotation`.
+  ouvrir avec `python -m annotation` ;
+- `modele.npz` dans la sortie : le modèle entraîné sur tous les cahiers
+  délimités, que `python -m decoupage.corpus` applique au corpus.
 
 La référence est le carnet de l'outil d'annotation : les notes « début de
 contribution » des cahiers délimités en entier pour le tirage (tâche
@@ -248,7 +250,8 @@ def main() -> None:
             notes[n["fichier"], n["page"]].append(min(n["y0"], n["y1"]))
     reference = [(f, p, y) for (f, p), ys in notes.items() for y in ys]
 
-    for fichier, p in pages_ouvertes(lus, lues, regles, delimites, notes):
+    ouvertes, complet = pages_ouvertes(lus, lues, regles, delimites, notes)
+    for fichier, p in ouvertes:
         page = lus[fichier][p][0]
         premiere = min(
             (i for i, x in enumerate(page) if x.texte.strip()),
@@ -295,6 +298,8 @@ def main() -> None:
     resume = [r for r in resume if r["fichier"] not in a_tester]
 
     args.sortie.mkdir(parents=True, exist_ok=True)
+    if complet is not None:
+        complet.sauver(args.sortie / "modele.npz")
     if trouves_test:
         with (args.sortie / "debuts-troncons.csv").open(
             "w", encoding="utf-8", newline=""
@@ -436,31 +441,45 @@ def mesurer_troncons(
             print(ligne)
 
 
-def pages_ouvertes(lus, lues, regles, delimites, notes) -> list[tuple[str, int]]:
+def candidates(
+    pages: list, numeros: list[int], avec_debut: set[int]
+) -> list[tuple[int, dict]]:
+    """(indice de page, indices) des pages lues d'un cahier sans début trouvé
+    par les règles, contre la page lue qui les précède."""
+    sortie = []
+    for p in range(1, len(pages)):
+        if p in avec_debut:
+            continue
+        (precedente, cadre_prec), (page, cadre) = pages[p - 1], pages[p]
+        d = modele.indices(
+            precedente,
+            page,
+            cadre.height,
+            cadre.width,
+            cadre_prec.height,
+            numeros[p] - numeros[p - 1] == 1,
+        )
+        if d:
+            sortie.append((p, d))
+    return sortie
+
+
+def pages_ouvertes(
+    lus, lues, regles, delimites, notes
+) -> tuple[list[tuple[str, int]], modele.Logistique | None]:
     """(fichier, indice de page) des pages sans début trouvé par les règles
-    que le modèle ouvre. Un cahier délimité est jugé par un modèle entraîné
-    sans lui ; les autres, par un modèle entraîné sur tous les délimités."""
-    candidates, cles = [], []
+    que le modèle ouvre, et le modèle entraîné sur tous les délimités. Un
+    cahier délimité est jugé par un modèle entraîné sans lui ; les autres,
+    par celui entraîné sur tous."""
+    candidates_, cles = [], []
     for fichier, pages in lus.items():
         avec_debut = {p for p, _, _ in regles[fichier]}
-        for p in range(1, len(pages)):
-            if p in avec_debut:
-                continue
-            (precedente, cadre_prec), (page, cadre) = pages[p - 1], pages[p]
-            d = modele.indices(
-                precedente,
-                page,
-                cadre.height,
-                cadre.width,
-                cadre_prec.height,
-                lues[fichier][p] - lues[fichier][p - 1] == 1,
-            )
-            if d:
-                candidates.append(d)
-                cles.append((fichier, p))
-    if not candidates or not delimites:
-        return []
-    x = modele.matrice(candidates, [f for f, _ in cles])
+        for p, d in candidates(pages, lues[fichier], avec_debut):
+            candidates_.append(d)
+            cles.append((fichier, p))
+    if not candidates_ or not delimites:
+        return [], None
+    x = modele.matrice(candidates_, [f for f, _ in cles])
     connus = np.array([f in delimites for f, _ in cles])
     y = np.array(
         [
@@ -475,11 +494,10 @@ def pages_ouvertes(lus, lues, regles, delimites, notes) -> list[tuple[str, int]]
     probabilites[connus] = modele.validation_croisee(
         x[connus], y[connus], [f for (f, _), c in zip(cles, connus) if c]
     )
+    complet = modele.Logistique().entrainer(x[connus], y[connus])
     if (~connus).any():
-        probabilites[~connus] = (
-            modele.Logistique().entrainer(x[connus], y[connus]).probabilites(x[~connus])
-        )
-    return [cle for cle, q in zip(cles, probabilites) if q >= modele.SEUIL]
+        probabilites[~connus] = complet.probabilites(x[~connus])
+    return [cle for cle, q in zip(cles, probabilites) if q >= modele.SEUIL], complet
 
 
 if __name__ == "__main__":
