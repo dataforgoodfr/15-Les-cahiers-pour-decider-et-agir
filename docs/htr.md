@@ -118,10 +118,12 @@ serverless répartit les requêtes entre ses régions, États-Unis compris.
   pour un temps dix fois plus long (49 s par page). Il faut relever le
   plafond de jetons : à 2 048, la réflexion l'épuise et une page sur deux
   sort vide.
-- **Le ligne par ligne avec Gemma est à proscrire** : 41 % de mots
-  inventés, 27 % avec le *reasoning* (10 à 24 min par page sur `01193`).
-  Privé du contexte de la page, le modèle complète chaque fragment de ligne
-  par du français plausible.
+- **Le ligne par ligne avec Gemma, sur les lignes de kraken, est à
+  proscrire** : 41 % de mots inventés, 27 % avec le *reasoning* (10 à 24 min
+  par page sur `01193`). Privé du contexte de la page, le modèle complète
+  chaque fragment de ligne par du français plausible. La mesure juge
+  surtout la segmentation (voir plus bas) : sur des lignes entières, le
+  ligne par ligne reste à mesurer.
 - **Ornith-1.5 9b**, le meilleur petit modèle, invente : sur la main
   difficile, il écrit un français fluide sans rapport avec la page (57 % de
   mots inventés sur `01193_p19`). Aucun indicateur automatique ne le
@@ -142,8 +144,14 @@ serverless répartit les requêtes entre ses régions, États-Unis compris.
 Les HTR lisent ligne par ligne, après une segmentation par kraken. Sur
 `01193`, elle coupe les lignes en fragments (56 lignes trouvées pour 11 sur
 `p19`), et tous les HTR y dépassent 50 % d'erreur, même sur des pages
-qu'Ornith lit à 13-17 %. Une partie de l'écart se gagnera en segmentant
-mieux.
+qu'Ornith lit à 13-17 %. Gemma 4 31b lu ligne par ligne passe par la même
+segmentation : ses 39,5 % de CER mesurent autant les fragments que le
+modèle. Une partie de l'écart se gagnera en segmentant mieux.
+
+Le Campus Condorcet segmente ses pages avec un modèle YOLO entraîné sur
+des lignes annotées à la main, avant de les lire (d'après leur poster
+« Transcrire des doléances au XXIᵉ siècle »). Les HTR légers et le
+ligne par ligne n'ont pas été mesurés ici sur de telles lignes.
 
 ### Un second étalon : Dole
 
@@ -196,7 +204,12 @@ la taille des pages (5 à 13 s chacune). Deux pistes, à mesurer sur ces
    sont exclus de l'entraînement. Les pages de Dole hors étalon (incertaines
    au rapprochement, ou dactylographiées et manuscrites mêlées) en donnent
    d'autres.
-2. **Mieux segmenter** les pages recadrées et les écritures irrégulières.
+2. **Mieux segmenter** les pages recadrées et les écritures irrégulières,
+   puis remesurer les HTR légers (Manicule, McCATMuS) et le ligne par ligne
+   sur ces lignes. C'est la piste d'une lecture sans gros modèle de vision.
+   Le modèle YOLO de segmentation du Campus Condorcet en serait un point de
+   départ, s'il est partagé : il sortirait sous la licence du modèle
+   d'origine (AGPL-3.0 pour YOLOv11 d'Ultralytics).
 
 Une HTR médiocre suffit déjà pour une autre tâche : retrouver dans les scans
 la page où commence une contribution manuscrite de l'édition Chabin, par un
