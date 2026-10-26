@@ -83,6 +83,7 @@ TEXTE_SEUL = {
     "règles + modèle + zones": {"règles", "modèle", "zones"},
     BLANCHE: {BLANCHE},
     f"{BLANCHE} + zones": {BLANCHE, "zones"},
+    f"règles + {BLANCHE} + zones": {"règles", BLANCHE, "zones"},
     f"règles + modèle + {BLANCHE} + zones": {"règles", "modèle", BLANCHE, "zones"},
 }
 MEILLEURE = "règles + modèle + liste blanche + zones"
