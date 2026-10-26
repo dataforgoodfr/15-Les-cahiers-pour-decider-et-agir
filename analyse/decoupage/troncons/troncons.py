@@ -12,9 +12,16 @@ cahier pèse donc ses pages dactylographiées) ; le tronçon est fait des
 avant. Les pages écrites ne sont ni vierges, ni de service, ni d'ouverture.
 Un tronçon représente les pages dactylographiées de son département : c'est
 le poids de ses mesures.
+
+Une page du tronçon compte dans les mesures dès qu'elle est vue (tâche
+« decoupage ») : toutes ses notes sont posées. Chaque page mesurée d'un
+tronçon vaut alors `dactylographiees_departement` / pages mesurées du
+tronçon.
 """
 
+import csv
 import random
+from pathlib import Path
 
 DACTYLOGRAPHIEE = "dactylographiée"
 
@@ -64,3 +71,45 @@ def tirer(
             }
         )
     return troncons
+
+
+def lire(chemin: Path) -> list[dict]:
+    """Les tronçons écrits par `python -m decoupage.troncons`, ou aucun."""
+    if not chemin.exists():
+        return []
+    with chemin.open(encoding="utf-8", newline="") as f:
+        return [
+            {
+                **t,
+                "premiere": int(t["premiere"]),
+                "derniere": int(t["derniere"]),
+                "dactylographiees_departement": int(t["dactylographiees_departement"]),
+            }
+            for t in csv.DictReader(f)
+        ]
+
+
+def pages_mesurees(
+    troncons: list[dict], pages: dict[str, list[int]], vues: set[tuple[str, int]]
+) -> list[set[tuple[str, int]]]:
+    """Par tronçon, ses pages (parmi `pages`, par cahier) qui sont vues."""
+    return [
+        {
+            (t["fichier"], n)
+            for n in pages.get(t["fichier"], [])
+            if t["premiere"] <= n <= t["derniere"] and (t["fichier"], n) in vues
+        }
+        for t in troncons
+    ]
+
+
+def ponderer(comptes: list[tuple[float, int, int, int]]) -> tuple[float, float]:
+    """Précision et rappel pondérés, de (poids, justes, trouvés, référence)
+    par tronçon."""
+    justes = sum(w * j for w, j, _, _ in comptes)
+    trouves = sum(w * t for w, _, t, _ in comptes)
+    reference = sum(w * r for w, _, _, r in comptes)
+    return (
+        justes / trouves if trouves else 0.0,
+        justes / reference if reference else 0.0,
+    )

@@ -3,7 +3,7 @@
     uv run python -m decoupage.contributions [--cahiers data/tirage/contributions.csv]
         [--versement data/versement] [--typage data/typage/departements]
         [--annotation data/annotation] [--ouvertures data/ouvertures/ouvertures.csv]
-        [--sortie data/contributions]
+        [--troncons data/troncons/troncons.csv] [--sortie data/contributions]
 
 Règles dans `decoupage.contributions.regles`. Seules les pages dactylographiées et
 mixtes sont lues (celles qui ont une couche imprimée lisible ; l'écriture à
@@ -24,8 +24,18 @@ d'eux est jugé par un modèle qui ne l'a pas vu (validation croisée). Écrit :
 La référence est le carnet de l'outil d'annotation : les notes « début de
 contribution » des cahiers délimités en entier pour le tirage (tâche
 « selection », dernière page vue). Affiche la précision et le rappel des
-débuts sur leurs pages lues, et à part sur les seules pages mixtes. Des positions et des comptes,
-jamais de texte.
+débuts sur leurs pages lues, et à part sur les seules pages mixtes.
+
+Le test : les tronçons de `python -m decoupage.troncons`, dans des
+départements que les cahiers délimités ne couvrent pas. Règles et modèle y
+lisent les cahiers en entier, le modèle entraîné sur tous les délimités ;
+la mesure porte sur les pages des tronçons vues (tâche « decoupage »),
+pondérée par département (`decoupage.troncons.troncons`), et aussi sur
+toutes leurs pages écrites, manuscrites comprises, que les règles ne lisent
+pas. Leurs débuts vont dans `debuts-troncons.csv`, jamais dans les listes à
+revoir : la référence de test ne doit pas partir des débuts trouvés.
+
+Des positions et des comptes, jamais de texte.
 """
 
 import argparse
@@ -41,7 +51,8 @@ from annotation.carnet import Carnet
 from annotation.corpus import Corpus
 from corpus.ouvertures.__main__ import lire as lire_ouvertures
 from decoupage.contributions import pages as modele
-from decoupage.contributions.regles import debuts, evaluer
+from decoupage.contributions.regles import apparier, debuts, evaluer
+from decoupage.troncons import troncons as test
 from panels.panel.panel import lire_typage
 from panels.selection.contribution import delimites as cahiers_delimites
 
@@ -53,6 +64,7 @@ VIERGE = "vierge"
 DEBUT = "début de contribution"
 TACHE = "contributions"
 SELECTION = "selection"
+DECOUPAGE = "decoupage"
 REGLES = {
     "courriel": "Courriels repérés",
     "gabarit": "Formulaires (gabarits) repérés",
@@ -183,11 +195,17 @@ def main() -> None:
     parser.add_argument(
         "--ouvertures", type=Path, default=Path("data/ouvertures/ouvertures.csv")
     )
+    parser.add_argument(
+        "--troncons", type=Path, default=Path("data/troncons/troncons.csv")
+    )
     parser.add_argument("--sortie", type=Path, default=Path("data/contributions"))
     args = parser.parse_args()
 
     with args.cahiers.open(encoding="utf-8", newline="") as f:
         fichiers = {ligne["fichier"] for ligne in csv.DictReader(f)}
+    troncons = test.lire(args.troncons)
+    a_tester = {t["fichier"] for t in troncons} - fichiers
+    fichiers |= a_tester
     chemins = {p.name: p for p in args.versement.rglob("*.pdf") if p.name in fichiers}
     ouvertures = lire_ouvertures(args.ouvertures)
     lues = pages_lues(args.typage, fichiers, ouvertures)
@@ -272,7 +290,18 @@ def main() -> None:
             }
         )
 
+    trouves_test = [d for d in trouves if d["fichier"] in a_tester]
+    trouves = [d for d in trouves if d["fichier"] not in a_tester]
+    resume = [r for r in resume if r["fichier"] not in a_tester]
+
     args.sortie.mkdir(parents=True, exist_ok=True)
+    if trouves_test:
+        with (args.sortie / "debuts-troncons.csv").open(
+            "w", encoding="utf-8", newline=""
+        ) as f:
+            ecrivain = csv.DictWriter(f, list(trouves_test[0]))
+            ecrivain.writeheader()
+            ecrivain.writerows(trouves_test)
     with (args.sortie / "debuts.csv").open("w", encoding="utf-8", newline="") as f:
         ecrivain = csv.DictWriter(f, list(trouves[0]))
         ecrivain.writeheader()
@@ -329,6 +358,82 @@ def main() -> None:
             f"  {titre} : {len(retenus)} débuts, précision {precision:.0%}, "
             f"rappel {rappel:.0%} (sur {len(pages)} pages)"
         )
+
+    if troncons:
+        ecrites = defaultdict(list)
+        for t in lire_typage(args.typage):
+            f, n = t["fichier"], int(t["page"])
+            if (
+                f in a_tester
+                and t["type_page"] != VIERGE
+                and t["page_de_service"] != "1"
+                and (f, n) not in ouvertures
+            ):
+                ecrites[f].append(n)
+        mesurer_troncons(troncons, trouves_test, carnet, lues, ecrites)
+
+
+def mesurer_troncons(
+    troncons: list[dict],
+    trouves: list[dict],
+    carnet: Carnet,
+    lues: dict[str, list[int]],
+    ecrites: dict[str, list[int]],
+) -> None:
+    """Précision et rappel sur les pages vues des tronçons de test."""
+    vues = {
+        cle for cle, s in carnet.statuts(DECOUPAGE, exacte=True).items() if s == "vue"
+    }
+    imprimees = test.pages_mesurees(troncons, lues, vues)
+    toutes = test.pages_mesurees(troncons, ecrites, vues)
+    mesurees = set().union(*toutes)
+    reference = [
+        (n["fichier"], n["page"], min(n["y0"], n["y1"]))
+        for n in carnet.positions()
+        if n["etiquette"] == DEBUT and (n["fichier"], n["page"]) in mesurees
+    ]
+    print(
+        f"Test : {sum(bool(p) for p in toutes)} tronçons sur {len(troncons)}, "
+        f"{len(mesurees)} pages écrites vues, dont {sum(map(len, imprimees))} "
+        f"lues par les règles ; {len(reference)} débuts"
+    )
+    for titre, garder in (
+        ("règles et modèle", lambda d: True),
+        ("règles seules", lambda d: d["regle"] != "page"),
+    ):
+        retenus = [
+            (d["fichier"], d["page"], d["y0"])
+            for d in trouves
+            if garder(d) and (d["fichier"], d["page"]) in mesurees
+        ]
+        for pages, quoi in ((imprimees, "pages lues"), (toutes, "toutes pages")):
+            comptes = []
+            for t, p in zip(troncons, pages):
+                if not p:
+                    continue
+                trouves_t = [d for d in retenus if (d[0], d[1]) in p]
+                reference_t = [r for r in reference if (r[0], r[1]) in p]
+                comptes.append(
+                    (
+                        t["dactylographiees_departement"] / len(p),
+                        apparier(trouves_t, reference_t),
+                        len(trouves_t),
+                        len(reference_t),
+                    )
+                )
+            justes = sum(c[1] for c in comptes)
+            trouves_n = sum(c[2] for c in comptes)
+            reference_n = sum(c[3] for c in comptes)
+            ligne = (
+                f"  {titre}, {quoi} : {trouves_n} débuts, précision "
+                f"{justes / trouves_n if trouves_n else 0:.0%}, rappel "
+                f"{justes / reference_n if reference_n else 0:.0%}"
+            )
+            # le poids d'un tronçon vaut pour ses pages dactylographiées
+            if pages is imprimees:
+                precision, rappel = test.ponderer(comptes)
+                ligne += f" ; pondérés par département : {precision:.0%}, {rappel:.0%}"
+            print(ligne)
 
 
 def pages_ouvertes(lus, lues, regles, delimites, notes) -> list[tuple[str, int]]:

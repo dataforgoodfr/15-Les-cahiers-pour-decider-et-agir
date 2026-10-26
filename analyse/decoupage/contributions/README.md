@@ -18,6 +18,9 @@ propre liste à revoir.
 
 Le début du cahier ouvre une contribution, sauf si une page manuscrite,
 que les règles ne lisent pas, précède la première page dactylographiée.
+Les couvertures en tête du cahier (20 mots de plus de deux lettres au plus,
+sans courriel ni formulaire) n'ouvrent rien, pas même une lettre sur leur
+titre : le cahier commence à la page qui les suit.
 
 ## Définition
 
@@ -123,8 +126,35 @@ trouvé passent de 19 à 10.
 Seuls, la taille du corps (AUC 0,77) et la marge (0,71) sont les meilleurs
 indices ; le modèle entier atteint 0,82. Cinq cahiers font la moitié des
 pages ouvertes à tort. Les pages ouvertes sont dans la liste « Pages qui
-ouvrent une contribution selon le modèle ». La mesure sur les tronçons de
-test (`decoupage.troncons`, départements jamais vus) reste à faire.
+ouvrent une contribution selon le modèle ».
+
+## Le test : les tronçons
+
+La même commande mesure aussi le découpage sur les tronçons de test
+(`decoupage.troncons`, départements jamais vus) : règles et modèle y lisent
+les cahiers en entier, le modèle entraîné sur tous les délimités, et la
+mesure porte sur les pages des tronçons vues dans la liste « decoupage ».
+Leurs débuts vont dans `debuts-troncons.csv`, jamais dans les listes à
+revoir.
+
+Au 26 octobre 2026, la première mesure (121 pages vues) donnait une
+précision de 44 % : le début du cahier faisait la moitié des faux (7
+débuts, 1 juste). Les six premières pages en cause sont des couvertures
+(titre, mairie, logo, un formulaire de l'AMIF laissé vierge), que
+`corpus.ouvertures` ne connaît pas : il ne reconnaît que les modèles
+communs à un département. Sur les cahiers délimités, aucune première page
+à 20 mots ou moins n'ouvrait de contribution (17 débuts, aucun juste) :
+d'où la règle des couvertures. Sur les délimités, règles et modèle passent
+de 75 % à 76 % de précision et de 81 % à 80 % de rappel ; règles seules,
+80 % et 67 %.
+
+Le même jour, l'annotation est en cours : 138 pages écrites vues dans 34
+tronçons sur 41, dont 86 lues par les règles, et 52 débuts. Sur les pages
+lues, règles et modèle trouvent 21 débuts : précision 52 %, rappel 61 %
+(66 % et 63 % pondérés par département) ; règles seules, 59 % et 56 %.
+Sur toutes les pages écrites, manuscrites comprises, le rappel tombe à
+21 %. Le modèle aide peu ici : il ouvre 4 pages, dont une seule juste.
+Sur 21 débuts, tout cela reste à refaire une fois les tronçons finis.
 
 ## Les pages mixtes
 
