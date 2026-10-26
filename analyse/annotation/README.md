@@ -20,7 +20,7 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   dactylographiée, M manuscrite, MD mixte, V vierge ; les pages de service
   sont pâlies).
 - **Noter sur la page**, sans formulaire : un clic pose un début de
-  contribution, un clic droit une fin, un glisser caviarde la zone (note de
+  contribution, un clic droit (ou Ctrl+clic, au pavé tactile) une fin, un glisser caviarde la zone (note de
   l'étiquette de donnée personnelle choisie, bloc de coordonnées sinon).
   La note s'enregistre aussitôt et reste choisie (halo jaune) : Suppr l'annule.
   Couleurs : vert pour un début, rose pour une fin, noir pour une zone

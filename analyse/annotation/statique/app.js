@@ -840,15 +840,17 @@ $("feuilles").addEventListener("pointerup", (ev) => {
     return;
   }
   // saisie rapide : un glisser caviarde, un clic pose un début de
-  // contribution (un clic droit une fin)
+  // contribution (un clic droit ou Ctrl+clic une fin, sans souris)
   if (bouge) poserNoteRapide(etat.brouillon, etiquetteMasque());
-  else poserNoteRapide(etat.brouillon, DEBUT);
+  else poserNoteRapide(etat.brouillon, ev.ctrlKey ? FIN : DEBUT);
 });
 // clic droit : une fin de contribution, à la place du menu du navigateur
 $("feuilles").addEventListener("contextmenu", (ev) => {
   if (!etat.cahier || !ev.target.closest(".calque")) return;
   ev.preventDefault();
   if (aMasquer() || aTranscrire()) return;
+  // Ctrl+clic ouvre aussi ce menu sur macOS : la fin est déjà posée au relâcher
+  if (ev.ctrlKey && ev.button === 0) return;
   const d = pointPdf(ev);
   poserNoteRapide({ x0: d.x, y0: d.y, x1: d.x, y1: d.y }, FIN);
 });
