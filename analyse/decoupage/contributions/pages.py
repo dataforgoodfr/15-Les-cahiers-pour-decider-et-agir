@@ -23,11 +23,14 @@ CPU, sur les cahiers délimités à la main. Il ne voit que des nombres et
 ne rend que des probabilités.
 """
 
+from __future__ import annotations
+
 import math
 import re
 import statistics
 from collections import Counter
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import pymupdf
@@ -192,6 +195,23 @@ class Logistique:
     def probabilites(self, x: np.ndarray) -> np.ndarray:
         z = (x - self.moyenne) / self.ecart
         return 1 / (1 + np.exp(-(z @ self.poids + self.biais)))
+
+    def sauver(self, chemin: Path) -> None:
+        np.savez(
+            chemin,
+            moyenne=self.moyenne,
+            ecart=self.ecart,
+            poids=self.poids,
+            biais=self.biais,
+        )
+
+    @classmethod
+    def charger(cls, chemin: Path) -> Logistique:
+        modele = cls()
+        with np.load(chemin) as poids:
+            modele.moyenne, modele.ecart = poids["moyenne"], poids["ecart"]
+            modele.poids, modele.biais = poids["poids"], float(poids["biais"])
+        return modele
 
 
 def validation_croisee(
