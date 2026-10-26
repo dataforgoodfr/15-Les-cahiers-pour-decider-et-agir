@@ -52,6 +52,10 @@ SANS_TETE = (
 )
 SIMILARITE = 0.75  # part de caractères communs pour reconnaître une ligne à l'OCR près
 ECART_DEBUT = 5  # lignes : un début trouvé si près du début du cahier le remplace
+# mots de plus de deux lettres au plus d'une couverture (titre, mairie, logo) :
+# sur les cahiers délimités et les tronçons, aucune première page à 20 mots ou
+# moins n'ouvrait de contribution (25 sur 25)
+MOTS_COUVERTURE = 20
 # « propositions » n'en est pas : sur les cahiers délimités, il ouvre 3 fois
 # sur 10 une vraie lettre, le plus souvent il est dans le texte (#5)
 TITRE_LETTRE = re.compile(r"dol[ée]ances?|contributions?|grand d[ée]bat", re.IGNORECASE)
@@ -370,6 +374,13 @@ def lettres(pages: list[list[str]]) -> list[tuple[int, int]]:
     return trouves
 
 
+def couverture(lignes: list[str]) -> bool:
+    """Page de couverture : au plus `MOTS_COUVERTURE` mots de plus de deux
+    lettres, comme le compte le typage."""
+    mots = re.findall(r"\w+", " ".join(lignes))
+    return sum(len(m) > 2 for m in mots) <= MOTS_COUVERTURE
+
+
 def debuts(
     pages: list[list[str]], debut_du_cahier: bool = True
 ) -> list[tuple[int, int, str]]:
@@ -378,7 +389,9 @@ def debuts(
     Le début du cahier ouvre toujours une contribution, sauf si une règle en
     trouve une dans ses toutes premières lignes (un logo ou un titre
     précède souvent l'en-tête du formulaire). Sans autre début trouvé, le
-    cahier n'est pas découpé : il n'a que ce début-là.
+    cahier n'est pas découpé : il n'a que ce début-là. Les couvertures en
+    tête du cahier (`couverture`) n'ouvrent rien : le cahier commence à la
+    page qui les suit.
 
     `debut_du_cahier` est faux quand une page écrite que les règles ne lisent
     pas (manuscrite) précède la première page lue : le cahier commence
@@ -392,9 +405,22 @@ def debuts(
     for p, lignes in enumerate(pages):
         for i in courriels(lignes):
             trouves.setdefault((p, i), "courriel")
+    # les couvertures en tête du cahier n'ouvrent rien ; une page qui porte un
+    # courriel ou un formulaire n'en est pas une, même courte
+    ouvertes = {p for p, _ in trouves}
+    apres = next(
+        (
+            p
+            for p, lignes in enumerate(pages)
+            if p in ouvertes or not couverture(lignes)
+        ),
+        None,
+    )
+    couvertures = set(range(len(pages) if apres is None else apres))
     # une lettre ne s'ajoute que sur une page où aucune autre règle ne trouve,
-    # ni sur une page de formulaire (sa seconde feuille, qui n'en ouvre pas)
-    deja = {p for p, _ in trouves} | pages_de_formulaire(pages)
+    # ni sur une page de formulaire (sa seconde feuille, qui n'en ouvre pas),
+    # ni sur une couverture (son titre de doléances)
+    deja = {p for p, _ in trouves} | pages_de_formulaire(pages) | couvertures
     for p, i in lettres(pages):
         if p not in deja:
             trouves[p, i] = "lettre"
@@ -402,6 +428,7 @@ def debuts(
         (
             (p, i)
             for p, lignes in enumerate(pages)
+            if p not in couvertures
             for i, x in enumerate(lignes)
             if x.strip()
         ),
@@ -423,7 +450,19 @@ def evaluer(
     reference: list[tuple[str, int, float]],
     tolerance: float = TOLERANCE,
 ) -> tuple[float, float]:
-    """Précision et rappel des débuts (fichier, page, ordonnée en points).
+    """Précision et rappel des débuts (fichier, page, ordonnée en points)."""
+    justes = apparier(predits, reference, tolerance)
+    precision = justes / len(predits) if predits else 0.0
+    rappel = justes / len(reference) if reference else 0.0
+    return precision, rappel
+
+
+def apparier(
+    predits: list[tuple[str, int, float]],
+    reference: list[tuple[str, int, float]],
+    tolerance: float = TOLERANCE,
+) -> int:
+    """Nombre de débuts trouvés justes.
 
     Un début trouvé est juste s'il y a, sur la même page, un début de la
     référence encore libre sur le même tronçon : à moins de `tolerance`
@@ -449,6 +488,4 @@ def evaluer(
             if candidats:
                 libres[fichier, page].remove(min(candidats, key=lambda r: abs(r - y)))
                 justes += 1
-    precision = justes / len(predits) if predits else 0.0
-    rappel = justes / len(reference) if reference else 0.0
-    return precision, rappel
+    return justes

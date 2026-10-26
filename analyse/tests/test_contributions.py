@@ -124,14 +124,15 @@ def test_un_en_tete_repete_n_est_pas_un_gabarit():
 
 
 def test_debuts_ajoute_le_debut_du_cahier():
-    pages = [["", "Préambule du cahier"], ["texte", *COURRIEL]]
+    preambule = ["Nous demandons davantage de services publics dans les communes"] * 3
+    pages = [["", *preambule], ["texte", *COURRIEL]]
     assert debuts(pages) == [(0, 1, "début du cahier"), (1, 1, "courriel")]
     # un courriel en tête du cahier en est le début
     assert debuts([COURRIEL]) == [(0, 0, "courriel")]
     # un logo puis un courriel : le courriel ouvre le cahier
     assert debuts([["VILLE DE", "PARIS", *COURRIEL]]) == [(0, 2, "courriel")]
     # un vrai texte avant le premier courriel reste une contribution
-    texte = [f"ligne {k}" for k in range(8)]
+    texte = [f"ligne de texte numéro {k}" for k in range(8)]
     assert debuts([[*texte, *COURRIEL]])[0] == (0, 0, "début du cahier")
     # une page manuscrite précède : la première page lue n'ouvre rien
     assert debuts(pages, debut_du_cahier=False) == [(1, 1, "courriel")]
@@ -202,3 +203,15 @@ def test_une_page_numerotee_au_dela_de_la_premiere_continue():
 def test_une_lettre_ne_double_pas_un_courriel():
     pages = [COURRIEL + ["Bonjour", "texte"], ["Madame,", "texte"]]
     assert [regle for _, _, regle in debuts(pages)] == ["courriel", "lettre"]
+
+
+TEXTE = ["Je souhaite que les services publics restent ouverts dans nos villages"] * 3
+
+
+def test_la_couverture_n_ouvre_pas_le_cahier():
+    couverture = ["MAIRIE DE VILLAGE", "CAHIER DE DOLÉANCES", "2019"]
+    assert debuts([couverture, TEXTE]) == [(1, 0, "début du cahier")]
+
+
+def test_une_page_de_texte_ouvre_le_cahier():
+    assert debuts([TEXTE, TEXTE]) == [(0, 0, "début du cahier")]

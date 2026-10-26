@@ -2,7 +2,7 @@
 
 import random
 
-from decoupage.troncons.troncons import tirer
+from decoupage.troncons.troncons import pages_mesurees, ponderer, tirer
 
 D, M = "dactylographiée", "manuscrite"
 
@@ -41,3 +41,23 @@ def test_une_page_dactylographiee_au_hasard_du_departement():
     assert (
         tirer(cahiers, set(), random.Random(0))[0]["dactylographiees_departement"] == 10
     )
+
+
+def test_seules_les_pages_vues_du_troncon_sont_mesurees():
+    troncons = [
+        {"fichier": "a.pdf", "premiere": 3, "derniere": 6},
+        {"fichier": "b.pdf", "premiere": 1, "derniere": 2},
+    ]
+    pages = {"a.pdf": [1, 3, 4, 6, 7], "b.pdf": [1, 2]}
+    vues = {("a.pdf", n) for n in (1, 3, 6, 7)}
+    assert pages_mesurees(troncons, pages, vues) == [
+        {("a.pdf", 3), ("a.pdf", 6)},
+        set(),
+    ]
+
+
+def test_un_departement_pese_ses_pages():
+    # (poids, justes, trouvés, référence) : le second tronçon pèse trois fois plus
+    precision, rappel = ponderer([(1, 2, 2, 4), (3, 0, 2, 2)])
+    assert precision == 2 / 8
+    assert rappel == 2 / 10
