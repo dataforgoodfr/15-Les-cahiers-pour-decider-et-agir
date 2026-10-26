@@ -80,6 +80,7 @@ texte ; 686 des 1 935 n'en ont aucun et sont couvertes d'office.
 |---|---|---|---|
 | règles + modèle | 70 % | 404 sur 835 | 1 % (1 %) |
 | liste blanche | 82 % | 253 | 10 % (1 %) |
+| règles + liste blanche + zones, sans modèle | 89 % | 151 | 12 % (3 %) |
 | règles + modèle + liste blanche + zones | 92 % | 111 | 12 % (3 %) |
 
 Sur les seules données qui ont des mots dans la couche texte, la chaîne
@@ -88,6 +89,16 @@ coordonnées des formulaires (129 données sur 153), et ce sont des mots du
 lexique : 63 % en minuscules, 35 % à majuscule (un nom de famille comme
 « Petit », ou « Rue »). Une donnée compte comme visible dès qu'un seul de
 ses mots l'est : la mesure est pessimiste.
+
+Sans modèle (GLiNER), la chaîne garde 89 % et tourne en quelques minutes
+sur CPU. Le 27 octobre 2026, `anonymisation.texte_seul` l'a passée sur les
+66 649 contributions du découpage automatique (`decoupage.corpus`, pages
+imprimées) : 11 % des 31,5 millions de mots sont cachés, 15 % en médiane
+par contribution (un quart en perd plus d'un tiers), et 91 % des
+contributions gardent au moins 20 mots visibles. Ce texte n'est relu par
+personne. Les 89 % sont mesurés sur des contributions délimitées à la main ;
+sur le découpage automatique, les zones de signature tombent moins juste,
+et la couverture est sans doute plus basse.
 
 Contre les blocs de coordonnées, un relecteur peut encadrer deux pages
 d'un formulaire : leurs zones se reportent sur les autres exemplaires
