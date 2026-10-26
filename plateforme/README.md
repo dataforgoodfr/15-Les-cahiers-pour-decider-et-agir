@@ -39,12 +39,6 @@ Les modèles du POC y sont repris un à un. Pour l'instant :
   ou courriels, dont `python -m decoupage.chabin` retrouve le début dans l'OCR du scan,
   avec leur texte anonymisé par l'édition. Les manuscrits, sans position, ne
   sont pas chargés.
-  Le découpage automatique de tous les cahiers citoyens (sortie de
-  `python -m decoupage.corpus`) est chargé par `uv run python manage.py
-  charger_decoupage`, sous un run de délimitation jamais activé : règles et
-  modèle sur les pages imprimées, chaque contribution arrêtée avant la
-  première page manuscrite, qui reste sans contribution. Non modéré et sans
-  extrait, il n'est jamais montré.
 
 ## La charte graphique
 

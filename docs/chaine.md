@@ -70,7 +70,7 @@ réécrire l'ancien.
 | **Découper** les cahiers en contributions | `decoupage.contributions` (règles et modèle), `decoupage.corpus` (les mêmes, sur tout le corpus), `decoupage.vision` (modèle de vision) ; références : `decoupage.delimitation`, `decoupage.chabin`, `decoupage.troncons` | Règles et modèle, pages dactylographiées et mixtes : 75 % des débuts trouvés sont justes, 81 % des débuts sont trouvés. Qwen servi en Europe, toutes pages : 81 % et 84 % | [`analyse/decoupage/contributions/`](../analyse/decoupage/contributions/), #5, #64 |
 | **Anonymiser** | `anonymisation` et ses sous-modules ; étalon `anonymisation.aude` | Texte seul : 92 à 94 % des données cachées ; image et modèle de vision : 88 à 89 % | [`docs/anonymisation.md`](anonymisation.md), #7, #128 |
 | **Modérer** : écarter les contenus haineux ou illicites | Aucun : à la main, dans l'outil d'annotation (« à écarter ») | Pas d'étalon ; un modèle de vision peut préparer une relecture, pas trancher | #166 |
-| **Charger** dans la base | `manage.py charger_corpus`, `charger_contributions`, `charger_extraits`, `charger_chabin`, `charger_decoupage` ([`plateforme/`](../plateforme/)) | — | [`plateforme/README.md`](../plateforme/README.md), #34 |
+| **Charger** dans la base | `manage.py charger_corpus`, `charger_contributions`, `charger_extraits`, `charger_chabin` ([`plateforme/`](../plateforme/)) | — | [`plateforme/README.md`](../plateforme/README.md), #34 |
 
 La lecture des manuscrits est un sous-projet à part, [`htr/`](../htr/),
 pour une raison technique : kraken demande Python 3.12 et numpy 1, quand
@@ -78,12 +78,10 @@ pour une raison technique : kraken demande Python 3.12 et numpy 1, quand
 `analyse/` : ils mesurent la couche texte du versement et interrogent des
 modèles servis ailleurs, sans dépendance lourde.
 
-Aujourd'hui, la base sert les contributions délimitées à la main (les
-cahiers des 100 contributions tirées). Celles de l'édition Chabin et du
-découpage automatique de tout le corpus (`decoupage.corpus`, pages imprimées
-seules, arrêtées avant les pages manuscrites) y sont chargées sous des runs
-jamais activés, pour comparer. L'anonymisation automatique est mesurée, mais
-ses sorties ne sont pas encore chargées.
+Aujourd'hui, la base ne contient que les contributions délimitées à
+la main (les cahiers des 100 contributions tirées) et celles de l'édition
+Chabin. Le découpage et l'anonymisation automatiques sont mesurés, mais leurs
+sorties ne sont pas encore chargées.
 
 L'outil d'annotation (`annotation`) sert à toute la constitution : c'est là
 qu'on note, à la main, les vérités terrain contre lesquelles tout est mesuré

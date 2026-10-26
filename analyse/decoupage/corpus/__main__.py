@@ -1,4 +1,4 @@
-"""Découpage automatique de tous les cahiers citoyens, pour la plateforme (issue #5).
+"""Découpage automatique de tous les cahiers citoyens (issue #5).
 
     uv run python -m decoupage.corpus [--versement data/versement]
         [--typage data/typage/departements]
@@ -15,10 +15,9 @@ délimités. Les contributions s'arrêtent avant les pages manuscrites
 Écrit `contributions.csv` dans la sortie, au format de
 `decoupage.delimitation` (début et fin en points PDF dans le repère de la page
 non tournée, comme les notes de l'outil), plus la règle qui a trouvé le
-début : la plateforme le charge sous un run inactif (`manage.py
-charger_decoupage`). Rien n'y est modéré : `publiable` vaut 1, mais aucune
-contribution n'a d'extrait relu, donc aucune n'est montrée. Des positions et
-des comptes, jamais de texte.
+début. Rien n'y est modéré ni caviardé : `publiable` vaut 1 faute de
+relecture, ce qui ne dit pas qu'une contribution peut être montrée. Des
+positions et des comptes, jamais de texte.
 """
 
 import argparse
