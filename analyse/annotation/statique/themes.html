@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sous-thèmes des propositions</title>
+<link rel="stylesheet" href="/statique/style.css">
+</head>
+<body class="paires themes">
+<header>
+  <label class="groupe">Annotateur
+    <input id="annotateur" placeholder="Votre prénom" spellcheck="false" autocomplete="off">
+  </label>
+  <nav class="groupe" aria-label="Propositions">
+    <button id="prec" title="Proposition précédente (←)">◀</button>
+    <span id="position" class="discret"></span>
+    <button id="suiv" title="Proposition suivante (→)">▶</button>
+    <button id="a-faire" title="Prochaine proposition sans annotation (n)">Prochaine à faire</button>
+  </nav>
+  <span id="avancement" class="groupe discret"></span>
+  <a class="groupe" href="/">Cahiers</a>
+</header>
+<main id="themes">
+  <section class="colonne">
+    <p id="consigne" class="discret">Cochez les sous-thèmes que la proposition surlignée traite : le sujet est abordé (constat, demande, proposition), pas un mot cité en passant. La contribution entière et la page de l'édition sont là pour le contexte. Jugez seul, sans chercher l'avis des autres.</p>
+    <article class="proposition" id="carte">
+      <p class="contexte discret" id="contexte"></p>
+      <div id="contribution"></div>
+    </article>
+    <fieldset id="sous-themes" class="sous-themes">
+      <legend>Sous-thèmes traités par la proposition surlignée</legend>
+      <input id="filtre" type="search" placeholder="Filtrer (/) ; Entrée coche le premier" spellcheck="false" autocomplete="off">
+      <div id="cases"></div>
+      <label class="sous-theme mal-coupee"><input type="checkbox" id="mal-coupee"> <kbd>c</kbd> Proposition mal coupée (à couper ou à fusionner)</label>
+    </fieldset>
+    <div class="jugements">
+      <button id="valider" class="jugement" title="Enregistrer et passer à la suivante (Entrée)"><kbd>Entrée</kbd> Valider</button>
+    </div>
+    <p id="info" class="discret"></p>
+  </section>
+  <section class="colonne source" aria-label="Page de l'édition Chabin">
+    <p class="discret" id="legende-page"></p>
+    <div id="page-chabin"><img id="image-page" alt="Page de l'édition Chabin"><div id="reperes"></div></div>
+  </section>
+</main>
+<script src="/statique/themes.js"></script>
+</body>
+</html>
