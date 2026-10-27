@@ -91,6 +91,83 @@ SOURCES = {
 FILTRAGE = ("modèle", "règles", "règles + modèle")
 COMPLETE = "règles + modèle + encre + zones"
 LEXIQUE = "https://www.lexique.org/databases/Lexique383/Lexique383.tsv"
+# sigles et mots du débat de 2019 absents du lexique, que la liste blanche
+# cachait dans des centaines de cahiers ; aucun ne peut nommer une personne
+VOCABULAIRE = [
+    "apl",
+    "caf",
+    "cac",
+    "cdd",
+    "cdi",
+    "cese",
+    "cice",
+    "cmu",
+    "co2",
+    "csg",
+    "edf",
+    "ehpad",
+    "ena",
+    "gafa",
+    "hlm",
+    "insee",
+    "isf",
+    "lrem",
+    "ogm",
+    "onu",
+    "otan",
+    "pib",
+    "pma",
+    "pme",
+    "rip",
+    "ric",
+    "rsa",
+    "rsi",
+    "sarl",
+    "sdf",
+    "smic",
+    "smig",
+    "sncf",
+    "tgv",
+    "tpe",
+    "tva",
+    "urssaf",
+    "associatif",
+    "chauffagistes",
+    "clausus",
+    "confiscatoire",
+    "contreparties",
+    "cumuls",
+    "défiscalisation",
+    "délocalisations",
+    "déradicalisation",
+    "désertification",
+    "développeurs",
+    "dotations",
+    "encontre",
+    "environnementales",
+    "europe",
+    "ferroutage",
+    "glyphosate",
+    "incivilités",
+    "indexées",
+    "indexés",
+    "intercommunalité",
+    "intercommunalités",
+    "lobbys",
+    "maillage",
+    "minimas",
+    "phytosanitaires",
+    "polluantes",
+    "progressivité",
+    "radicalisés",
+    "régaliennes",
+    "renouvelables",
+    "représentativité",
+    "ruralité",
+    "salariales",
+    "sociétaux",
+    "startup",
+]
 # variantes de la détection d'encre (`detection.encre_sans_texte`) : seuil de
 # gris, densité au-delà de laquelle une zone est un aplat, et encre gardée
 # sous les mots hors lexique (une lecture fautive de l'écriture à la main)
@@ -495,7 +572,7 @@ def references(
     lexique = {
         _simple(ligne.split("\t", 1)[0])
         for ligne in sources.telecharger(LEXIQUE, args.cache).decode().splitlines()[1:]
-    }
+    } | {_simple(m) for m in VOCABULAIRE}
     maires = charger_maires(sources.telecharger(MAIRES, args.cache))
     cog = {
         c["com"]: (c["libelle"], c["nccenr"])

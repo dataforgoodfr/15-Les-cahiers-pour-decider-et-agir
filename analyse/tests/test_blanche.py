@@ -99,3 +99,12 @@ def test_formulaires_appris_sur_les_autres_pages():
     assert zones["f.pdf", 4][0]["source"] == "formulaire"
     seul = {k: v for k, v in pages.items() if k[1] in (1, 2)}
     assert formulaires(seul, lignes, None, "f") == {}  # une seule autre page
+
+
+def test_mot_du_lexique_en_un_seul_jeton():
+    lexique = LEXIQUE | {"aujourdhui", "oeuvre", "et", "ou"}
+    assert raison("aujourd'hui", lexique, PRENOMS, NOMS) is None
+    assert raison("œuvre", lexique, PRENOMS, NOMS) is None
+    assert raison("et/ou", lexique, PRENOMS, NOMS) is None
+    assert raison("Aujourd'hui", lexique, PRENOMS, NOMS) is not None
+    assert raison("Et/Ou", lexique, PRENOMS, NOMS) is not None
