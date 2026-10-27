@@ -120,12 +120,14 @@ les deux variantes sont mesurées, c'est sur le même étalon, au 27 octobre 202
 | Anonymiser, texte seul | 93 cahiers délimités, données encadrées | Règles, liste blanche et zones : 89 % couvertes, 12 % des autres mots cachés ; avec GLiNER, 92 % | Pas mesuré : la vision travaille sur l'image |
 | Anonymiser, texte seul | Aude, 223 pages dactylographiées, masques des Archives (sans zones de signature) ; un masque est couvert quand ses mots de la couche texte sont cachés | Règles et liste blanche : 80 % couverts, 7 % des autres mots cachés ; avec GLiNER, 83 % | Vision seule : 91 % couverts, 1 % caché |
 | Anonymiser, image | Aude, masques des Archives, encre comprise | Règles, modèle et encre : 91 % couverts, mais 20 % des mots cachés sur les pages dactylographiées et 92 % sur les manuscrites | Vision seule : 88 % (dactylographiées) et 89 % (manuscrites), pour 1 à 2 % cachés |
-| Thèmes, chaîne entière | 1 488 contributions délimitées | Mots-clés sur le corpus anonymisé : la place de chaque sous-thème suit la main (corrélation 0,97) | — |
-| Thèmes, repérage | 300 contributions de l'édition Chabin, tirées au hasard ; accord entre les deux, sans annotation humaine | Mots-clés : 6,0 sous-thèmes par contribution | Claude Haiku : 5,7 ; deux sur trois en commun avec les mots-clés, kappa médian 0,46 |
+| Thèmes, chaîne entière | 1 488 contributions délimitées | Mots-clés sur le corpus anonymisé : la place de chaque sous-thème suit la main (corrélation 0,98) | — |
+| Thèmes, justesse | 147 propositions de l'édition Chabin, classées à la main dans toute la grille (10 contributions ; 10 autres ont servi à régler les mots-clés) | Mots-clés : précision 50 %, rappel 32 %, kappa médian 0,36 | Claude Haiku, proposition par proposition : précision 51 %, rappel 49 %, kappa médian 0,38 |
+| Thèmes, repérage | 300 contributions de l'édition Chabin, tirées au hasard ; accord entre les deux, sans annotation humaine | Mots-clés : 6,6 sous-thèmes par contribution | Claude Haiku : 5,7 ; deux sur trois en commun avec les mots-clés, kappa médian 0,42 |
 
-Deux mesures sont ponctuelles, faites hors des modules : le texte seul sur
-l'Aude et le repérage par Haiku. Les autres se refont avec la commande de
-leur module.
+Trois mesures sont ponctuelles, faites hors des modules : le texte seul sur
+l'Aude, le repérage par Haiku et le partage des propositions annotées entre
+réglage et test. Les autres se refont avec la commande de leur module
+(`classement.themes.accord` pour les propositions annotées, sans partage).
 
 Ce que ça dit :
 
@@ -136,11 +138,17 @@ Ce que ça dit :
 - **Pour anonymiser, la vision fait mieux.** Sur les pages dactylographiées
   de l'Aude, elle couvre 91 % des masques contre 80 à 83 % sans LLM, et cache
   sept fois moins de texte.
-- **Pour les thèmes, les deux repérages s'accordent sur les sujets
-  concrets** (ISF, vote blanc, RIC, salaires et retraites, immigration :
-  kappa de 0,75 à 0,99) **et divergent sur les sujets larges** (école, place
-  des citoyens, répartition de l'impôt : 0,27 à 0,31). Rien ne dit encore lequel a
-  raison : seule une annotation humaine des désaccords le tranchera.
+- **Pour les thèmes, les deux repérages se valent en précision ; le LLM
+  trouve plus.** Face à la main, mots-clés et Haiku ont raison une fois sur
+  deux (50 % et 51 %), mais Haiku retrouve 49 % des sous-thèmes contre 32 %.
+  Entre eux, ils s'accordent sur les sujets concrets (ISF, vote blanc, RIC,
+  salaires et retraites, immigration : kappa de 0,73 à 0,99) et divergent sur
+  les sujets larges (école, place des citoyens, répartition de l'impôt : 0,27
+  à 0,39). Sur certains de ces sujets larges (justice sociale, taxation
+  financière, transformation du système politique), aucun des deux ne
+  retrouve la main : sans définition, chacun lit la grille à sa façon. Une
+  seule personne a annoté : l'accord entre deux humains, le plafond qu'on
+  peut exiger, reste à mesurer.
 - **Sur les manuscrits, rien ne remplace un gros modèle.** Sans texte, les
   règles ne découpent rien et la liste blanche n'a rien à garder ; l'encre
   cache presque toute l'écriture. Même avec un LLM, aucun modèle servi en
