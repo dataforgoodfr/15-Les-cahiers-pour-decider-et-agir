@@ -63,6 +63,7 @@ from corpus.communes import sources
 
 LIEUX = ("France", "Europe")
 FIN_DE_PHRASE = re.compile(r"[.!?…]$")
+BARRE = re.compile(r"[a-zà-ÿœæ]+/[a-zà-ÿœæ]+")
 BLANCHE = "liste blanche"
 TOUTES = "encre pâle, raturée, sous OCR"
 SOURCES = {
@@ -131,6 +132,20 @@ def raison(texte: str, admis: set[str], prenoms: set[str], noms: Publics) -> str
         return "prénom"
     if all(j in admis for j in jetons):
         return None
+    # en minuscules seulement : « aujourd'hui » et « start-up », un seul mot
+    # du lexique ; « et/ou » et « km/h », deux mots ; « œuvre », que Lexique
+    # écrit « oeuvre »
+    if texte.islower():
+        lie = texte.replace("œ", "oe").replace("æ", "ae")
+        if (
+            "".join(jetons) in admis
+            or all(j in admis for j in _jetons(lie))
+            or (
+                BARRE.fullmatch(lie)
+                and all(_simple(j) in admis for j in lie.split("/"))
+            )
+        ):
+            return None
     if any(c.isdigit() for c in texte):
         return "nombre"
     return "majuscule hors liste" if majuscule else "minuscule hors liste"
