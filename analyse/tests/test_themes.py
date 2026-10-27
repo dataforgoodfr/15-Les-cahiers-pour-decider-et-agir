@@ -1,6 +1,6 @@
 """Repérage des sous-thèmes, sur des phrases construites pour le test."""
 
-from classement.themes.lecture import lignes_imprimees
+from classement.themes.lecture import anonymisees, lignes_imprimees
 from classement.themes.sous_themes import normaliser, sous_themes
 
 
@@ -32,3 +32,18 @@ def test_grille_thematiques_v2():
     assert "Mobilité, carburant" in sous_themes("Le prix du gazole augmente")
     assert "Salaires et retraites" in sous_themes("Revaloriser les retraites")
     assert "Qualité de l'eau" in sous_themes("L'eau potable coûte trop cher")
+
+
+def test_anonymisees_lisibles_sans_lignes_imprimees():
+    question = "Quelles sont vos propositions pour la fiscalité ?"
+
+    def contribution(caches, corps):
+        return {"mots": "60", "caches": str(caches), "texte": f"{question}\n{corps}"}
+
+    cahier = [
+        contribution(2, "Nous voulons le RIC. " * 12),
+        contribution(50, "Instaurer le RIC au plus vite. " * 8),
+        contribution(0, "[…] " * 30),
+        contribution(0, "Il faut compter les bulletins blancs. " * 6),
+    ]
+    assert anonymisees({"CC_1.pdf": cahier}) == [{"RIC"}, {"Vote blanc et nul"}]

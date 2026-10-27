@@ -8,6 +8,7 @@ from collections import Counter
 
 import pymupdf
 
+from anonymisation.texte_seul.__main__ import LISIBLE
 from classement.themes.sous_themes import normaliser, sous_themes
 
 REPETEE = 3  # occurrences d'une ligne dans un cahier pour la tenir imprimée
@@ -53,3 +54,18 @@ def cahier(args) -> tuple[str, set[str]] | None:
     if len(t) < TEXTE_MIN:
         return None
     return fichier, sous_themes(t)
+
+
+def anonymisees(par_cahier: dict[str, list[dict]]) -> list[set[str]]:
+    """Sous-thèmes des contributions anonymisées (`anonymisation.texte_seul`)
+    qui gardent `LISIBLE` mots visibles, lignes imprimées du cahier retirées."""
+    sortie = []
+    for contributions in par_cahier.values():
+        imprimees = lignes_imprimees([c["texte"].split("\n") for c in contributions])
+        for c in contributions:
+            if int(c["mots"]) - int(c["caches"]) < LISIBLE:
+                continue
+            t = texte(c["texte"].split("\n"), imprimees)
+            if len(t) >= TEXTE_MIN:
+                sortie.append(sous_themes(t))
+    return sortie
