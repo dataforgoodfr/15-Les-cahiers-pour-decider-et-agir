@@ -89,7 +89,7 @@ par `uv run python -m corpus.typage`.
 
 | Module | Issue | Ce qu'il fait |
 |---|---|---|
-| `classement.themes` | #24 | Place de chaque sous-thème de la grille de l'association dans les contributions délimitées, le corpus et le Vrai débat ; repérage par mots-clés |
+| `classement.themes` | #24 | Place de chaque sous-thème de la grille de l'association dans les contributions délimitées, le corpus anonymisé sans LLM, les cahiers et le Vrai débat ; repérage par mots-clés |
 | `classement.propositions` | #94 | Contributions de l'édition Chabin (déjà anonymisées) découpées en propositions, l'unité de l'étalon de regroupement ; un échantillon à vérifier par des volontaires |
 | `classement.paires` | #94 | Paires de propositions à annoter (même proposition ou non), tirées par tranches de ressemblance de plongements locaux, plus une part au hasard ; lots de réglage et de test |
 | `classement.paires.accord` | #94 | Accord des annotateurs sur les paires jugées dans l'outil d'annotation (kappa de Cohen), litiges et adjudications |

@@ -3,13 +3,17 @@
     uv run python -m classement.themes [--delimitation data/delimitation/contributions.csv]
         [--versement data/versement] [--typage data/typage/departements]
         [--ouvertures data/ouvertures/ouvertures.csv]
+        [--anonymisees data/anonymisation/texte_seul/contributions.csv]
         [--vrai-debat ../data/vrai-debat/1059propositionsvraidébat.pdf]
         [--sans-corpus] [--sortie data/themes]
 
-Trois mesures, par sous-thème (`classement.themes.sous_themes`) :
+Quatre mesures, par sous-thème (`classement.themes.sous_themes`) :
 
 - **contributions** : les contributions délimitées à la main
   (`python -m decoupage.delimitation`) qui ont du texte dactylographié ;
+- **corpus anonymisé** : les contributions du découpage automatique,
+  anonymisées sans modèle (`python -m anonymisation.texte_seul`) ; toute la
+  chaîne sans LLM, à comparer aux contributions délimitées ;
 - **cahiers** : les cahiers du versement qui ont des pages dactylographiées
   (hors pages de service et d'ouverture). Long : `--sans-corpus` le saute ;
 - **Vrai débat** : les propositions de la plateforme du Vrai débat, et la
@@ -29,6 +33,7 @@ d'extrait.
 import argparse
 import csv
 import re
+import sys
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
@@ -37,6 +42,7 @@ import pymupdf
 
 from classement.themes.lecture import (
     TEXTE_MIN,
+    anonymisees,
     cahier,
     lignes_de_page,
     lignes_imprimees,
@@ -97,6 +103,15 @@ def mesurer_contributions(delimitation: Path, chemins: dict, lues: dict):
     return resultats, orphelins
 
 
+def mesurer_anonymisees(chemin: Path) -> list[set[str]]:
+    csv.field_size_limit(sys.maxsize)  # le texte entier d'une contribution
+    par_cahier = defaultdict(list)
+    with chemin.open(encoding="utf-8", newline="") as f:
+        for c in csv.DictReader(f):
+            par_cahier[c["fichier"]].append(c)
+    return anonymisees(par_cahier)
+
+
 def mesurer_corpus(chemins: dict, lues: dict) -> list[set[str]]:
     taches = [(f, chemins[f], n) for f, n in sorted(lues.items()) if f in chemins]
     with ProcessPoolExecutor() as ex:
@@ -129,7 +144,7 @@ def colonne(resultats: list[set[str]], nom: str) -> str:
     return f"{n / len(resultats):.0%} ({n})"
 
 
-def rapport(contributions, cahiers, vrai_debat) -> str:
+def rapport(contributions, anonymes, cahiers, vrai_debat) -> str:
     propositions = [r for r, _ in vrai_debat]
     votes = sum(v for _, v in vrai_debat) or 1
 
@@ -144,13 +159,17 @@ def rapport(contributions, cahiers, vrai_debat) -> str:
         (
             f"Repérage par mots-clés (`classement.themes.sous_themes`) : {len(contributions)} "
             f"contributions délimitées avec du texte dactylographié, "
+            f"{len(anonymes)} contributions du corpus anonymisé, "
             f"{len(cahiers)} cahiers du versement, {len(propositions)} "
             "propositions du Vrai débat. Un mot repéré ne dit pas que le sujet "
             "est traité : ce sont des ordres de grandeur, pas un classement."
         ),
         "",
-        "| sous-thème | thèmes | contributions | cahiers | Vrai débat | votes VD |",
-        "|---|---|---|---|---|---|",
+        (
+            "| sous-thème | thèmes | contributions | corpus anonymisé | cahiers | "
+            "Vrai débat | votes VD |"
+        ),
+        "|---|---|---|---|---|---|---|",
     ]
     ajouts = {nom for nom, _, _ in AJOUTS}
     ordre = sorted(TOUS, key=lambda s: -sum(s[0] in r for r in contributions))
@@ -161,6 +180,7 @@ def rapport(contributions, cahiers, vrai_debat) -> str:
         )
         lignes.append(
             f"| {etiquette} | {themes} | {colonne(contributions, nom)} | "
+            f"{colonne(anonymes, nom)} | "
             f"{colonne(cahiers, nom)} | {colonne(propositions, nom)} | "
             f"{part_votes(nom)} |"
         )
@@ -172,16 +192,18 @@ def rapport(contributions, cahiers, vrai_debat) -> str:
         "",
         "Un thème est touché si un de ses sous-thèmes l'est.",
         "",
-        "| thème | contributions | cahiers | Vrai débat |",
-        "|---|---|---|---|",
+        "| thème | contributions | corpus anonymisé | cahiers | Vrai débat |",
+        "|---|---|---|---|---|",
     ]
     for code, titre in THEMES.items():
         noms = {nom for nom, codes, _ in TOUS if code in codes}
         a_theme = [{"x"} if r & noms else set() for r in contributions]
+        d_theme = [{"x"} if r & noms else set() for r in anonymes]
         b_theme = [{"x"} if r & noms else set() for r in cahiers]
         c_theme = [{"x"} if r & noms else set() for r in propositions]
         lignes.append(
-            f"| {titre} | {colonne(a_theme, 'x')} | {colonne(b_theme, 'x')} | "
+            f"| {titre} | {colonne(a_theme, 'x')} | {colonne(d_theme, 'x')} | "
+            f"{colonne(b_theme, 'x')} | "
             f"{colonne(c_theme, 'x')} |"
         )
     hors_liste = [set() if r - ajouts else {"x"} for r in contributions]
@@ -211,6 +233,11 @@ def main() -> None:
         "--ouvertures", type=Path, default=Path("data/ouvertures/ouvertures.csv")
     )
     parser.add_argument(
+        "--anonymisees",
+        type=Path,
+        default=Path("data/anonymisation/texte_seul/contributions.csv"),
+    )
+    parser.add_argument(
         "--vrai-debat",
         type=Path,
         default=Path("../data/vrai-debat/1059propositionsvraidébat.pdf"),
@@ -222,10 +249,13 @@ def main() -> None:
     chemins = {p.name: p for p in args.versement.rglob("CC_*.pdf")}
     lues = pages_lues(args.typage, set(chemins), lire_ouvertures(args.ouvertures))
     contributions, orphelins = mesurer_contributions(args.delimitation, chemins, lues)
+    anonymes = (
+        mesurer_anonymisees(args.anonymisees) if args.anonymisees.exists() else []
+    )
     cahiers = [] if args.sans_corpus else mesurer_corpus(chemins, lues)
     vrai_debat = mesurer_vrai_debat(args.vrai_debat) if args.vrai_debat.exists() else []
 
-    texte_rapport = rapport(contributions, cahiers, vrai_debat)
+    texte_rapport = rapport(contributions, anonymes, cahiers, vrai_debat)
     frequents = sorted(
         ((mot, len(c)) for mot, c in orphelins.items() if len(c) >= CAHIERS_MIN),
         key=lambda x: -x[1],
