@@ -102,6 +102,57 @@ Les modules d'exploitation lisent encore les sorties d'`analyse/` (par
 exemple `classement.themes` lit `data/delimitation/`) plutôt que la base. À mesure que
 la base s'étoffe, ils devraient la lire directement.
 
+## Avec et sans LLM
+
+Chaque étape a une variante sans LLM : règles, régression, petits modèles
+qui tiennent sur un processeur ou une petite carte (GLiNER, 200 M de
+paramètres ; OCR de moins d'un milliard). La variante LLM passe par un gros
+modèle : Qwen3.8-27B ou Gemma 4 31B, servis en Europe, ou Claude Haiku,
+hébergé aux États-Unis et réservé aux pages et textes déjà anonymisés. Quand
+les deux variantes sont mesurées, c'est sur le même étalon, au 27 octobre 2026.
+
+| Étape | Étalon | Sans LLM | Avec LLM |
+|---|---|---|---|
+| Lire l'imprimé | Chabin, erreurs par caractère (médiane) | ABBYY 1,5 %, Tesseract 1,7 % ; OvisOCR3 (0,8 Md) 0,6 % | Inutile : un petit OCR lit déjà presque sans faute |
+| Lire les manuscrits | Chabin, erreurs par caractère | kraken : 28 % au mieux, illisible | Gemma 4 31B 6,4 %, Claude Haiku 5,4 % ; Chabin elle-même 2,8 % |
+| Découper, pages imprimées | 25 cahiers délimités, 165 pages | Règles et régression : précision 83 %, rappel 84 % | Qwen vérifié 79 % et 98 % ; Haiku 85 % et 98 % |
+| Découper, toutes pages | Les mêmes cahiers, 374 pages | Rappel 26 % : rien sur les manuscrits, sans texte | Qwen vérifié 81 % et 84 % ; Haiku 90 % et 84 % |
+| Anonymiser, texte seul | 93 cahiers délimités, données encadrées | Règles, liste blanche et zones : 89 % couvertes, 12 % des autres mots cachés ; avec GLiNER, 92 % | Pas mesuré : la vision travaille sur l'image |
+| Anonymiser, texte seul | Aude, 223 pages dactylographiées, masques des Archives (sans zones de signature) ; un masque est couvert quand ses mots de la couche texte sont cachés | Règles et liste blanche : 80 % couverts, 7 % des autres mots cachés ; avec GLiNER, 83 % | Vision seule : 91 % couverts, 1 % caché |
+| Anonymiser, image | Aude, masques des Archives, encre comprise | Règles, modèle et encre : 91 % couverts, mais 20 % des mots cachés sur les pages dactylographiées et 92 % sur les manuscrites | Vision seule : 88 % (dactylographiées) et 89 % (manuscrites), pour 1 à 2 % cachés |
+| Thèmes, chaîne entière | 1 488 contributions délimitées | Mots-clés sur le corpus anonymisé : la place de chaque sous-thème suit la main (corrélation 0,97) | — |
+| Thèmes, repérage | 300 contributions de l'édition Chabin, tirées au hasard ; accord entre les deux, sans annotation humaine | Mots-clés : 6,0 sous-thèmes par contribution | Claude Haiku : 5,7 ; deux sur trois en commun avec les mots-clés, kappa médian 0,46 |
+
+Deux mesures sont ponctuelles, faites hors des modules : le texte seul sur
+l'Aude et le repérage par Haiku. Les autres se refont avec la commande de
+leur module.
+
+Ce que ça dit :
+
+- **Sur l'imprimé, la chaîne sans LLM lit et découpe aussi bien.** Les
+  LLM trouvent plus de débuts de contributions (98 % contre 84 %), pas plus
+  justes. Les pages imprimées font la moitié des pages écrites (38 %
+  dactylographiées, 11 % mixtes).
+- **Pour anonymiser, la vision fait mieux.** Sur les pages dactylographiées
+  de l'Aude, elle couvre 91 % des masques contre 80 à 83 % sans LLM, et cache
+  sept fois moins de texte.
+- **Pour les thèmes, les deux repérages s'accordent sur les sujets
+  concrets** (ISF, vote blanc, RIC, salaires et retraites, immigration :
+  kappa de 0,75 à 0,99) **et divergent sur les sujets larges** (école, place
+  des citoyens, répartition de l'impôt : 0,27 à 0,31). Rien ne dit encore lequel a
+  raison : seule une annotation humaine des désaccords le tranchera.
+- **Sur les manuscrits, rien ne remplace un gros modèle.** Sans texte, les
+  règles ne découpent rien et la liste blanche n'a rien à garder ; l'encre
+  cache presque toute l'écriture. Même avec un LLM, aucun modèle servi en
+  Europe ne lit assez fidèlement pour publier ([`docs/htr.md`](htr.md)).
+- **Une limite.** Les 25 cahiers du découpage viennent des délimités, sur
+  lesquels les règles ont été réglées : sur les tronçons, départements jamais
+  vus, elles tombent à 52 % et 61 % (sur 21 débuts seulement), et les LLM
+  n'y sont pas mesurés, car leurs pages ne sont pas caviardées.
+- **Le coût.** L'anonymisation par la vision demanderait environ 440 heures
+  d'A100 pour le corpus avec les deux modèles ; l'anonymisation en texte
+  seul, sans LLM, tourne en quelques minutes sur un processeur.
+
 ## Les références
 
 Chaque mesure se fait contre un travail humain :
