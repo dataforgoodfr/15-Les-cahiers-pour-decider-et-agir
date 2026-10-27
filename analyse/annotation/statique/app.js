@@ -1504,7 +1504,9 @@ document.addEventListener("keydown", async (ev) => {
     m: () => { $("voir-marques").checked = !$("voir-marques").checked; if (etat.cahier) dessinerCalques(); },
     ...Object.fromEntries(raccourcis().map((nom, i) => [String(i + 1), () => choisirEtiquette(nom)])),
   };
-  if (actions[ev.key]) { ev.preventDefault(); await actions[ev.key](); }
+  // sur un clavier AZERTY, 1 donne « & » : à défaut, la touche physique du chiffre
+  const touche = actions[ev.key] ? ev.key : /^(?:Digit|Numpad)(\d)$/.exec(ev.code)?.[1];
+  if (actions[touche]) { ev.preventDefault(); await actions[touche](); }
 });
 
 // ---------- démarrage ----------

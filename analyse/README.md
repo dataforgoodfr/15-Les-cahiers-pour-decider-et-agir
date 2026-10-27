@@ -93,6 +93,8 @@ par `uv run python -m corpus.typage`.
 | `classement.propositions` | #94 | Contributions de l'édition Chabin (déjà anonymisées) découpées en propositions, l'unité de l'étalon de regroupement ; un échantillon à vérifier par des volontaires |
 | `classement.paires` | #94 | Paires de propositions à annoter (même proposition ou non), tirées par tranches de ressemblance de plongements locaux, plus une part au hasard ; lots de réglage et de test |
 | `classement.paires.accord` | #94 | Accord des annotateurs sur les paires jugées dans l'outil d'annotation (kappa de Cohen), litiges et adjudications |
+| `classement.themes.revue` | #24 | Propositions de l'édition Chabin à revoir dans l'outil d'annotation, sous-thème par sous-thème, avec leur place dans le PDF de l'édition |
+| `classement.themes.accord` | #24 | Accord des annotateurs sur les sous-thèmes, précision, rappel et kappa des mots-clés et du LLM, par proposition et par contribution |
 
 Les modèles locaux de l'anonymisation (GLiNER) sont dans un groupe à part :
 `uv sync --group modeles` ; OpenCV, pour `anonymisation.aude`, aussi : `uv sync --group

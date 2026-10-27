@@ -10,6 +10,8 @@ const AIDE = {
 };
 
 const $ = (id) => document.getElementById(id);
+// la touche physique, pas le caractère : sur un clavier AZERTY, 1 donne « & »
+const CHIFFRE = /^(?:Digit|Numpad)(\d)$/;
 const etat = { paires: [], miens: {}, litiges: [], possibles: [], mode: "juger", rang: 0 };
 
 function lire(cle, defaut) {
@@ -153,7 +155,7 @@ $("suiv").addEventListener("click", () => aller(1));
 $("a-faire").addEventListener("click", () => aFaire());
 document.addEventListener("keydown", (e) => {
   if (e.target instanceof HTMLInputElement || e.ctrlKey || e.metaKey || e.altKey) return;
-  const n = Number(e.key);
+  const n = Number(CHIFFRE.exec(e.code)?.[1] ?? NaN);
   if (n >= 1 && n <= etat.possibles.length) juger(etat.possibles[n - 1]);
   else if (e.key === "ArrowLeft") aller(-1);
   else if (e.key === "ArrowRight") aller(1);

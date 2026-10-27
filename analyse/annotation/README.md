@@ -115,11 +115,24 @@ la machine : les pages, les notes et les listes ne la quittent pas.
   `uv run python -m classement.paires.accord` donne l'accord (kappa de Cohen) ; il lit
   plusieurs journaux si chacun a annoté sur sa machine.
 
+- **Cocher les sous-thèmes des propositions** (http://127.0.0.1:8765/themes) :
+  les propositions de contributions de l'édition Chabin (sortie de
+  `python -m classement.themes.revue`), une à une. La proposition est
+  surlignée dans sa contribution entière, avec ses intitulés, et sur la page
+  de l'édition, à côté. On coche dans toute la grille les sous-thèmes qu'elle
+  traite (le filtre, `/`, trouve un sous-thème ; Entrée y coche le premier),
+  `c` la signale mal coupée, puis Entrée enregistre et passe à la suivante ;
+  aucune case cochée veut dire qu'aucun n'est traité. Un clic sur une autre
+  proposition de la contribution y va. Chacun annote seul, sous son prénom,
+  sans voir ce qu'ont repéré les mots-clés ou un LLM.
+  `uv run python -m classement.themes.accord` donne l'accord des annotateurs
+  et la justesse de chaque méthode, par proposition et par contribution.
+
 Raccourcis : ← → page, n p élément de liste, v vue puis élément suivant, r à
 revoir, + − 0 zoom, t pivoter, 1 à 9 étiquette, a accepter les repérages,
 m montrer ou cacher les repérages, Suppr supprimer la note ouverte, Échap
 annuler, Ctrl+Entrée enregistrer la
-note.
+note. Les chiffres se tapent sans Maj, même sur un clavier AZERTY (& pour 1).
 
 ## Les données
 
@@ -131,6 +144,7 @@ Tout reste dans `data/annotation/`, hors de git :
   (`Carnet.positions`, `Carnet.qualifications(remarques=False)`). Les
   transcriptions (`Carnet.transcriptions`) citent le cahier entier.
 - `classement.paires.jsonl` : les jugements des paires (`classement.paires.py`), en ajout seul.
+- `themes.jsonl` : les sous-thèmes cochés des propositions (`annotation.themes`), en ajout seul.
 - `listes/*.json` : les listes à revoir (`listes.py`), qui ne contiennent que
   des positions, des étiquettes et des commentaires sur la méthode. Une liste
   « à masquer » identifie chaque repérage ; ses rétablissements vont au

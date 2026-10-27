@@ -2,10 +2,13 @@
 
     uv run python -m annotation [--versement data/versement]
         [--typage data/typage/departements] [--dossier data/annotation]
-        [--paires data/paires/paires.csv] [--port 8765]
+        [--paires data/paires/paires.csv] [--themes data/themes/revue.csv]
+        [--chabin ../data/cahiers_chabin-pdfs] [--port 8765]
 
-Puis ouvrir http://127.0.0.1:8765, ou http://127.0.0.1:8765/paires pour
-juger les paires de propositions (`annotation.paires`). Le serveur n'écoute que sur la machine :
+Puis ouvrir http://127.0.0.1:8765, http://127.0.0.1:8765/paires pour
+juger les paires de propositions (`annotation.paires`), ou
+http://127.0.0.1:8765/themes pour cocher les sous-thèmes des propositions
+(`annotation.themes`). Le serveur n'écoute que sur la machine :
 les pages, les notes et les listes ne la quittent pas.
 
 Dans le dossier (hors git, comme tout `data/`) :
@@ -13,7 +16,8 @@ Dans le dossier (hors git, comme tout `data/`) :
 - `notes.jsonl` : le carnet des notes et des statuts (`annotation.carnet`) ;
 - `listes/` : les listes de pages à revoir (`annotation.listes`), écrites par
   les modules d'analyse ;
-- `classement.paires.jsonl` : les jugements des paires de propositions.
+- `classement.paires.jsonl` : les jugements des paires de propositions ;
+- `themes.jsonl` : les sous-thèmes cochés des propositions.
 
 Le panneau de chaque page montre son typage et ce que les analyses y ont
 détecté (`annotation.metadonnees`, lu dans `--donnees`).
@@ -38,6 +42,9 @@ from annotation.corpus import Corpus
 from annotation.metadonnees import Metadonnees
 from annotation.paires import ADJUGER, JUGEMENTS, JUGER, Journal, etat, lire_paires
 from annotation.paires import litiges as litiges_
+from annotation.themes import JournalThemes, grille, lire_revue
+from annotation.themes import etat as etat_themes
+from annotation.themes import image as image_chabin
 
 STATIQUE = Path(__file__).parent / "statique"
 TYPES_MIME = {".html": "text/html", ".js": "text/javascript", ".css": "text/css"}
@@ -103,6 +110,24 @@ def vue_paires(chemin: Path, journal: Journal, annotateur: str) -> dict:
     }
 
 
+def vue_themes(chemin: Path, journal: JournalThemes, annotateur: str) -> dict:
+    """Les contributions à revoir, la grille, et ce que l'annotateur a coché
+    dans chaque proposition, sans ce qu'ont coché les autres."""
+    annotations = etat_themes(journal.evenements())
+    return {
+        "contributions": lire_revue(chemin),
+        "grille": grille(),
+        "miens": {
+            p: {
+                "sous_themes": sorted(par[annotateur]["sous_themes"]),
+                "mal_coupee": par[annotateur]["mal_coupee"],
+            }
+            for p, par in annotations.items()
+            if annotateur in par
+        },
+    }
+
+
 def application(
     corpus: Corpus,
     carnet: Carnet,
@@ -110,6 +135,9 @@ def application(
     metadonnees: Metadonnees,
     paires: Path | None = None,
     journal: Journal | None = None,
+    themes: Path | None = None,
+    journal_themes: JournalThemes | None = None,
+    pdf_chabin: Path | None = None,
 ):
     class Requete(BaseHTTPRequestHandler):
         def log_message(self, *args):  # pas de noms de cahiers dans le terminal
@@ -145,6 +173,8 @@ def application(
                 chemin = "/statique/index.html"
             elif chemin == "/paires":
                 chemin = "/statique/paires.html"
+            elif chemin == "/themes":
+                chemin = "/statique/themes.html"
             if chemin.startswith("/statique/"):
                 fichier = STATIQUE / chemin.removeprefix("/statique/")
                 if fichier.parent != STATIQUE or not fichier.is_file():
@@ -157,6 +187,20 @@ def application(
                 )
             elif chemin == "/api/paires" and paires and journal:
                 self.json(vue_paires(paires, journal, q.get("annotateur", "").strip()))
+            elif chemin == "/api/themes" and themes and journal_themes:
+                self.json(
+                    vue_themes(themes, journal_themes, q.get("annotateur", "").strip())
+                )
+            elif chemin == "/api/themes/image" and themes and pdf_chabin:
+                pdf = q["pdf"]
+                if pdf not in {c["pdf"] for c in lire_revue(themes)}:
+                    raise KeyError(pdf)
+                largeur = max(400, min(2000, round(int(q["largeur"]) / 200) * 200))
+                self.envoyer(
+                    image_chabin(pdf_chabin / pdf, int(q["page"]), largeur),
+                    "image/jpeg",
+                    cache="private, max-age=86400",
+                )
             elif chemin == "/api/listes":
                 self.json(listes.sommaire(dossier_listes))
             elif chemin == "/api/liste":
@@ -290,6 +334,21 @@ def application(
                             corps["paire"], annotateur, corps.get("jugement"), role
                         )
                     )
+                elif chemin == "/api/themes/annoter" and themes and journal_themes:
+                    if corps["proposition"] not in {
+                        p["proposition"]
+                        for c in lire_revue(themes)
+                        for p in c["propositions"]
+                    }:
+                        raise KeyError(corps["proposition"])
+                    self.json(
+                        journal_themes.annoter(
+                            corps["proposition"],
+                            corps["annotateur"],
+                            corps.get("sous_themes"),
+                            corps.get("mal_coupee", False),
+                        )
+                    )
                 elif chemin == "/api/statut":
                     corpus.chemin(corps["fichier"])
                     self.json(
@@ -317,6 +376,10 @@ def main() -> None:
         "--donnees", type=Path, default=Path("data"), help="sorties des analyses"
     )
     parser.add_argument("--paires", type=Path, default=Path("data/paires/paires.csv"))
+    parser.add_argument("--themes", type=Path, default=Path("data/themes/revue.csv"))
+    parser.add_argument(
+        "--chabin", type=Path, default=Path("../data/cahiers_chabin-pdfs")
+    )
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument(
         "--sans-navigateur", action="store_true", help="ne pas ouvrir le navigateur"
@@ -334,6 +397,9 @@ def main() -> None:
             Metadonnees(args.donnees),
             args.paires,
             Journal(args.dossier / "paires.jsonl"),
+            args.themes,
+            JournalThemes(args.dossier / "themes.jsonl"),
+            args.chabin,
         ),
     )
     adresse = f"http://127.0.0.1:{args.port}"
