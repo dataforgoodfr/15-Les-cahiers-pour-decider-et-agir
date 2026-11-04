@@ -37,7 +37,7 @@ Chaque chantier est une issue qui regroupe ses sous-issues.
 | Lire le texte imprimé (OCR) | Vision, mesure de qualité | [#12](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/12), [docs/ocr.md](docs/ocr.md) |
 | Lire les manuscrits (HTR) | Vision, modèles légers sur CPU | [#6](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/6), [docs/htr.md](docs/htr.md) |
 | Modérer | Règles, petits modèles de classification, annotation | [#166](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/166) |
-| Classer et regrouper les propositions | Traitement de la langue, statistiques | [#4](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/4), [#94](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/94) |
+| Classer et regrouper les propositions | Traitement du langage, statistiques | [#4](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/4), [#94](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/94) |
 | La plateforme | Django, PostgreSQL, front | [#29](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/29), [#38](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/38) |
 | Restitution et valorisation | Produit, design, rédaction | [#10](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/10) |
 
