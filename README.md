@@ -1,13 +1,13 @@
 # Les cahiers pour décider et agir
 
 <p align="center">
-  <a href="https://www.decider-agir.fr/"><img src="docs/images/logo-cahiers.png" alt="Des cahiers pour décider et agir" height="90"></a>
+  <a href="https://www.decider-agir.fr/"><img src="docs/images/logo-cahiers.png" alt="Les Cahiers pour décider et agir" height="90"></a>
   &nbsp;&nbsp;
   <a href="https://dataforgood.fr/"><img src="docs/images/logo-dataforgood.svg" alt="Data For Good" height="90"></a>
 </p>
 
 Projet [Data For Good](https://dataforgood.fr/), saison 2026-2027, avec
-l'association [Des cahiers pour décider et agir](https://www.decider-agir.fr/).
+l'association [Les Cahiers pour décider et agir](https://www.decider-agir.fr/).
 
 ## Le projet
 
@@ -15,7 +15,7 @@ Pendant le Grand débat national (fin 2018 - début 2019), des milliers de
 communes ont ouvert des « cahiers citoyens » où chacun pouvait écrire ses
 doléances.
 
-**Des cahiers pour décider et agir** est un projet associatif : organiser la
+**Les Cahiers pour décider et agir** est un projet associatif : organiser la
 restitution de ces cahiers. Data For Good l'accompagne sur la partie données.
 
 ## L'objectif

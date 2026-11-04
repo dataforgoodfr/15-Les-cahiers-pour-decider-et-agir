@@ -2,7 +2,7 @@
 
 Ce projet est actif : l'équipe y travaille pendant la saison 2026-2027 de
 Data For Good, avec l'association
-[Des cahiers pour décider et agir](https://www.decider-agir.fr/).
+[Les Cahiers pour décider et agir](https://www.decider-agir.fr/).
 
 ## Rejoindre le projet
 
