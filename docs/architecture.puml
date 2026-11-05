@@ -3,9 +3,11 @@
 
   Person(RespEdit, "Responsable éditorial")
   Person(Benevole, "Analyste bénévole")
+  Person_Ext(Utilisateur, "Utilisateur externe")
   System_Boundary(c1, "Cahiers pour décider et agir") {
     Container_Boundary(django, "Containeur Django") {
-      Container(backend_app, "Backend Gestion et présentation du contenu éditorial", "Wagtail")
+      Container(backend_app, "Backoffice Gestion et présentation du contenu éditorial", "Wagtail headless")
+      Container(frontend_app, "Frontend utilisateur", "??")
       Container(api_cahier_app, "API Cahiers citoyen", "Application Django")
       ContainerDb(backend_db, "Contenu éditorial", "PostgreSQL")
       ContainerDb(cahier_db, "Meta-données cahiers citoyen", "PostgreSQL")
@@ -15,21 +17,15 @@
       Rel(backend_app, backend_db, "stockage et lecture", "SQL")
       Rel(backend_app, cahier_db, "Lecture", "SQL")
       Rel(backend_app, cahier_cellar, "Lecture", "S3")
+      Rel(frontend_app, backend_app, "Accès aux API wagtail", "HTTPS")
     }
     Container_Boundary(outil_analyse, "Outil d'analyse et de contribution") {
       Container(ihm_analyse, "Interface d'analyse et de contribution")
     }
   }
-  System_Boundary(utilisateur_ext, "Utilisateur externe") {
-    Person_Ext(Utilisateur, "Utilisateur externe")
-    Container_Boundary(navigateur, "Navigateur Wb") {
-      Container(frontend_app, "Frontend cahiers pour décider et agir")      
-    }
-    Rel(Utilisateur, frontend_app, "Utilisation de l'application web")
-  }
+  Rel(Utilisateur, frontend_app, "Utilisation de l'application web")
   Rel(ihm_analyse, api_cahier_app, "Recherche des cahiers à analyser / enregistrement des résultats d'analyse")
   Rel(ihm_analyse, "cahier_cellar", "Lecture des PDF pour affichage")
-  Rel(frontend_app, backend_app, "HTTPS")
   Rel(RespEdit, backend_app, "HTTPS")
   Rel(Benevole, ihm_analyse, "Analyse des cahiers citoyens")
 @enduml
