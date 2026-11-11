@@ -27,10 +27,9 @@ Il s'agit d'un bénévole de l'association D4G qui s'implique sur ce projet pour
 
  ### Composants applicatifs
 
- Les composants applicatifs sont réalisés sous la forme d'applications Django.
-
- Le composant **Gestion et présentation du contenu éditorial** représente l'application
- centrale du projet. Il est chargé de présenter le contenu éditorial aux utilisateurs externes
+ Le composant **Backoffice de gestion et présentation du contenu éditorial** représente l'application
+ centrale du projet. Il permet au **responsable éditorial** de gérer le contenu du site. Ce composant
+ expose des API au compostant **Frontend utilisateur** qui est chargé de présenter le contenu éditorial aux utilisateurs externes
  et de gérer les interactions telles que définies par les spécifications.
 
  Le composant **interface d'analyse et de contribution** sera ouvert uniquement pendant
