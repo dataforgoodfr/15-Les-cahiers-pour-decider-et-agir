@@ -489,3 +489,79 @@ class ChargerExtraitsTests(TestCase):
         sortie = self.charger(["exporté,2,2,2,pdf/a.pdf"])
         self.assertIn("1 extraits rattachés, 1 retirés", sortie)
         self.assertFalse(Contribution.objects.get(pk=self.contributions[0].pk).extrait)
+
+
+EXTRAITS_CHABIN = [
+    {
+        "chabin_pdf_files": [
+            "Cahier-de-doleances-de-Corme-Ecluse-transcription.pdf"
+        ],
+        "nb_contrib": 2,
+        "contributions": [
+            {
+                "title": "1. Manuscrit, 19 lignes, 152 mots",
+                "text": "Première doléance",
+            },
+            {
+                "title": "7. Manuscrit, 6 lignes, 31 mots (homme)",
+                "text": "Septième doléance",
+            },
+        ],
+        "found_nb_contrib": 2,
+        "city": {
+            "insee": "17119",
+            "commune": "Corme-Écluse",
+            "habitants": 1121,
+        },
+        "pdf_files": [
+            "BnF_GDN_17_PDF/CC/CC_17600_190225_17119_MD_00811.pdf"
+        ],
+    }
+]
+
+
+class ChargerChabinExtraitsTests(TestCase):
+    """Vérifie le chargement et l'idempotence de la commande charger_chabin_extraits."""
+
+    def charger(self, donnees=EXTRAITS_CHABIN):
+        with tempfile.TemporaryDirectory() as dossier:
+            fichier = Path(dossier) / "cahiers_chabin_extraits.json"
+            fichier.write_text(json.dumps(donnees), encoding="utf-8")
+            sortie = StringIO()
+            call_command("charger_chabin_extraits", "--fichier", fichier, stdout=sortie)
+        return sortie.getvalue()
+
+    def test_chargement_run_documents_et_contributions(self):
+        sortie = self.charger()
+        run = Run.objects.get()
+        self.assertEqual(run.genre, Run.Genre.DELIMITATION)
+        self.assertEqual(
+            run.libelle,
+            "Extraits choisis des transcriptions de Marie-Anne Chabin",
+        )
+        self.assertEqual(run.auteur, "Marie-Anne Chabin")
+
+        document = Document.objects.get()
+        self.assertEqual(document.fichier, "CC_17600_190225_17119_MD_00811.pdf")
+        self.assertEqual(document.categorie, Document.Categorie.CAHIER)
+        self.assertEqual(document.code_insee, "17119")
+        self.assertEqual(document.code_postal, "17600")
+
+        premiere, septieme = document.contributions.all()
+        self.assertEqual(premiere.run, run)
+        self.assertEqual(premiere.rang, 1)
+        self.assertEqual(premiere.texte, "Première doléance")
+        self.assertEqual((premiere.page_debut, premiere.page_fin), (0, 0))
+
+        self.assertEqual(septieme.rang, 7)
+        self.assertEqual(septieme.texte, "Septième doléance")
+        self.assertEqual((septieme.page_debut, septieme.page_fin), (0, 0))
+        self.assertIn("2 contributions chargées dans 1 documents", sortie)
+
+    def test_idempotence_lors_d_une_reexecution(self):
+        self.charger()
+        self.charger()
+        self.assertEqual(Run.objects.count(), 1)
+        self.assertEqual(Document.objects.count(), 1)
+        self.assertEqual(Contribution.objects.count(), 2)
+

@@ -1,8 +1,62 @@
-# Plateforme
+# Introduction
 
-L'application de production, en Django, hébergée sur Clever Cloud
-([#34](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/34)).
-Les modèles du POC y sont repris un à un. Pour l'instant :
+Le répertoire `plateforme` contient le code de la **plateforme** que nous
+construisons avec [Décider et Agir](https://www.decider-agir.fr/).
+
+Au 11 novembre 2026, une grande partie de ce code reprend des éléments du
+Proof of Concept [cahiers doléances](https://github.com/dataforgoodfr/cahier_doleances)
+réalisé durant l'été 2026 par Data for Good. **Ce code sera progressivement remanié afin
+de ne conserver que les éléments nécessaires à la plateforme, en supprimant les parties
+qui traitent de l'extraction des données des cahiers.**
+
+Notre plateforme est développé en utilisant le framework [Django](https://docs.djangoproject.com/fr/6.1/).
+Nous serons probablement appelé à faire aussi appel à un peu de Javascript pour le frontend.
+Nous pensons pour cela à utiliser [htmx](https://htmx.org/), ce que nous analyserons plus en détail au cours du projet.
+
+# Pour bien démarrer
+
+## Les prérequis
+
+- Si vous avez besoin de (mieux) connaître Django,
+  ce [tuto](https://docs.djangoproject.com/fr/6.1/intro/tutorial01/) est parfait.
+- Il est nécessaire que vous installiez [uv](https://docs.astral.sh/uv/),
+  le gestionnaire de dépendances Python utilisé par Data for Good.
+- Il vous faudra aussi installer [Docker](https://www.docker.com/get-started/).
+  En particulier pour faire fonctionner simplement [Postgresql](https://www.postgresql.org/).
+
+## Et maintenant... c'est parti !
+
+Ouvrez un terminal dans le répertoire `plateforme`.
+
+```sh
+docker run -d --name pg-cahiers -e POSTGRES_PASSWORD=cahiers -e POSTGRES_DB=cahiers -p 5432:5432 postgres:18
+```
+
+pour lancer la base de données. Les fois suivantes, le container Docker ayant été chargé,
+vous utiliserez la commande `docker start pg-cahiers`.
+
+Puis :
+
+```sh
+export DATABASE_URL=postgres://postgres:cahiers@localhost/cahiers DJANGO_DEBUG=1
+uv sync # Installe les dépendances Python sur votre machine.
+uv run python manage.py migrate # Met à jour la base de données (avec l'ORM Django).
+uv run python manage.py charger_chabin_extraits # Charge les extraits des contributions Chabin.
+uv run python manage.py createsuperuser # Crée un superutilisateur.
+uv run python manage.py runserver
+```
+
+Le site sur http://localhost:8000/ est accessible.
+La console d'administration de Django est disponible sur http://localhost:8000/admin/.
+
+Pour lancer les tests : `uv run python manage.py test`.
+
+Pour toute question, rendez-vous
+sur [Mattermost 15: Cahiers D&A Dev](https://mattermost.services.dataforgood.fr/data-for-good/channels/15-cahiers-da-dev).
+
+# Modèles Django
+
+*Au 11 décembre 2026*, les modèles du POC y sont repris un à un. Cela évoluera. Pour l'instant :
 
 - `territoires` : régions, départements et communes **au 1er janvier 2019**,
   le millésime des codes INSEE des cahiers. Communes déléguées, associées et
@@ -56,14 +110,14 @@ Le format commun de la chaîne texte
 ([#16](https://github.com/dataforgoodfr/15-Les-cahiers-pour-decider-et-agir/issues/16)) :
 les étapes lisent ces tables, pas les PDF. PostgreSQL fait référence.
 
-| Table | Une ligne par | Contenu |
-| --- | --- | --- |
-| `Document` | fichier du versement | catégorie, commune du nom de fichier, date de dépôt, nombre de pages |
-| `Rattachement` | changement de commune dans un document | page à partir de laquelle le cahier est celui d'une autre commune (#42) |
-| `Page` | page | type (vierge, dactylographiée, mixte, manuscrite), rotation, page de service ou d'ouverture, couche texte native du PDF |
-| `Run` | couche produite | genre, auteur, modèle et paramètres ; un seul actif par genre |
-| `Transcription` | page et run de transcription | texte, qualité entre 0 et 1, chemin des sorties lourdes (ALTO, images) hors base |
-| `Contribution` | contribution et run de délimitation | de (page, x, y) à (page, x, y), en points PDF ; publiable ou non ; texte s'il a été lu |
+| Table           | Une ligne par                          | Contenu                                                                                                                 |
+|-----------------|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| `Document`      | fichier du versement                   | catégorie, commune du nom de fichier, date de dépôt, nombre de pages                                                    |
+| `Rattachement`  | changement de commune dans un document | page à partir de laquelle le cahier est celui d'une autre commune (#42)                                                 |
+| `Page`          | page                                   | type (vierge, dactylographiée, mixte, manuscrite), rotation, page de service ou d'ouverture, couche texte native du PDF |
+| `Run`           | couche produite                        | genre, auteur, modèle et paramètres ; un seul actif par genre                                                           |
+| `Transcription` | page et run de transcription           | texte, qualité entre 0 et 1, chemin des sorties lourdes (ALTO, images) hors base                                        |
+| `Contribution`  | contribution et run de délimitation    | de (page, x, y) à (page, x, y), en points PDF ; publiable ou non ; texte s'il a été lu                                  |
 
 Le fichier PDF (`CC_01000_190304_01053_MD_15462.pdf`) et le numéro de page,
 à partir de 1, désignent une page partout, dans `analyse/` comme ici.
@@ -110,15 +164,15 @@ ni `collectstatic` : les hooks s'en chargent.
 
 Variables d'environnement à définir :
 
-| Variable | Valeur |
-| --- | --- |
-| `APP_FOLDER` | `plateforme` |
+| Variable                   | Valeur                                                     |
+|----------------------------|------------------------------------------------------------|
+| `APP_FOLDER`               | `plateforme`                                               |
 | `CC_PYTHON_UV_RUN_COMMAND` | `uv run gunicorn config.wsgi` (gunicorn écoute sur `PORT`) |
-| `CC_POST_BUILD_HOOK` | `uv run python manage.py collectstatic --noinput` |
-| `CC_PRE_RUN_HOOK` | `uv run python manage.py migrate --noinput` |
-| `DJANGO_SECRET_KEY` | une longue chaîne aléatoire |
-| `DJANGO_ALLOWED_HOSTS` | les domaines, séparés par des virgules |
-| `CELLAR_BUCKET` | le nom du bucket des PDF, privé |
+| `CC_POST_BUILD_HOOK`       | `uv run python manage.py collectstatic --noinput`          |
+| `CC_PRE_RUN_HOOK`          | `uv run python manage.py migrate --noinput`                |
+| `DJANGO_SECRET_KEY`        | une longue chaîne aléatoire                                |
+| `DJANGO_ALLOWED_HOSTS`     | les domaines, séparés par des virgules                     |
+| `CELLAR_BUCKET`            | le nom du bucket des PDF, privé                            |
 
 `POSTGRESQL_ADDON_URI` et `CELLAR_ADDON_*` sont fournies par les add-ons.
 Après le premier déploiement, charger les communes une fois avec
