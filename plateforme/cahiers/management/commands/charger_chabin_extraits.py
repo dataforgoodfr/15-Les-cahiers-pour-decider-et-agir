@@ -14,6 +14,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from cahiers import noms
 from cahiers.models import Contribution, Document, Run
 
 LIBELLE = "Extraits choisis des transcriptions de Marie-Anne Chabin"
@@ -21,15 +22,6 @@ AUTEUR = "Marie-Anne Chabin"
 
 CHAMPS_DOCUMENT = ["categorie", "code_insee", "code_postal"]
 CHAMPS_CONTRIBUTION = ["texte", "page_debut", "page_fin"]
-
-
-def extraire_code_postal(nom_fichier: str) -> str:
-    """Extrait le code postal d'un nom de fichier PDF standardisé.
-
-    Exemple : `"CC_17600_190225_17119_MD_00811.pdf"` -> `"17600"`.
-    """
-    morceau = nom_fichier.split("_")
-    return morceau[1] if len(morceau) > 1 else ""
 
 
 def extraire_rang(titre: str) -> int:
@@ -72,17 +64,10 @@ class Command(BaseCommand):
         )
 
         # 2. Préparation et création en masse des documents
-        documents = []
-        for entree in entrees:
-            nom_fichier = Path(entree["pdf_files"][0]).name
-            documents.append(
-                Document(
-                    fichier=nom_fichier,
-                    categorie=Document.Categorie.CAHIER,
-                    code_insee=entree["city"]["insee"],
-                    code_postal=extraire_code_postal(nom_fichier),
-                )
-            )
+        documents = [
+            noms.document(Path(entree["pdf_files"][0]).name)
+            for entree in entrees
+        ]
 
         Document.objects.bulk_create(
             documents,
