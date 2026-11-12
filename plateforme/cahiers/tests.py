@@ -523,6 +523,15 @@ EXTRAITS_CHABIN = [
 class ChargerChabinExtraitsTests(TestCase):
     """Vérifie le chargement et l'idempotence de la commande charger_chabin_extraits."""
 
+    def setUp(self):
+        self.media = tempfile.TemporaryDirectory()
+        self.reglage = override_settings(MEDIA_ROOT=self.media.name)
+        self.reglage.enable()
+
+    def tearDown(self):
+        self.reglage.disable()
+        self.media.cleanup()
+
     def charger(self, donnees=EXTRAITS_CHABIN):
         with tempfile.TemporaryDirectory() as dossier:
             fichier = Path(dossier) / "cahiers_chabin_extraits.json"
@@ -540,23 +549,41 @@ class ChargerChabinExtraitsTests(TestCase):
             "Extraits choisis des transcriptions de Marie-Anne Chabin",
         )
         self.assertEqual(run.auteur, "Marie-Anne Chabin")
+        self.assertTrue(run.actif)
 
         document = Document.objects.get()
         self.assertEqual(document.fichier, "CC_17600_190225_17119_MD_00811.pdf")
         self.assertEqual(document.categorie, Document.Categorie.CAHIER)
         self.assertEqual(document.code_insee, "17119")
         self.assertEqual(document.code_postal, "17600")
+        self.assertEqual(document.date_depot, date(2019, 2, 25))
+        self.assertEqual(document.commune.nom, "Corme-Écluse")
+        self.assertEqual(document.commune.departement.nom, "Charente-Maritime")
 
         premiere, septieme = document.contributions.all()
         self.assertEqual(premiere.run, run)
         self.assertEqual(premiere.rang, 1)
         self.assertEqual(premiere.texte, "Première doléance")
         self.assertEqual((premiere.page_debut, premiere.page_fin), (0, 0))
+        self.assertIn("Première doléance".encode("latin-1"), premiere.extrait.read())
 
         self.assertEqual(septieme.rang, 7)
         self.assertEqual(septieme.texte, "Septième doléance")
         self.assertEqual((septieme.page_debut, septieme.page_fin), (0, 0))
         self.assertIn("2 contributions chargées dans 1 documents", sortie)
+        self.assertEqual(Contribution.objects.montrables().count(), 2)
+
+    def test_la_page_d_accueil_montre_l_exemple(self):
+        self.charger()
+        accueil = self.client.get("/")
+        self.assertContains(accueil, "Corme-Écluse")
+        self.assertContains(accueil, "Charente-Maritime")
+        self.assertContains(accueil, "25 février 2019")
+        contribution = accueil.context["contribution"]
+        extrait = self.client.get(f"/contributions/{contribution.pk}/extrait.pdf")
+        self.assertEqual(extrait.status_code, 200)
+        self.assertEqual(extrait["Content-Type"], "application/pdf")
+        self.assertTrue(b"".join(extrait.streaming_content).startswith(b"%PDF"))
 
     def test_idempotence_lors_d_une_reexecution(self):
         self.charger()
@@ -564,4 +591,6 @@ class ChargerChabinExtraitsTests(TestCase):
         self.assertEqual(Run.objects.count(), 1)
         self.assertEqual(Document.objects.count(), 1)
         self.assertEqual(Contribution.objects.count(), 2)
+        self.assertEqual(Contribution.objects.montrables().count(), 2)
+        self.assertEqual(Commune.objects.count(), 1)
 

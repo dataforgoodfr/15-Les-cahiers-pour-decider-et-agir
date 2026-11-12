@@ -46,8 +46,10 @@ uv run python manage.py createsuperuser # Crée un superutilisateur.
 uv run python manage.py runserver
 ```
 
-Le site sur http://localhost:8000/ est accessible.
-La console d'administration de Django est disponible sur http://localhost:8000/admin/.
+Le site sur http://localhost:8000/ est accessible : la page d'accueil tire
+au sort une contribution de ce jeu d'exemple (commune et date de dépôt
+comprises). La console d'administration de Django est disponible sur
+http://localhost:8000/admin/.
 
 Pour lancer les tests : `uv run python manage.py test`.
 
@@ -93,6 +95,11 @@ sur [Mattermost 15: Cahiers D&A Dev](https://mattermost.services.dataforgood.fr/
   ou courriels, dont `python -m decoupage.chabin` retrouve le début dans l'OCR du scan,
   avec leur texte anonymisé par l'édition. Les manuscrits, sans position, ne
   sont pas chargés.
+  Le jeu d'exemple public (`uv run python manage.py charger_chabin_extraits`,
+  fichier `cahiers/data/cahiers_chabin_extraits.json`) suffit pour la page
+  d'accueil d'un clone neuf : son run est activé tant qu'aucune autre
+  délimitation ne l'est, chaque contribution reçoit un PDF d'extrait, et les
+  communes citées sont créées si le référentiel INSEE n'est pas encore là.
 
 ## La charte graphique
 
