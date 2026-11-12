@@ -1,0 +1,29 @@
+@startuml C4_Elements
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+  Person(RespEdit, "Responsable éditorial")
+  Person(Benevole, "Analyste bénévole")
+  Person_Ext(Utilisateur, "Utilisateur externe")
+  System_Boundary(c1, "Cahiers pour décider et agir") {
+    Container(frontend_app, "Frontend utilisateur", "??")
+    Container(ihm_analyse, "Outil d'analyse et de contribution")
+    Container_Boundary(django, "Containeur Django") {
+      Container(backend_app, "Backoffice Gestion et présentation du contenu éditorial", "CMS")
+      Container(api_cahier_app, "API Cahiers citoyen", "Application Django")
+      ContainerDb(backend_db, "Contenu éditorial", "PostgreSQL")
+      ContainerDb(cahier_db, "Meta-données cahiers citoyen", "PostgreSQL")
+      ContainerDb(cahier_cellar, "PDF des cahiers citoyen", "Cellar")
+      Rel(api_cahier_app, cahier_db, "lecture/écriture", "SQL")
+      Rel(api_cahier_app, cahier_cellar, "lecture/écriture", "S3")
+      Rel(backend_app, backend_db, "stockage et lecture", "SQL")
+      Rel(backend_app, cahier_db, "Lecture", "SQL")
+      Rel(backend_app, cahier_cellar, "Lecture", "S3")
+      Rel(frontend_app, backend_app, "Accès aux API CMS", "HTTPS")
+    }
+  }
+  Rel(Utilisateur, frontend_app, "Utilisation de l'application web")
+  Rel(ihm_analyse, api_cahier_app, "Recherche des cahiers à analyser / enregistrement des résultats d'analyse")
+  Rel(ihm_analyse, "cahier_cellar", "Lecture des PDF pour affichage")
+  Rel(RespEdit, backend_app, "HTTPS")
+  Rel(Benevole, ihm_analyse, "Analyse des cahiers citoyens")
+@enduml
