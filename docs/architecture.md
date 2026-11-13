@@ -1,6 +1,6 @@
 # Architecture
 
-![Architecture technique](architecture.png)
+![Architecture technique](architecture.svg)
 
 ## Description des composants
 
