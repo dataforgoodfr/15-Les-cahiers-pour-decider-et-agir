@@ -16,12 +16,27 @@ function garder(cle, valeur) {
 // pour filtrer sans se soucier des accents ni des majuscules
 const simple = (s) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
+// En ligne, le lien de l'annotateur porte son jeton (?j=) : le serveur en
+// déduit le prénom, et la vue des cahiers n'existe pas.
+const JETON = new URLSearchParams(location.search).get("j");
+function appel(url, options = {}) {
+  if (JETON) options.headers = { ...options.headers, "X-Jeton": JETON };
+  return fetch(url, options);
+}
+function prenomDuServeur(d) {
+  if (!d.annotateur) return;
+  $("annotateur").value = d.annotateur;
+  $("annotateur").readOnly = true;
+}
+if (JETON) document.querySelector('header a[href="/"]')?.remove();
+
 function annotateur() { return $("annotateur").value.trim(); }
 
 async function charger() {
-  const r = await fetch(`/api/themes?annotateur=${encodeURIComponent(annotateur())}`);
+  const r = await appel(`/api/themes?annotateur=${encodeURIComponent(annotateur())}`);
   if (!r.ok) { $("info").textContent = "Le serveur ne sert pas les sous-thèmes."; return; }
   const d = await r.json();
+  prenomDuServeur(d);
   etat.contributions = d.contributions;
   etat.propositions = d.contributions.flatMap((c) => c.propositions.map((p) => ({ ...p, c })));
   etat.grille = d.grille;
@@ -154,7 +169,7 @@ async function annoter(sousThemes) {
   const p = etat.propositions[etat.rang];
   if (!p || !annotateur()) return;
   const malCoupee = $("mal-coupee").checked;
-  const r = await fetch("/api/themes/annoter", {
+  const r = await appel("/api/themes/annoter", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ proposition: p.proposition, annotateur: annotateur(), sous_themes: sousThemes, mal_coupee: malCoupee }),

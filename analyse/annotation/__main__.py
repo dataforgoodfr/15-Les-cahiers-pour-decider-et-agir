@@ -22,6 +22,12 @@ Dans le dossier (hors git, comme tout `data/`) :
 Le panneau de chaque page montre son typage et ce que les analyses y ont
 détecté (`annotation.metadonnees`, lu dans `--donnees`).
 
+En ligne (`--en-ligne`, sur Clever Cloud), le serveur ne sert que les
+paires et les sous-thèmes, tirés de l'édition Chabin : jamais les cahiers du
+versement. Chaque annotateur a son lien, `/paires?j=JETON` ; le serveur en
+déduit son prénom, lu dans la variable ANNOTATEURS (`jeton:Prénom,…`), et
+refuse les requêtes sans jeton connu.
+
 Une page qu'`corpus.orientation` détecte tournée d'un quart de tour s'affiche
 tournée de ROTATION_DETECTEE : à l'ouverture du cahier, la rotation entre au
 carnet (l'ordre de lecture des notes en dépend, `panels.selection` la relit), sauf
@@ -30,6 +36,7 @@ si la page a déjà une rotation, même remise à 0, ou des notes.
 
 import argparse
 import json
+import os
 import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -48,6 +55,41 @@ from annotation.themes import image as image_chabin
 
 STATIQUE = Path(__file__).parent / "statique"
 TYPES_MIME = {".html": "text/html", ".js": "text/javascript", ".css": "text/css"}
+# en ligne, rien d'autre : ni la vue des cahiers, ni les listes, ni le carnet
+EN_LIGNE_GET = {
+    "/paires",
+    "/themes",
+    "/statique/paires.html",
+    "/statique/paires.js",
+    "/statique/themes.html",
+    "/statique/themes.js",
+    "/statique/style.css",
+    "/api/paires",
+    "/api/themes",
+    "/api/themes/image",
+}
+EN_LIGNE_POST = {"/api/paires/juger", "/api/themes/annoter"}
+# les pages de l'édition Chabin sont publiques : pas de jeton pour les images,
+# qu'une balise <img> ne saurait pas envoyer en en-tête
+SANS_JETON = {"/api/themes/image"}
+LONGUEUR_JETON = 16
+
+
+def lire_jetons(texte: str) -> dict[str, str]:
+    """`jeton:Prénom,jeton:Prénom` en {jeton: prénom}. Un jeton court, un
+    prénom vide ou un jeton répété est une erreur : mieux vaut ne pas démarrer."""
+    jetons: dict[str, str] = {}
+    for paire in filter(None, (x.strip() for x in texte.split(","))):
+        jeton, _, nom = paire.partition(":")
+        jeton, nom = jeton.strip(), nom.strip()
+        if len(jeton) < LONGUEUR_JETON or not nom or jeton in jetons:
+            raise ValueError(f"ANNOTATEURS : entrée invalide pour « {nom or '?'} »")
+        jetons[jeton] = nom
+    if not jetons:
+        raise ValueError("ANNOTATEURS est vide")
+    return jetons
+
+
 # Étiquettes des notes posées sur la page, par groupe. Les données
 # personnelles se marquent d'un rectangle : c'est la référence de
 # l'anonymisation (#7). Le texte de la note ne doit pas recopier la donnée.
@@ -129,16 +171,21 @@ def vue_themes(chemin: Path, journal: JournalThemes, annotateur: str) -> dict:
 
 
 def application(
-    corpus: Corpus,
-    carnet: Carnet,
-    dossier_listes: Path,
-    metadonnees: Metadonnees,
+    corpus: Corpus | None,
+    carnet: Carnet | None,
+    dossier_listes: Path | None,
+    metadonnees: Metadonnees | None,
     paires: Path | None = None,
     journal: Journal | None = None,
     themes: Path | None = None,
     journal_themes: JournalThemes | None = None,
     pdf_chabin: Path | None = None,
+    jetons: dict[str, str] | None = None,
 ):
+    """`jetons` passe le serveur en ligne : seulement les paires et les
+    sous-thèmes, et l'annotateur se déduit du jeton, jamais de la requête."""
+    en_ligne = jetons is not None
+
     class Requete(BaseHTTPRequestHandler):
         def log_message(self, *args):  # pas de noms de cahiers dans le terminal
             pass
@@ -160,9 +207,28 @@ def application(
         def erreur(self, statut, message: str):
             self.json({"erreur": message}, statut)
 
+        def annotateur_en_ligne(self, chemin: str, q: dict) -> str | None:
+            """Le prénom du jeton (en-tête X-Jeton, ou `j` dans l'adresse) ;
+            None si la requête est refusée, la réponse est alors envoyée."""
+            permis = EN_LIGNE_POST if self.command == "POST" else EN_LIGNE_GET
+            if chemin not in permis:
+                self.erreur(HTTPStatus.NOT_FOUND, "introuvable")
+                return None
+            if not chemin.startswith("/api/") or chemin in SANS_JETON:
+                return ""
+            nom = jetons.get(self.headers.get("X-Jeton") or q.get("j", ""))
+            if nom is None:
+                self.erreur(HTTPStatus.FORBIDDEN, "lien d'annotateur inconnu")
+            return nom
+
         def do_GET(self):
             url = urlparse(self.path)
             q = {k: v[0] for k, v in parse_qs(url.query).items()}
+            if en_ligne:
+                nom = self.annotateur_en_ligne(url.path, q)
+                if nom is None:
+                    return
+                q["annotateur"] = nom
             try:
                 self.route_get(url.path, q)
             except (KeyError, IndexError, ValueError) as e:
@@ -186,11 +252,13 @@ def application(
                     {"etiquettes": ETIQUETTES, "problemes": PROBLEMES, "types": TYPES}
                 )
             elif chemin == "/api/paires" and paires and journal:
-                self.json(vue_paires(paires, journal, q.get("annotateur", "").strip()))
+                vue = vue_paires(paires, journal, q.get("annotateur", "").strip())
+                self.json(vue | ({"annotateur": q["annotateur"]} if en_ligne else {}))
             elif chemin == "/api/themes" and themes and journal_themes:
-                self.json(
-                    vue_themes(themes, journal_themes, q.get("annotateur", "").strip())
+                vue = vue_themes(
+                    themes, journal_themes, q.get("annotateur", "").strip()
                 )
+                self.json(vue | ({"annotateur": q["annotateur"]} if en_ligne else {}))
             elif chemin == "/api/themes/image" and themes and pdf_chabin:
                 pdf = q["pdf"]
                 if pdf not in {c["pdf"] for c in lire_revue(themes)}:
@@ -275,7 +343,14 @@ def application(
             longueur = int(self.headers.get("Content-Length", 0))
             try:
                 corps = json.loads(self.rfile.read(longueur) or b"{}")
-                chemin = urlparse(self.path).path
+                url = urlparse(self.path)
+                chemin = url.path
+                if en_ligne:
+                    q = {k: v[0] for k, v in parse_qs(url.query).items()}
+                    nom = self.annotateur_en_ligne(chemin, q)
+                    if nom is None:
+                        return
+                    corps["annotateur"] = nom
                 if chemin == "/api/notes":
                     corpus.chemin(corps["fichier"])
                     self.json(carnet.noter(corps))
@@ -384,7 +459,17 @@ def main() -> None:
     parser.add_argument(
         "--sans-navigateur", action="store_true", help="ne pas ouvrir le navigateur"
     )
+    parser.add_argument(
+        "--en-ligne",
+        action="store_true",
+        help="paires et sous-thèmes seulement, sur toutes les interfaces, port PORT, "
+        "annotateurs lus dans ANNOTATEURS",
+    )
     args = parser.parse_args()
+
+    if args.en_ligne:
+        en_ligne(args)
+        return
 
     corpus = Corpus(args.versement, args.typage)
     carnet = Carnet(args.dossier / "notes.jsonl")
@@ -412,6 +497,28 @@ def main() -> None:
         serveur.serve_forever()
     except KeyboardInterrupt:
         pass
+
+
+def en_ligne(args: argparse.Namespace) -> None:
+    jetons = lire_jetons(os.environ.get("ANNOTATEURS", ""))
+    port = int(os.environ.get("PORT", args.port))
+    serveur = ThreadingHTTPServer(
+        ("0.0.0.0", port),
+        application(
+            None,
+            None,
+            None,
+            None,
+            args.paires,
+            Journal(args.dossier / "paires.jsonl"),
+            args.themes,
+            JournalThemes(args.dossier / "themes.jsonl"),
+            args.chabin,
+            jetons=jetons,
+        ),
+    )
+    print(f"En ligne sur le port {port}, {len(jetons)} annotateurs", flush=True)
+    serveur.serve_forever()
 
 
 if __name__ == "__main__":

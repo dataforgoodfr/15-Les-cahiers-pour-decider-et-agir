@@ -21,6 +21,20 @@ function garder(cle, valeur) {
   try { localStorage.setItem(cle, valeur); } catch { /* stockage indisponible */ }
 }
 
+// En ligne, le lien de l'annotateur porte son jeton (?j=) : le serveur en
+// déduit le prénom, et la vue des cahiers n'existe pas.
+const JETON = new URLSearchParams(location.search).get("j");
+function appel(url, options = {}) {
+  if (JETON) options.headers = { ...options.headers, "X-Jeton": JETON };
+  return fetch(url, options);
+}
+function prenomDuServeur(d) {
+  if (!d.annotateur) return;
+  $("annotateur").value = d.annotateur;
+  $("annotateur").readOnly = true;
+}
+if (JETON) document.querySelector('header a[href="/"]')?.remove();
+
 function annotateur() { return $("annotateur").value.trim(); }
 
 function liste() {
@@ -34,9 +48,10 @@ function jugementCourant(p) {
 }
 
 async function charger() {
-  const r = await fetch(`/api/paires?annotateur=${encodeURIComponent(annotateur())}`);
+  const r = await appel(`/api/paires?annotateur=${encodeURIComponent(annotateur())}`);
   if (!r.ok) { $("info").textContent = "Le serveur ne sert pas les paires."; return; }
   const d = await r.json();
+  prenomDuServeur(d);
   Object.assign(etat, { paires: d.paires, miens: d.miens, litiges: d.litiges, possibles: d.jugements_possibles });
   afficher();
 }
@@ -107,7 +122,7 @@ async function juger(jugement) {
   const p = liste()[etat.rang];
   if (!p || !annotateur()) return;
   const role = etat.mode === "juger" ? "jugement" : "adjudication";
-  const r = await fetch("/api/paires/juger", {
+  const r = await appel("/api/paires/juger", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ paire: p.paire, annotateur: annotateur(), jugement, role }),
