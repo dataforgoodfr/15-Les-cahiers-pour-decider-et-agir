@@ -16,8 +16,11 @@ repos:
     rev: v8.30.0
     hooks:
       - id: gitleaks
-        entry: gitleaks dir --verbose --redact
-        pass_filenames: false
+      - id: gitleaks
+        alias: gitleaks-ci
+        name: Detect hardcoded secrets (git history)
+        entry: gitleaks git --verbose --redact
+        stages: [manual]
   # Aucune donnée des cahiers dans git (docs/donnees.md) : on refuse les
   # fichiers de données, quel que soit leur contenu. Un faux positif se règle
   # en ajoutant une exception à `exclude`, dans une PR relue.

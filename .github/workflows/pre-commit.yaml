@@ -10,7 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
     - uses: actions/setup-python@v7
       with:
         python-version-file: .python-version
     - uses: pre-commit/action@v3.0.1
+    - name: Detect secrets in git history
+      run: pre-commit run gitleaks-ci --hook-stage manual
