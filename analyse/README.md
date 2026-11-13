@@ -73,6 +73,7 @@ par `uv run python -m corpus.typage`.
 | Module | Issue | Ce qu'il fait |
 |---|---|---|
 | `annotation` | #5, #7 | Outil local d'annotation : vérités terrain sur les pages, listes à revoir |
+| `annotation.grist` | #252, #253 | Sous-thèmes et paires dans Grist, une copie par annotateur : tables à importer, réponses reversées au journal de l'outil |
 
 ## Exploiter
 
