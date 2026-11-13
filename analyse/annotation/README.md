@@ -152,3 +152,26 @@ Tout reste dans `data/annotation/`, hors de git :
 
 Un module écrit une liste avec `annotation.listes.ecrire` (format dans la
 docstring de `listes.py`).
+
+## En ligne
+
+Pour les bénévoles, les paires et les sous-thèmes sont servis en ligne, sur
+Clever Cloud (application `annotation`). Seuls ces deux écrans sont servis :
+ils ne montrent que l'édition Chabin. La vue des cahiers, le carnet et les
+listes répondent 404.
+
+```bash
+ANNOTATEURS="jeton:Prénom,jeton:Prénom" PORT=9000 \
+  uv run python -m annotation --en-ligne --dossier JOURNAUX \
+  --paires JOURNAUX/entrees/paires.csv --themes JOURNAUX/entrees/revue.csv \
+  --chabin JOURNAUX/entrees/chabin
+```
+
+- Chaque annotateur reçoit son lien, `/paires?j=JETON` ou `/themes?j=JETON`.
+  Le prénom vient du jeton, jamais de la page ; sans jeton connu, le serveur
+  refuse (403). Un jeton fait au moins 16 caractères.
+- `JOURNAUX` est un FS Bucket monté sur l'application : les journaux y
+  survivent aux redéploiements. Une seule instance, car le verrou des
+  journaux est propre au processus.
+- Les réponses se récupèrent par FTP sur le FS Bucket, puis se lisent comme
+  en local (`classement.paires.accord`, `classement.themes.accord`).
