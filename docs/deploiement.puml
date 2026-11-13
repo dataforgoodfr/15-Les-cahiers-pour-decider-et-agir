@@ -1,0 +1,62 @@
+@startuml deploiement
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+' Hébergement Clever Cloud au 13 novembre 2026 (voir docs/deploiement.md).
+' Aucun identifiant, hôte ni secret ici : noms d'add-ons seulement.
+
+AddElementTag("a_venir", $bgColor="#ffffff", $fontColor="#777777", $borderColor="#999999", $borderStyle=DashedLine(), $legendText="à venir")
+AddElementTag("arrete", $bgColor="#dddddd", $fontColor="#555555", $borderColor="#999999", $legendText="arrêtée")
+AddElementTag("public", $bgColor="#2e7d32", $borderColor="#1b5e20", $legendText="lecture publique")
+AddElementTag("sensible", $bgColor="#b71c1c", $borderColor="#7f0000", $legendText="données non anonymisées")
+
+SHOW_PERSON_OUTLINE()
+LAYOUT_TOP_DOWN()
+
+Person(benevole, "Bénévole annotateur", "Lien personnel")
+Person(equipe, "Équipe (4 membres de l'organisation)", "CLI clever, console")
+
+Deployment_Node(poste, "Poste de travail", "dépôt, analyse/") {
+  Container(chaine, "Chaîne d'analyse", "Python, uv", "Découpage, anonymisation, tirage ; produit analyse/data/")
+}
+
+Deployment_Node(clever, "Clever Cloud", "organisation « Les Cahiers pour Décider et Agir », région Paris") {
+
+  Deployment_Node(prod, "Production") {
+    Container(app_prod, "Application plateforme", "Django", "Pas encore créée (#248)", $tags="a_venir")
+    ContainerDb(pg_prod, "production_postgres", "PostgreSQL 18", "Communes, documents, pages, contributions du tirage, extraits")
+    ContainerDb(cellar_orig, "cellar_cahiers_originaux", "Cellar (privé)", "cahiers-originaux : tirage des 100 cahiers, sauvegardes ; cahiers-plateforme : extraits caviardés", $tags="sensible")
+    ContainerDb(cellar_pub, "production_cellar_public", "Cellar", "cahiers-public : vide, rien avant validation de l'association", $tags="public")
+  }
+
+  Deployment_Node(staging, "Staging") {
+    Container(app_staging, "staging_app", "Python", "Aucun add-on lié (#248)", $tags="arrete")
+    ContainerDb(pg_staging, "staging_postgres", "PostgreSQL", "Vide, migrations à lancer")
+    ContainerDb(cellar_stg, "staging_cellar_cahiers_citoyens", "Cellar (privé)", "cahiers-staging-prive : les 100 exports caviardés")
+    ContainerDb(cellar_stg_pub, "staging_cellar_public", "Cellar", "cahiers-staging-public : vide", $tags="public")
+  }
+
+  Deployment_Node(annot, "Annotation (saison 15)") {
+    Container(app_annot, "annotation", "Python, nano", "python -m annotation --en-ligne : paires et sous-thèmes de l'édition Chabin")
+    ContainerDb(fs_annot, "annotation_fs_bucket", "FS Bucket", "Entrées (Chabin) et journaux des réponses")
+  }
+
+  Deployment_Node(sauv, "Sauvegardes") {
+    Container(app_sauv, "sauvegardes", "Python, nano, cron", "Lundi 4 h : pg_dump et journaux, gardés 26 semaines")
+  }
+}
+
+Rel(benevole, app_annot, "Juge, coche", "HTTPS, ?j=jeton")
+Rel(app_annot, fs_annot, "Lit les entrées, écrit les journaux", "montage")
+Rel(app_sauv, pg_prod, "pg_dump", "SQL")
+Rel(app_sauv, fs_annot, "Copie les journaux", "montage")
+Rel(app_sauv, cellar_orig, "Écrit sauvegardes/", "S3")
+Rel(chaine, pg_prod, "Charge le corpus et le tirage", "SQL")
+Rel(chaine, cellar_orig, "Dépose originaux et extraits", "S3")
+Rel(app_prod, pg_prod, "", "SQL")
+Rel(app_prod, cellar_orig, "Extraits", "S3")
+Rel(app_prod, cellar_pub, "Publie après relecture", "S3")
+Rel(app_staging, pg_staging, "à lier", "SQL")
+Rel(equipe, app_staging, "Déploie", "git")
+
+SHOW_LEGEND()
+@enduml
