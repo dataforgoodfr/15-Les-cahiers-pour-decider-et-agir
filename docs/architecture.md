@@ -2,6 +2,8 @@
 
 ![Architecture technique](architecture.svg)
 
+Ce qui est déployé aujourd'hui sur Clever Cloud : [`deploiement.md`](deploiement.md).
+
 ## Description des composants
 
 ### Acteurs
