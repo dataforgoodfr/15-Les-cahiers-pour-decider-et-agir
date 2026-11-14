@@ -1,8 +1,14 @@
-"""Réglages de la plateforme.
+"""Réglages de la plateforme (12-Factor App).
 
-Tout ce qui dépend de l'environnement passe par des variables
-d'environnement : celles des add-ons Clever Cloud (PostgreSQL, Cellar) en
-production, celles de README.md en local.
+Trois environnements de déploiement sont pris en charge via ``DJANGO_ENV`` :
+- ``LOCAL`` : développement local (PostgreSQL sous Docker, ``DEBUG=True`` par défaut).
+- ``STAGING`` : pré-production (Clever Cloud, ``DEBUG=False`` par défaut).
+- ``PROD`` : production (Clever Cloud, ``DEBUG=False`` imposé).
+
+Les variables d'environnement peuvent être chargées depuis un fichier ``.env``
+(en local) ou fournies par la plateforme d'hébergement (Clever Cloud en
+STAGING et PROD). Les variables déjà présentes dans l'environnement système
+sont toujours prioritaires sur les fichiers ``.env``.
 """
 
 import os
@@ -10,24 +16,69 @@ from pathlib import Path
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEBUG = os.environ.get("DJANGO_DEBUG") == "1"
+ENVIRONNEMENTS_VALIDES = ("LOCAL", "STAGING", "PROD")
+
+
+def _charger_fichiers_env(base_dir: Path) -> None:
+    """Charge les fichiers .env sans écraser les variables déjà définies."""
+    fichier_explicite = os.environ.get("DJANGO_ENV_FILE")
+    if fichier_explicite:
+        chemin = Path(fichier_explicite)
+        if not chemin.is_absolute():
+            chemin = base_dir / chemin
+        load_dotenv(chemin, override=False)
+        return
+
+    env_courant = os.environ.get("DJANGO_ENV", "").strip().lower()
+    if env_courant:
+        load_dotenv(base_dir / f".env.{env_courant}", override=False)
+    load_dotenv(base_dir / ".env", override=False)
+
+
+_charger_fichiers_env(BASE_DIR)
+
+# Détermination de l'environnement (LOCAL, STAGING ou PROD).
+_env_brut = os.environ.get("DJANGO_ENV", "").strip().upper()
+if _env_brut:
+    if _env_brut not in ENVIRONNEMENTS_VALIDES:
+        raise ImproperlyConfigured(
+            f"DJANGO_ENV invalide : {_env_brut!r}. "
+            f"Valeurs attendues : {', '.join(ENVIRONNEMENTS_VALIDES)}."
+        )
+    ENV = _env_brut
+else:
+    ENV = "LOCAL" if os.environ.get("DJANGO_DEBUG") == "1" else "PROD"
+
+# Mode DEBUG : activé par défaut uniquement en LOCAL, interdit en PROD.
+if "DJANGO_DEBUG" in os.environ:
+    DEBUG = os.environ["DJANGO_DEBUG"].strip().lower() in ("1", "true", "yes")
+else:
+    DEBUG = ENV == "LOCAL"
+
+if ENV == "PROD" and DEBUG:
+    raise ImproperlyConfigured("DJANGO_DEBUG ne peut pas être activé lorsque DJANGO_ENV=PROD.")
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
-    if not DEBUG:
+    if ENV != "LOCAL":
         raise ImproperlyConfigured(
-            "DJANGO_SECRET_KEY manque (ou DJANGO_DEBUG=1 en local)."
+            f"DJANGO_SECRET_KEY manque (obligatoire en {ENV}, ou définir DJANGO_ENV=LOCAL)."
         )
     SECRET_KEY = "django-insecure-developpement-local"
 
 # Noms de domaine séparés par des virgules, par exemple
-# « cahiers.cleverapps.io,cahiers.example.org ».
-ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h]
-if DEBUG:
-    ALLOWED_HOSTS += ["localhost", "127.0.0.1"]
+# « cahiers-staging.cleverapps.io » ou « cahiers.cleverapps.io,cahiers.example.org ».
+ALLOWED_HOSTS = [
+    h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()
+]
+if ENV == "LOCAL" or DEBUG:
+    for hote_local in ("localhost", "127.0.0.1"):
+        if hote_local not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(hote_local)
 CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS]
 
 INSTALLED_APPS = [
@@ -72,11 +123,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# POSTGRESQL_ADDON_URI est fournie par l'add-on PostgreSQL de Clever Cloud.
+# POSTGRESQL_ADDON_URI est fournie par l'add-on PostgreSQL de Clever Cloud (STAGING / PROD).
+# En LOCAL, l'URL par défaut correspond au conteneur Docker postgres:18 (pg-cahiers).
+_database_url = os.environ.get("POSTGRESQL_ADDON_URI") or os.environ.get("DATABASE_URL")
+if not _database_url:
+    if ENV == "LOCAL":
+        _database_url = "postgres://postgres:cahiers@localhost:5432/cahiers"
+    else:
+        raise ImproperlyConfigured(
+            f"DATABASE_URL ou POSTGRESQL_ADDON_URI manque en environnement {ENV}."
+        )
+
 DATABASES = {
     "default": dj_database_url.parse(
-        os.environ.get("POSTGRESQL_ADDON_URI")
-        or os.environ.get("DATABASE_URL", "postgres://localhost/cahiers"),
+        _database_url,
         conn_max_age=600,
         conn_health_checks=True,
     )

@@ -28,17 +28,18 @@ Nous pensons pour cela à utiliser [htmx](https://htmx.org/), ce que nous analys
 
 Ouvrez un terminal dans le répertoire `plateforme`.
 
+Lancez la base de données PostgreSQL avec Docker Compose :
+
 ```sh
-docker run -d --name pg-cahiers -e POSTGRES_PASSWORD=cahiers -e POSTGRES_DB=cahiers -p 5432:5432 postgres:18
+docker compose up -d
 ```
 
-pour lancer la base de données. Les fois suivantes, le container Docker ayant été chargé,
-vous utiliserez la commande `docker start pg-cahiers`.
+(ou directement via `docker run -d --name pg-cahiers -e POSTGRES_PASSWORD=cahiers -e POSTGRES_DB=cahiers -p 5432:5432 postgres:18`, puis `docker start pg-cahiers` les fois suivantes).
 
-Puis :
+Créez votre fichier `.env` local à partir du modèle, puis lancez l'application :
 
 ```sh
-export DATABASE_URL=postgres://postgres:cahiers@localhost/cahiers DJANGO_DEBUG=1
+cp .env.example .env
 uv sync # Installe les dépendances Python sur votre machine.
 uv run python manage.py migrate # Met à jour la base de données (avec l'ORM Django).
 uv run python manage.py charger_chabin_extraits # Charge les extraits des contributions Chabin.
@@ -128,18 +129,18 @@ découpage automatique des `Contribution`. Le document et ses pages ne sont
 jamais réécrits ; seuls les attributs mesurés par `analyse/` (type, rotation,
 service, ouverture) y sont reportés.
 
-## En local
+## En local (`DJANGO_ENV=LOCAL`)
 
-Il faut un PostgreSQL. Par exemple avec Podman ou Docker :
+Il faut un PostgreSQL. Avec Docker Compose (ou Podman) :
 
 ```sh
-podman run -d --name pg-cahiers -e POSTGRES_PASSWORD=cahiers -e POSTGRES_DB=cahiers -p 5432:5432 postgres:18
+docker compose up -d
 ```
 
 Puis :
 
 ```sh
-export DATABASE_URL=postgres://postgres:cahiers@localhost/cahiers DJANGO_DEBUG=1
+cp .env.example .env
 uv sync
 uv run python manage.py migrate
 uv run python manage.py charger_communes
@@ -155,7 +156,7 @@ L'administration est sur <http://localhost:8000/admin/>.
 
 Les tests : `uv run python manage.py test`.
 
-## Déploiement sur Clever Cloud
+## Déploiement sur Clever Cloud (`STAGING` et `PROD`)
 
 Une application Python, avec les add-ons PostgreSQL et Cellar. Le `uv.lock`
 active le déploiement uv natif : pas de Nginx, l'application sert elle-même
@@ -166,6 +167,7 @@ Variables d'environnement à définir :
 
 | Variable                   | Valeur                                                     |
 |----------------------------|------------------------------------------------------------|
+| `DJANGO_ENV`               | `STAGING` (pré-production) ou `PROD` (production)          |
 | `APP_FOLDER`               | `plateforme`                                               |
 | `CC_PYTHON_UV_RUN_COMMAND` | `uv run gunicorn config.wsgi` (gunicorn écoute sur `PORT`) |
 | `CC_POST_BUILD_HOOK`       | `uv run python manage.py collectstatic --noinput`          |
