@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% comment %}
+Page d'accueil, d'après la maquette Figma (nœud 726:9766).
+Les contenus sont pour l'instant ceux de la maquette, écrits en dur : ils
+seront remplacés par des champs Wagtail / des requêtes sur les doléances.
+{% endcomment %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block body_class %}template-homepage{% endblock %}
+
+{% block content %}
+
+{# --- Hero ------------------------------------------------------------ #}
+<section class="hero">
+  <h1 class="hero__title">{{ page.title }}</h1>
+  <p class="hero__lead">{{ page.hero_text }}</p>
+  <div class="hero__actions">
+    <a class="btn btn--primary btn--lg" href="#prioriser">Prioriser les doléances</a>
+    <a class="btn btn--outline btn--lg" href="#">Explorer les doléances</a>
+  </div>
+</section>
+
+{# --- Vote ------------------------------------------------------------- #}
+<section class="section--surface vote" id="prioriser">
+  <form method="post" action="#">
+    <fieldset class="vote__fieldset">
+      <legend class="section__eyebrow">À vous de prioriser</legend>
+      <h2 class="vote__title">Quelle proposition vous semble<br>la plus urgente&nbsp;?</h2>
+      <div class="vote__choices">
+        <label class="vote-card">
+          <span>
+            <span class="tag">Solution</span>
+            <span class="vote-card__text">La progressivité de l’impôt sur le revenu est trop importante pour des couples
+              à moyen revenu.</span>
+          </span>
+          <span class="radio"><input type="radio" name="choix" value="a"> Cliquez pour choisir</span>
+        </label>
+        <label class="vote-card">
+          <span>
+            <span class="tag">Solution</span>
+            <span class="vote-card__text">Rétablir l’exit taxe comme elle était en novembre 2017 afin de limiter
+              l’évasion fiscale.</span>
+          </span>
+          <span class="radio"><input type="radio" name="choix" value="b"> Cliquez pour choisir</span>
+        </label>
+      </div>
+      <label class="radio vote__none"><input type="radio" name="choix" value="aucune"> Aucune des deux
+        propositions</label>
+    </fieldset>
+  </form>
+</section>
+
+{# --- Parcours ------------------------------------------------------- #}
+<nav class="paths" aria-label="Parcours">
+  <a class="path-card" href="#">
+    <span class="path-card__title">Découvrir</span>
+    <span class="path-card__text">toutes les doléances, thématiques et contenus inspirants</span>
+    <svg class="path-card__arrow" aria-hidden="true">
+      <use href="#i-arrow-long" />
+    </svg>
+  </a>
+  <a class="path-card" href="#">
+    <span class="path-card__title">Interpeller</span>
+    <span class="path-card__text">les candidats à la présidence 2027 sur les thèmes les plus soutenus</span>
+    <svg class="path-card__arrow" aria-hidden="true">
+      <use href="#i-arrow-long" />
+    </svg>
+  </a>
+  <a class="path-card" href="#">
+    <span class="path-card__title">Participer</span>
+    <span class="path-card__text">à l’actualisation et la priorisation des doléances</span>
+    <svg class="path-card__arrow" aria-hidden="true">
+      <use href="#i-arrow-long" />
+    </svg>
+  </a>
+</nav>
+
+{# --- Thématique : Démocratie ----------------------------------------- #}
+<section class="thematic">
+  <div class="thematic__intro">
+    <span class="tag tag--outline">Démocratie</span>
+    <h2 class="section__title">Place des citoyens et de leur parole</h2>
+    <p class="thematic__lead">Volonté d’être consultés, écoutés, remis au cœur des décisions politiques, de valorisation
+      de l’expérience acquise.</p>
+    <div class="section__actions"><a class="btn btn--outline" href="#">Explorer cette thématique</a></div>
+  </div>
+  <div class="thematic__cards">
+    {% include "cms/components/doleance_card.html" with theme="Démocratie" type="Solution" citation="“On nous demande
+    notre avis tous les cinq ans, entre deux tours, et après on repart vivre nos vies sans qu’on nous demande rien.”"
+    soutiens=1254 %}
+    {% include "cms/components/video_card.html" with nom="Morgane Beaumont" numero="0421" duree="03:12" %}
+    {% include "cms/components/initiative_card.html" with theme="Démocratie" titre="Un RIC en place à Saint-Martigues
+    fait des émules" %}
+    {% include "cms/components/doleance_card.html" with theme="Démocratie" type="Solution" taille="md" citation="“Dans
+    ma commune je connais chaque route, chaque famille, chaque problème, et pourtant toutes les décisions se prennent
+    sans nous, dans des bureaux où personne n’a jamais mis les pieds ici.”" soutiens=1254 %}
+  </div>
+</section>
+
+{# --- Témoignages vidéo ---------------------------------------------- #}
+<section class="section--dark feature">
+  <div class="feature__intro">
+    <h2 class="section__title">Ils parlent de leur vie quotidienne</h2>
+    <p class="section__lead">Glass suits glass hedwig harry crookshanks mimubulus. Fat three-headed sticking beasts
+      ghost the raw-steak shack from parvati.</p>
+    <div class="section__actions"><a class="btn btn--outline-inverse" href="#">Voir tous les témoignages vidéo</a></div>
+  </div>
+  <div class="carousel" data-carousel>
+    <ul class="carousel__track">
+      <li class="carousel__item">
+        {% include "cms/components/testimony_card.html" with prenom="Sylvie" lieu="Côtes-d’Armor" theme="Démocratie"
+        texte="Trevor grim gringotts mewing sopophorous crimson together now. Muggle-born fairy filch pie 10 under 12
+        dragon-scale knight-bus. Giant nose centaur remembrall candles aurors drills." %}
+      </li>
+      <li class="carousel__item">
+        {% include "cms/components/testimony_card.html" with prenom="Didier" lieu="Bretagne" compact=True %}
+      </li>
+      <li class="carousel__item">
+        {% include "cms/components/testimony_card.html" with prenom="Marc" lieu="Gironde" compact=True %}
+      </li>
+      <li class="carousel__item">
+        {% include "cms/components/testimony_card.html" with prenom="Aïcha" lieu="Nord" compact=True %}
+      </li>
+    </ul>
+    {% include "cms/components/carousel_controls.html" %}
+  </div>
+</section>
+
+{# --- Thématique : Administration -------------------------------------- #}
+<section class="thematic">
+  <div class="thematic__intro">
+    <span class="tag tag--outline">Administration et services publics</span>
+    <h2 class="section__title">Egalité des citoyens devant l’administration et la santé</h2>
+    <p class="thematic__lead">Égalité des chances à l’école et formations en général / mixité scolaire, attitudes des
+      forces de police face aux citoyens et aux justiciables, information et accueil des collectivités locales, etc.</p>
+    <div class="section__actions"><a class="btn btn--outline" href="#">Explorer cette thématique</a></div>
+  </div>
+  <div class="thematic__cards">
+    {% include "cms/components/video_card.html" with nom="Marc Labriette" numero="0178" duree="02:04" %}
+    {% include "cms/components/doleance_card.html" with theme="Administration et services publics" type="Solution"
+    citation="Dans chaque préfecture et chaque commissariat, une personne désignée pour accompagner gratuitement les
+    gens dans leurs démarches […]" soutiens=1254 %}
+    {% include "cms/components/doleance_card.html" with theme="Administration et services publics" type="Solution"
+    taille="md" citation="Ma fille est en Terminale dans un lycée où il manque des profs depuis octobre, et les sujets
+    qu’elle n’a pas eus c’est nous, les parents, qui les payons en cours du soir." soutiens=1254 %}
+    {% include "cms/components/doleance_card.html" with theme="Administration et services publics" type="Solution"
+    taille="sm" citation="Quand j’ai eu un contrôle fiscal, j’ai pas eu les moyens de me payer un expert-comptable pour
+    me défendre, contrairement aux grosses boîtes qui ont des avocats. Devant l’administration on est tous censés être
+    égaux, mais en vrai celui qui a de l’argent a toujours raison plus longtemps que moi." soutiens=1254 %}
+  </div>
+</section>
+
+{# --- Solutions concrètes ------------------------------------------- #}
+<section class="section--surface feature">
+  <div class="feature__intro">
+    <h2 class="section__title">Des solutions concrètes</h2>
+    <p class="section__lead">Glass suits glass hedwig harry crookshanks mimubulus. Fat three-headed sticking beasts
+      ghost the raw-steak shack from parvati.</p>
+    <div class="section__actions"><a class="btn btn--outline" href="#">Voir toutes les initiatives</a></div>
+  </div>
+  <div class="carousel carousel--initiatives" data-carousel>
+    <ul class="carousel__track">
+      <li class="carousel__item">{% include "cms/components/initiative_card.html" with theme="Démocratie"
+        titre="Inauguration de l’école maternelle végétalisée Henri Adam à Saint Avertin" %}</li>
+      <li class="carousel__item">{% include "cms/components/initiative_card.html" with theme="Démocratie" titre="Un RIC
+        en place à Saint-Martigues fait des émules" %}</li>
+      <li class="carousel__item">{% include "cms/components/initiative_card.html" with theme="Démocratie" titre="Un
+        budget participatif voté par les habitants" %}</li>
+      <li class="carousel__item">{% include "cms/components/initiative_card.html" with theme="Démocratie" titre="Une
+        assemblée citoyenne tirée au sort" %}</li>
+    </ul>
+    {% include "cms/components/carousel_controls.html" %}
+  </div>
+</section>
+
+{# --- Thèmes --------------------------------------------------------- #}
+<section class="themes">
+  <div class="themes__intro">
+    <h2 class="section__title">Les thèmes des cahiers</h2>
+    <p class="section__lead">Les doléances sont regroupées dans des thèmes qui, eux-mêmes, contiennent des thématiques
+      spécifiques. À vous de les explorer.</p>
+    <div class="section__actions"><a class="btn btn--outline" href="#">Voir tous les thèmes</a></div>
+  </div>
+  <div class="carousel carousel--themes" data-carousel>
+    <ul class="carousel__track">
+      <li class="carousel__item">{% include "cms/components/theme_card.html" with titre="Démocratie" %}</li>
+      <li class="carousel__item">{% include "cms/components/theme_card.html" with titre="Fiscalité (justice fiscale)" %}
+      </li>
+      <li class="carousel__item">{% include "cms/components/theme_card.html" with titre="Administration et services
+        publics" %}</li>
+      <li class="carousel__item">{% include "cms/components/theme_card.html" with titre="Habitabilité et transitions" %}
+      </li>
+      <li class="carousel__item">{% include "cms/components/theme_card.html" with titre="Pouvoir d’achat" %}</li>
+    </ul>
+    {% include "cms/components/carousel_controls.html" %}
+  </div>
+</section>
+
+{# --- Méthodologie -------------------------------------------------- #}
+<section class="method">
+  <h2 class="method__title">Notre méthodologie</h2>
+  <p class="method__lead">Chaque cri du cœur regroupe des doléances similaires, relues et reformulées par l’association.
+    Voici comment, étape par étape.</p>
+  <a class="btn btn--primary btn--block" href="#">Découvrir la méthodologie</a>
+</section>
+
+{% endblock content %}

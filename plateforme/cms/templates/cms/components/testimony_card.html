@@ -1,0 +1,19 @@
+{% comment %}
+Témoignage vidéo. Paramètres : prenom, lieu, theme, texte, image_url, url, compact.
+{% endcomment %}
+<article class="testimony-card{% if compact %} testimony-card--compact{% endif %}">
+  <div class="media">
+    {% if image_url %}<img src="{{ image_url }}" alt="" loading="lazy">{% endif %}
+    <svg class="media__play" aria-hidden="true"><use href="#i-play"/></svg>
+  </div>
+  <div class="testimony-card__body">
+    {% if compact %}
+      <p>{{ prenom }}<span class="testimony-card__place">{{ lieu }}</span></p>
+    {% else %}
+      {% include "cms/components/tags.html" with theme=theme type="Témoignage" %}
+      <h3 class="testimony-card__name">{{ prenom }}<span class="testimony-card__place">{{ lieu }}</span></h3>
+      <p class="testimony-card__text">{{ texte }}</p>
+      <a class="btn btn--primary" href="{{ url|default:'#' }}">Regarder son témoignage</a>
+    {% endif %}
+  </div>
+</article>

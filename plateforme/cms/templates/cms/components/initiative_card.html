@@ -1,0 +1,11 @@
+{% comment %}
+Initiative locale. Paramètres : theme, titre, image_url, url.
+{% endcomment %}
+<article class="initiative-card">
+  {% if theme %}<span class="tag">{{ theme }}</span>{% endif %}
+  <div class="media media--wide">
+    {% if image_url %}<img src="{{ image_url }}" alt="" loading="lazy">{% endif %}
+  </div>
+  <h3 class="initiative-card__title">{{ titre }}</h3>
+  <a class="btn btn--soft btn--block" href="{{ url|default:'#' }}">Découvrir l’initiative</a>
+</article>

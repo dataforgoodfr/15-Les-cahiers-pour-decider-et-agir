@@ -1,0 +1,5 @@
+{# Étiquettes accolées : thème (fond noir) + type facultatif (contour). #}
+<div class="tags">
+  {% if theme %}<span class="tag">{{ theme }}</span>{% endif %}
+  {% if type %}<span class="tag tag--outline">{{ type }}</span>{% endif %}
+</div>
