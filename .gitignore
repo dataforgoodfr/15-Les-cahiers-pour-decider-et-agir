@@ -182,3 +182,6 @@ data/
 
 # fichiers déposés de la plateforme (extraits, PDF des cahiers) : jamais dans git
 plateforme/media/
+
+# autres
+.DS_Store
