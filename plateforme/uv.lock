@@ -701,6 +701,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/74/26/2fbeedb218a787a5e
 wheels = [
     { url = "https://files.pythonhosted.org/packages/60/d1/38f3a3405989a89ac18390803e70c6ad7c7760da4f9b83cbeca0c44a0c72/python_dotenv-1.2.4-py3-none-any.whl", hash = "sha256:42269a8a5b3fd54ffa6f3d84b18abed50064717576b4ecf03dc4a55d8aa04fdc", size = 23266, upload-time = "2026-10-01T05:36:08.633Z" },
 name = "requests"
+]
 version = "2.34.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
