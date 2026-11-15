@@ -44,23 +44,83 @@ class SettingsEnvironnementTests(SimpleTestCase):
         self.assertTrue(s.DEBUG)
         self.assertEqual(s.SECRET_KEY, "django-insecure-developpement-local")
         self.assertIn("localhost", s.ALLOWED_HOSTS)
+        self.assertFalse(s.SESSION_COOKIE_SECURE)
+        self.assertFalse(s.CSRF_COOKIE_SECURE)
+        self.assertEqual(s.SECURE_HSTS_SECONDS, 0)
         self.assertEqual(s.DATABASES["default"]["NAME"], "cahiers")
         self.assertEqual(s.DATABASES["default"]["PASSWORD"], "cahiers")
+        self.assertEqual(
+            s.STORAGES["default"]["BACKEND"],
+            "django.core.files.storage.FileSystemStorage",
+        )
+        self.assertEqual(
+            s.STORAGES["staticfiles"]["BACKEND"],
+            "whitenoise.storage.CompressedStaticFilesStorage",
+        )
 
-    def test_configuration_staging(self):
-        s = _recharger_settings(
-            {
+    def test_configuration_staging_avec_addons_clever_cloud(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            env_staging = {
+                "DJANGO_ENV_FILE": str(Path(tmp_dir) / ".env.inexistant"),
                 "DJANGO_ENV": "STAGING",
                 "DJANGO_SECRET_KEY": "secret-staging",
-                "DJANGO_ALLOWED_HOSTS": "staging.cahiers.example.org",
+                "DJANGO_ALLOWED_HOSTS": "staging.cahiers.cleverapps.io",
                 "POSTGRESQL_ADDON_URI": "postgres://u:p@db.internal:5432/cahiers_staging",
+                "CELLAR_ADDON_HOST": "cellar-c2.services.clever-cloud.com",
+                "CELLAR_ADDON_KEY_ID": "cle-cellar",
+                "CELLAR_ADDON_KEY_SECRET": "secret-cellar",
+                "CELLAR_BUCKET": "cahiers-staging-prive",
             }
-        )
-        self.assertEqual(s.ENV, "STAGING")
-        self.assertFalse(s.DEBUG)
-        self.assertEqual(s.ALLOWED_HOSTS, ["staging.cahiers.example.org"])
-        self.assertTrue(s.SESSION_COOKIE_SECURE)
-        self.assertEqual(s.DATABASES["default"]["NAME"], "cahiers_staging")
+            with patch.dict(os.environ, env_staging, clear=True):
+                s = importlib.reload(reglage_module)
+                self.assertEqual(s.ENV, "STAGING")
+                self.assertFalse(s.DEBUG)
+                self.assertEqual(s.ALLOWED_HOSTS, ["staging.cahiers.cleverapps.io"])
+                self.assertTrue(s.SESSION_COOKIE_SECURE)
+                self.assertTrue(s.CSRF_COOKIE_SECURE)
+                self.assertEqual(s.SECURE_HSTS_SECONDS, 3600)
+                self.assertEqual(s.DATABASES["default"]["NAME"], "cahiers_staging")
+                self.assertEqual(
+                    s.STORAGES["default"]["BACKEND"],
+                    "storages.backends.s3.S3Storage",
+                )
+                self.assertEqual(
+                    s.STORAGES["default"]["OPTIONS"]["endpoint_url"],
+                    "https://cellar-c2.services.clever-cloud.com",
+                )
+                self.assertEqual(
+                    s.STORAGES["default"]["OPTIONS"]["bucket_name"],
+                    "cahiers-staging-prive",
+                )
+                self.assertEqual(
+                    os.environ.get("AWS_REQUEST_CHECKSUM_CALCULATION"),
+                    "when_required",
+                )
+                self.assertEqual(
+                    os.environ.get("AWS_RESPONSE_CHECKSUM_VALIDATION"),
+                    "when_required",
+                )
+
+    def test_cellar_incomplet_refuse(self):
+        with self.assertRaises(ImproperlyConfigured):
+            _recharger_settings(
+                {
+                    "DJANGO_ENV": "STAGING",
+                    "DJANGO_SECRET_KEY": "secret-staging",
+                    "POSTGRESQL_ADDON_URI": "postgres://u:p@db.internal:5432/cahiers_staging",
+                    "CELLAR_ADDON_HOST": "cellar-c2.services.clever-cloud.com",
+                }
+            )
+
+    def test_base_de_donnees_manquante_en_staging_et_prod_refuse(self):
+        for env in ("STAGING", "PROD"):
+            with self.assertRaises(ImproperlyConfigured):
+                _recharger_settings(
+                    {
+                        "DJANGO_ENV": env,
+                        "DJANGO_SECRET_KEY": "secret",
+                    }
+                )
 
     def test_configuration_prod_refuse_debug(self):
         with self.assertRaises(ImproperlyConfigured):
