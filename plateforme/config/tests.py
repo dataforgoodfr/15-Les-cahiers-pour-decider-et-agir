@@ -14,14 +14,17 @@ import config.settings as reglage_module
 def _recharger_settings(env_vars: dict[str, str]):
     """Recharge config.settings dans un environnement isolé sans fichier .env."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        env_propre = {"DJANGO_ENV_FILE": str(Path(tmp_dir) / ".env.inexistant"), **env_vars}
+        env_propre = {
+            "DJANGO_ENV_FILE": str(Path(tmp_dir) / ".env.inexistant"),
+            **env_vars,
+        }
         with patch.dict(os.environ, env_propre, clear=True):
             return importlib.reload(reglage_module)
 
 
 class AdminTests(TestCase):
     def test_page_de_connexion(self):
-        reponse = self.client.get("/admin/login/")
+        reponse = self.client.get("/django-admin/login/")
         self.assertContains(reponse, "Les cahiers pour décider et agir")
 
     def test_admin_reservee_aux_administrateurs(self):
@@ -156,9 +159,10 @@ class SettingsEnvironnementTests(SimpleTestCase):
                 "DATABASE_URL=postgres://u:p@localhost:5432/cahiers_dotenv\n",
                 encoding="utf-8",
             )
-            with patch.dict(os.environ, {"DJANGO_ENV_FILE": str(fichier_env)}, clear=True):
+            with patch.dict(
+                os.environ, {"DJANGO_ENV_FILE": str(fichier_env)}, clear=True
+            ):
                 s = importlib.reload(reglage_module)
                 self.assertEqual(s.ENV, "STAGING")
                 self.assertEqual(s.SECRET_KEY, "cle-depuis-dotenv")
                 self.assertEqual(s.DATABASES["default"]["NAME"], "cahiers_dotenv")
-
