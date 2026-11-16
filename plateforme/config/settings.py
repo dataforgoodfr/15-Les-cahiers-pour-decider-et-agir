@@ -175,7 +175,20 @@ STORAGES = {
 }
 MEDIA_ROOT = BASE_DIR / "media"
 if os.environ.get("CELLAR_ADDON_HOST"):
-    hote = os.environ["CELLAR_ADDON_HOST"].removeprefix("https://")
+    variables_cellar_requises = (
+        "CELLAR_ADDON_KEY_ID",
+        "CELLAR_ADDON_KEY_SECRET",
+        "CELLAR_BUCKET",
+    )
+    manquantes = [v for v in variables_cellar_requises if not os.environ.get(v)]
+    if manquantes:
+        raise ImproperlyConfigured(
+            f"CELLAR_ADDON_HOST est défini mais il manque : {', '.join(manquantes)}."
+        )
+    # Compatibilité boto3 récent avec le S3 Cellar de Clever Cloud.
+    os.environ.setdefault("AWS_REQUEST_CHECKSUM_CALCULATION", "when_required")
+    os.environ.setdefault("AWS_RESPONSE_CHECKSUM_VALIDATION", "when_required")
+    hote = os.environ["CELLAR_ADDON_HOST"].removeprefix("https://").removeprefix("http://")
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
@@ -196,10 +209,9 @@ if os.environ.get("CELLAR_ADDON_HOST"):
 # ici, elle renverrait aussi le contrôle de santé, qui arrive en HTTP.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SILENCED_SYSTEM_CHECKS = ["security.W008"]
-if not DEBUG:
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 3600
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = 0 if DEBUG else 3600
 
 MAILERS = {
     "default": {

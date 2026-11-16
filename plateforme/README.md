@@ -158,6 +158,8 @@ Les tests : `uv run python manage.py test`.
 
 ## Déploiement sur Clever Cloud (`STAGING` et `PROD`)
 
+Voir aussi [`docs/deploiement.md`](../docs/deploiement.md#plan-de-deploiement-plateforme) pour le plan complet de déploiement sur Clever Cloud.
+
 Une application Python, avec les add-ons PostgreSQL et Cellar. Le `uv.lock`
 active le déploiement uv natif : pas de Nginx, l'application sert elle-même
 ses fichiers statiques (WhiteNoise). Clever Cloud ne lance alors ni `migrate`
