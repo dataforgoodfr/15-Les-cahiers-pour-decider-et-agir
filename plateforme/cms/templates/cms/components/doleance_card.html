@@ -1,0 +1,21 @@
+{% comment %}
+Carte doléance (citation + actions).
+Paramètres : theme, type, citation, url, soutiens, taille ("" | "md" | "sm").
+{% endcomment %}
+<article class="doleance-card{% if taille %} doleance-card--{{ taille }}{% endif %}">
+  {% include "cms/components/tags.html" with theme=theme type=type %}
+  <div class="doleance-card__body">
+    <blockquote class="doleance-card__quote">{{ citation }}</blockquote>
+    <div class="doleance-card__actions">
+      <a class="btn btn--soft" href="{{ url|default:'#' }}">Lire la doléance complète</a>
+      <button class="btn btn--soft btn--icon" type="button" aria-label="Partager la doléance">
+        <svg class="icon" aria-hidden="true"><use href="#i-share"/></svg>
+      </button>
+      <button class="btn btn--primary btn--rounded doleance-card__support" type="button">
+        <svg class="icon" aria-hidden="true"><use href="#i-vote"/></svg>
+        Soutenir l’idée
+        <span class="btn__badge">{{ soutiens|default:0 }} soutiens</span>
+      </button>
+    </div>
+  </div>
+</article>

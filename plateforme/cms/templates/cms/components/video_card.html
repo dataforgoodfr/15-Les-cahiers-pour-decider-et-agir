@@ -1,0 +1,11 @@
+{% comment %}
+Doléance filmée. Paramètres : nom, numero, duree, image_url, url.
+{% endcomment %}
+<a class="video-card" href="{{ url|default:'#' }}">
+  <div class="media">
+    {% if image_url %}<img src="{{ image_url }}" alt="" loading="lazy">{% endif %}
+    <svg class="media__play" aria-hidden="true"><use href="#i-play"/></svg>
+  </div>
+  <p class="video-card__name">{{ nom }}</p>
+  <p class="video-card__meta">Doléance N°{{ numero }}<br>{{ duree }}</p>
+</a>

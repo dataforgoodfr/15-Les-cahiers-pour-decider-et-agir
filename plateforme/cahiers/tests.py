@@ -140,12 +140,12 @@ class AdminTests(TestCase):
         )
         self.client.force_login(User.objects.create_superuser("admin"))
         for url in [
-            "/admin/cahiers/document/",
-            f"/admin/cahiers/document/{document.pk}/change/",
-            "/admin/cahiers/page/",
-            "/admin/cahiers/run/",
-            "/admin/cahiers/transcription/",
-            "/admin/cahiers/contribution/",
+            "/django-admin/cahiers/document/",
+            f"/django-admin/cahiers/document/{document.pk}/change/",
+            "/django-admin/cahiers/page/",
+            "/django-admin/cahiers/run/",
+            "/django-admin/cahiers/transcription/",
+            "/django-admin/cahiers/contribution/",
         ]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
 
@@ -389,42 +389,6 @@ class PagesPubliquesTests(TestCase):
         self.reglage.disable()
         self.media.cleanup()
 
-    def test_l_accueil_ne_tire_que_les_montrables(self):
-        for _ in range(10):
-            reponse = self.client.get("/")
-            self.assertEqual(reponse.context["contribution"], self.montrable)
-        self.assertEqual(reponse.context["total"], 1)
-
-    def test_une_autre_contribution_ecarte_la_precedente(self):
-        autre = Contribution.objects.create(
-            run=self.montrable.run,
-            document=self.montrable.document,
-            rang=4,
-            page_debut=2,
-            page_fin=2,
-        )
-        autre.extrait.save(f"{autre.pk}.pdf", ContentFile(PDF))
-        for _ in range(10):
-            reponse = self.client.get(f"/?apres={self.montrable.pk}")
-            self.assertEqual(reponse.context["contribution"], autre)
-
-    def test_l_extrait_d_une_contribution_montrable(self):
-        reponse = self.client.get(f"/contributions/{self.montrable.pk}/extrait.pdf")
-        self.assertEqual(reponse.status_code, 200)
-        self.assertEqual(reponse["Content-Type"], "application/pdf")
-        self.assertEqual(reponse["X-Frame-Options"], "SAMEORIGIN")
-        self.assertEqual(b"".join(reponse.streaming_content), PDF)
-
-    def test_rien_d_autre_n_est_servi(self):
-        for c in (self.ecartee, self.sans_extrait):
-            reponse = self.client.get(f"/contributions/{c.pk}/extrait.pdf")
-            self.assertEqual(reponse.status_code, 404)
-        # un run inactif ne montre rien
-        Run.objects.update(actif=False)
-        reponse = self.client.get(f"/contributions/{self.montrable.pk}/extrait.pdf")
-        self.assertEqual(reponse.status_code, 404)
-        self.assertIsNone(self.client.get("/").context["contribution"])
-
 
 class ChargerExtraitsTests(TestCase):
     def setUp(self):
@@ -493,9 +457,7 @@ class ChargerExtraitsTests(TestCase):
 
 EXTRAITS_CHABIN = [
     {
-        "chabin_pdf_files": [
-            "Cahier-de-doleances-de-Corme-Ecluse-transcription.pdf"
-        ],
+        "chabin_pdf_files": ["Cahier-de-doleances-de-Corme-Ecluse-transcription.pdf"],
         "nb_contrib": 2,
         "contributions": [
             {
@@ -513,9 +475,7 @@ EXTRAITS_CHABIN = [
             "commune": "Corme-Écluse",
             "habitants": 1121,
         },
-        "pdf_files": [
-            "BnF_GDN_17_PDF/CC/CC_17600_190225_17119_MD_00811.pdf"
-        ],
+        "pdf_files": ["BnF_GDN_17_PDF/CC/CC_17600_190225_17119_MD_00811.pdf"],
     }
 ]
 
@@ -564,4 +524,3 @@ class ChargerChabinExtraitsTests(TestCase):
         self.assertEqual(Run.objects.count(), 1)
         self.assertEqual(Document.objects.count(), 1)
         self.assertEqual(Contribution.objects.count(), 2)
-

@@ -88,8 +88,23 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     "territoires",
     "cahiers",
+    "wagtail.contrib.forms",
+    "wagtail.contrib.redirects",
+    "wagtail.embeds",
+    "wagtail.sites",
+    "wagtail.users",
+    "wagtail.snippets",
+    "wagtail.documents",
+    "wagtail.images",
+    "wagtail.search",
+    "wagtail.admin",
+    "wagtail",
+    "modelcluster",
+    "taggit",
+    "cms",
 ]
 
 MIDDLEWARE = [
@@ -102,6 +117,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "wagtail.contrib.redirects.middleware.RedirectMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -160,7 +176,7 @@ USE_TZ = True
 SOURCES_DIR = Path(os.environ.get("SOURCES_DIR", BASE_DIR / "sources"))
 
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / "static"
 
 # Les fichiers déposés (PDF des cahiers) vont sur Cellar quand l'add-on est
 # branché, sur le disque sinon. Le bucket reste privé : les PDF non anonymisés
@@ -225,3 +241,23 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": "INFO"},
 }
+
+MEDIA_URL = "/media/"
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
+WAGTAIL_SITE_NAME = "Les cahiers pour décider et agir"
+WAGTAILADMIN_BASE_URL = os.environ.get("WAGTAILADMIN_BASE_URL", "http://localhost:8000")
+WAGTAILSEARCH_BACKENDS = {
+    "default": {"backend": "wagtail.search.backends.database"},
+}
+WAGTAILDOCS_EXTENSIONS = [
+    "csv",
+    "docx",
+    "key",
+    "odt",
+    "pdf",
+    "pptx",
+    "rtf",
+    "txt",
+    "xlsx",
+    "zip",
+]
