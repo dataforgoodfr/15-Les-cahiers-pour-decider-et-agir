@@ -1,12 +1,15 @@
 import json
+import os
 import tempfile
 from datetime import date
 from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import IntegrityError
 from django.test import TestCase, override_settings
 
@@ -524,3 +527,86 @@ class ChargerChabinExtraitsTests(TestCase):
         self.assertEqual(Run.objects.count(), 1)
         self.assertEqual(Document.objects.count(), 1)
         self.assertEqual(Contribution.objects.count(), 2)
+
+
+class InitialiserAdminTests(TestCase):
+    def test_cree_superutilisateur_si_absent(self):
+        with patch.dict(
+            os.environ,
+            {
+                "DJANGO_SUPERUSER_USERNAME": "admin",
+                "DJANGO_SUPERUSER_EMAIL": "admin@example.org",
+                "DJANGO_SUPERUSER_PASSWORD": "secret-123",
+            },
+            clear=True,
+        ):
+            call_command("initialiser_admin")
+        utilisateur = User.objects.get(username="admin")
+        self.assertTrue(utilisateur.is_superuser)
+        self.assertTrue(utilisateur.is_staff)
+        self.assertEqual(utilisateur.email, "admin@example.org")
+        self.assertTrue(utilisateur.check_password("secret-123"))
+
+    def test_idempotent_et_ne_reecrit_pas_le_mot_de_passe(self):
+        User.objects.create_superuser("admin", password="ancien")
+        with patch.dict(
+            os.environ,
+            {
+                "DJANGO_SUPERUSER_USERNAME": "admin",
+                "DJANGO_SUPERUSER_PASSWORD": "nouveau",
+            },
+            clear=True,
+        ):
+            call_command("initialiser_admin")
+        self.assertEqual(User.objects.count(), 1)
+        self.assertTrue(User.objects.get(username="admin").check_password("ancien"))
+
+    def test_force_reinitialise_le_mot_de_passe(self):
+        User.objects.create_superuser("admin", password="ancien")
+        with patch.dict(
+            os.environ,
+            {
+                "DJANGO_SUPERUSER_USERNAME": "admin",
+                "DJANGO_SUPERUSER_PASSWORD": "nouveau",
+                "DJANGO_FORCE_SUPERUSER_PASSWORD": "1",
+            },
+            clear=True,
+        ):
+            call_command("initialiser_admin")
+        self.assertTrue(User.objects.get(username="admin").check_password("nouveau"))
+
+    def test_mot_de_passe_requis_a_la_creation(self):
+        with patch.dict(
+            os.environ, {"DJANGO_SUPERUSER_USERNAME": "admin"}, clear=True
+        ), self.assertRaises(CommandError):
+            call_command("initialiser_admin")
+
+    def test_utilisateurs_standards_depuis_json(self):
+        with patch.dict(
+            os.environ,
+            {
+                "DJANGO_SUPERUSER_USERNAME": "admin",
+                "DJANGO_SUPERUSER_PASSWORD": "secret-123",
+                "DJANGO_USERS": json.dumps(
+                    [
+                        {
+                            "username": "resp",
+                            "email": "resp@example.org",
+                            "staff": True,
+                            "password": "secret-resp",
+                        }
+                    ]
+                ),
+            },
+            clear=True,
+        ):
+            call_command("initialiser_admin")
+        resp = User.objects.get(username="resp")
+        self.assertTrue(resp.is_staff)
+        self.assertFalse(resp.is_superuser)
+        self.assertTrue(resp.check_password("secret-resp"))
+
+    def test_sans_variable_ne_fait_rien(self):
+        with patch.dict(os.environ, {}, clear=True):
+            call_command("initialiser_admin")
+        self.assertEqual(User.objects.count(), 0)
