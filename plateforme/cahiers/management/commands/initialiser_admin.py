@@ -31,11 +31,11 @@ class Command(BaseCommand):
         password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "")
         force = os.environ.get("DJANGO_FORCE_SUPERUSER_PASSWORD") == "1"
 
-        user, created = User.objects.get_or_create(username=username)
-        if created and not password:
+        if not User.objects.filter(username=username).exists() and not password:
             raise CommandError(
                 "DJANGO_SUPERUSER_PASSWORD manque pour créer le superutilisateur."
             )
+        user, created = User.objects.get_or_create(username=username)
         user.is_staff = True
         user.is_superuser = True
         if email := os.environ.get("DJANGO_SUPERUSER_EMAIL"):

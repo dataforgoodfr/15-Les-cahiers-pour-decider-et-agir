@@ -58,10 +58,11 @@ clever env set AWS_RESPONSE_CHECKSUM_VALIDATION when_required --alias "$ALIAS"
 # 5. Domaine (idempotent)
 clever domain add "$HOSTS" --alias "$ALIAS" || true
 
-# 6. Déploiement (clé SSH requise, cf. deploiement-staging.md §6)
+# 6. Déploiement (token CLEVER_* requis ; aucune clé SSH)
 clever deploy --alias "$ALIAS" --force
 
 # 7. Seed (idempotent, relançable à chaque déploiement)
+#    `clever ssh` nécessite une clé SSH enregistrée : clever ssh-keys add < clé.pub>
 clever ssh --alias "$ALIAS" --instance any --app-home --command "uv run python manage.py charger_communes"
 clever ssh --alias "$ALIAS" --instance any --app-home --command "uv run python manage.py charger_chabin_extraits"
 clever ssh --alias "$ALIAS" --instance any --app-home --command "uv run python manage.py initialiser_admin"

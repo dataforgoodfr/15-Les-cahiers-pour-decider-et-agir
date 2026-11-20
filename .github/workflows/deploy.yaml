@@ -29,25 +29,15 @@ jobs:
           curl -fsSL https://github.com/CleverCloud/clever-tools/releases/download/5.4.0/clever-tools-5.4.0_linux.tar.gz \
             | tar -xz --strip-components=1 -C "$HOME/.local/bin"
 
-      - name: Configurer la clé SSH de déploiement
-        env:
-          CLEVER_SSH_KEY: ${{ secrets.CLEVER_SSH_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "$CLEVER_SSH_KEY" > ~/.ssh/id_clever
-          chmod 600 ~/.ssh/id_clever
-
       - name: Déployer
         env:
           CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
           CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}
           CLEVER_APP_ID: ${{ vars.CLEVER_APP_ID }}
-          GIT_SSH_COMMAND: "ssh -i ~/.ssh/id_clever -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          clever login --token "$CLEVER_TOKEN" --secret "$CLEVER_SECRET"
           clever link "$CLEVER_APP_ID"
-          clever deploy --force
+          clever deploy --same-commit-policy rebuild
 
       - name: Smoke test (staging)
         if: ${{ github.event_name == 'workflow_run' || inputs.environment == 'staging' }}

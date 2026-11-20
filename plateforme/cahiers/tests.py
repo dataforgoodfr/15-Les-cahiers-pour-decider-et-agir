@@ -580,6 +580,7 @@ class InitialiserAdminTests(TestCase):
             os.environ, {"DJANGO_SUPERUSER_USERNAME": "admin"}, clear=True
         ), self.assertRaises(CommandError):
             call_command("initialiser_admin")
+        self.assertEqual(User.objects.count(), 0)
 
     def test_utilisateurs_standards_depuis_json(self):
         with patch.dict(
