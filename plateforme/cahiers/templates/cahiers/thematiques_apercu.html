@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Thématiques (aperçu provisoire){% endblock %}
+
+{% block extra_css %}
+<style>
+  .thematiques-apercu {
+    max-width: var(--page-max);
+    margin: 0 auto;
+    padding: 40px var(--gutter) 80px;
+  }
+
+  .thematiques-apercu__bandeau {
+    background: var(--c-surface-1);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 32px;
+    font-size: var(--fs-sm);
+    color: var(--c-ink-soft);
+  }
+
+  .thematiques-apercu__titre {
+    font-size: var(--fs-2xl);
+    margin-bottom: 24px;
+  }
+
+  .thematiques-apercu__sommaire {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 40px;
+  }
+
+  .thematiques-apercu__sommaire a {
+    display: inline-block;
+    padding: 6px 12px;
+    background: var(--c-surface-1);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+  }
+
+  .thematiques-apercu__sommaire a:hover {
+    background: var(--c-surface-2);
+  }
+
+  .thematiques-apercu__theme {
+    margin-bottom: 44px;
+    padding-top: 24px;
+    border-top: 2px solid var(--c-line);
+  }
+
+  .thematiques-apercu__theme-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .thematiques-apercu__theme-titre {
+    font-size: var(--fs-xl);
+  }
+
+  .thematiques-apercu__slug {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: var(--fs-sm);
+    color: var(--c-muted);
+    background: var(--c-surface-1);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+  }
+
+  .thematiques-apercu__description {
+    margin: 8px 0 0;
+    color: var(--c-ink-soft);
+    white-space: pre-line;
+    line-height: 1.5;
+  }
+
+  .thematiques-apercu__description--vide {
+    color: var(--c-muted);
+    font-style: italic;
+  }
+
+  .thematiques-apercu__liste {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    list-style: none;
+    padding: 0;
+    margin: 20px 0 0;
+  }
+
+  .thematiques-apercu__carte {
+    background: var(--c-surface-1);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .thematiques-apercu__carte-titre {
+    font-size: var(--fs-base);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="thematiques-apercu">
+  <p class="thematiques-apercu__bandeau">
+    <strong>Aperçu provisoire de la taxonomie</strong> — page temporaire réservée aux
+    environnements de développement et de pré-production, en attendant les pages
+    éditoriales Wagtail dédiées.
+  </p>
+
+  <h1 class="thematiques-apercu__titre">Thématiques des cahiers</h1>
+
+  {% if themes %}
+    <nav aria-label="Accès rapide aux thèmes">
+      <ul class="thematiques-apercu__sommaire">
+        {% for theme in themes %}
+          <li>
+            <a href="#{{ theme.slug }}">{{ theme.ordre }}. {{ theme.nom }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+
+    {% for theme in themes %}
+      <section class="thematiques-apercu__theme" id="{{ theme.slug }}">
+        <div class="thematiques-apercu__theme-entete">
+          <h2 class="thematiques-apercu__theme-titre">{{ theme.ordre }}. {{ theme.nom }}</h2>
+          <code class="thematiques-apercu__slug">{{ theme.slug }}</code>
+        </div>
+        {% if theme.description %}
+          <p class="thematiques-apercu__description">{{ theme.description }}</p>
+        {% endif %}
+
+        {% if theme.sous_thematiques.all %}
+          <ul class="thematiques-apercu__liste">
+            {% for sous_theme in theme.sous_thematiques.all %}
+              <li class="thematiques-apercu__carte">
+                <h3 class="thematiques-apercu__carte-titre">
+                  {{ sous_theme.ordre }}. {{ sous_theme.nom }}
+                </h3>
+                <code class="thematiques-apercu__slug">{{ sous_theme.slug }}</code>
+                {% if sous_theme.description %}
+                  <p class="thematiques-apercu__description">{{ sous_theme.description }}</p>
+                {% else %}
+                  <p class="thematiques-apercu__description thematiques-apercu__description--vide">
+                    Description en cours de rédaction.
+                  </p>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </section>
+    {% endfor %}
+  {% else %}
+    <p class="thematiques-apercu__description thematiques-apercu__description--vide">
+      Aucune thématique n'est chargée pour le moment. Exécutez
+      <code>uv run python manage.py charger_thematiques</code>.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

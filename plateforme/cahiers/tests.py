@@ -5,16 +5,26 @@ from io import StringIO
 from pathlib import Path
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.management import call_command
-from django.db import IntegrityError
+from django.core.management.base import CommandError
+from django.db import IntegrityError, connection, transaction
 from django.test import TestCase, override_settings
 
 from territoires.models import Commune, Departement, Region
 
-from . import noms
+from . import chargement, noms
 from .management.commands.charger_contributions import LIBELLE
-from .models import Contribution, Document, Page, Rattachement, Run, Transcription
+from .models import (
+    Contribution,
+    Document,
+    Page,
+    Rattachement,
+    Run,
+    Thematique,
+    Transcription,
+)
 
 
 def bourg_en_bresse():
@@ -524,3 +534,262 @@ class ChargerChabinExtraitsTests(TestCase):
         self.assertEqual(Run.objects.count(), 1)
         self.assertEqual(Document.objects.count(), 1)
         self.assertEqual(Contribution.objects.count(), 2)
+
+
+class ThematiqueModelTests(TestCase):
+    """Vérifie les contraintes, validations et helpers de `Thematique`."""
+
+    def setUp(self):
+        self.democratie = Thematique.objects.create(
+            nom="Démocratie", slug="democratie", ordre=1
+        )
+        self.fiscalite = Thematique.objects.create(
+            nom="Fiscalité", slug="fiscalite", ordre=2
+        )
+        self.ric = Thematique.objects.create(
+            nom="RIC",
+            slug="ric",
+            parent=self.democratie,
+            ordre=1,
+            description="Référendum d'initiative citoyenne.",
+        )
+
+    def test_proprietes_et_affichage(self):
+        self.assertTrue(self.democratie.est_theme)
+        self.assertFalse(self.democratie.est_sous_theme)
+        self.assertEqual(self.democratie.theme_racine, self.democratie)
+        self.assertEqual(str(self.democratie), "Démocratie")
+
+        self.assertFalse(self.ric.est_theme)
+        self.assertTrue(self.ric.est_sous_theme)
+        self.assertEqual(self.ric.theme_racine, self.democratie)
+        self.assertEqual(str(self.ric), "Démocratie — RIC")
+
+    def test_slug_unique(self):
+        with self.assertRaises(IntegrityError):
+            Thematique.objects.create(nom="Autre", slug="ric", ordre=3)
+
+    def test_ordre_doit_etre_positif(self):
+        with self.assertRaises(IntegrityError):
+            Thematique.objects.create(nom="Zéro", slug="zero", ordre=0)
+
+    def test_pas_son_propre_parent(self):
+        self.fiscalite.parent = self.fiscalite
+        with self.assertRaises(ValidationError):
+            self.fiscalite.clean()
+        with self.assertRaises(IntegrityError):
+            Thematique.objects.filter(pk=self.fiscalite.pk).update(
+                parent=self.fiscalite
+            )
+
+    def _verifier_contraintes_differees(self):
+        """Force PostgreSQL à vérifier les contraintes DEFERRED comme au COMMIT."""
+        with connection.cursor() as cursor:
+            cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+    def test_ordre_unique_entre_themes_racines(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Thematique.objects.create(
+                nom="Doublon racine", slug="doublon-racine", ordre=1
+            )
+            self._verifier_contraintes_differees()
+
+    def test_ordre_unique_par_parent_mais_partageable_entre_parents(self):
+        # Ordre 1 autorisé sous un autre thème parent.
+        isf = Thematique.objects.create(
+            nom="ISF", slug="isf", parent=self.fiscalite, ordre=1
+        )
+        self.assertEqual(isf.ordre, 1)
+        self._verifier_contraintes_differees()
+
+        # Ordre 1 interdit une seconde fois sous le même parent.
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Thematique.objects.create(
+                nom="Autre sous-thème",
+                slug="autre-sous-theme",
+                parent=self.democratie,
+                ordre=1,
+            )
+            self._verifier_contraintes_differees()
+
+    def test_echange_ordre_dans_une_transaction_grace_a_deferred(self):
+        with transaction.atomic():
+            self.democratie.ordre = 2
+            self.democratie.save()
+            self.fiscalite.ordre = 1
+            self.fiscalite.save()
+            self._verifier_contraintes_differees()
+
+        self.democratie.refresh_from_db()
+        self.fiscalite.refresh_from_db()
+        self.assertEqual((self.democratie.ordre, self.fiscalite.ordre), (2, 1))
+
+    def test_clean_interdit_troisieme_niveau(self):
+        niveau_3 = Thematique(
+            nom="Sous-sous-thème", slug="sous-sous-theme", parent=self.ric, ordre=1
+        )
+        with self.assertRaises(ValidationError) as ctx:
+            niveau_3.clean()
+        self.assertIn("parent", ctx.exception.message_dict)
+
+    def test_clean_interdit_parent_sur_theme_ayant_des_enfants(self):
+        self.democratie.parent = self.fiscalite
+        with self.assertRaises(ValidationError) as ctx:
+            self.democratie.clean()
+        self.assertIn("parent", ctx.exception.message_dict)
+
+    def test_queryset_helpers(self):
+        Thematique.objects.create(
+            nom="Votes blancs",
+            slug="votes-blancs",
+            parent=self.democratie,
+            ordre=2,
+        )
+        Thematique.objects.create(
+            nom="ISF", slug="isf", parent=self.fiscalite, ordre=1
+        )
+
+        self.assertEqual(
+            list(Thematique.objects.themes().values_list("slug", flat=True)),
+            ["democratie", "fiscalite"],
+        )
+        self.assertEqual(
+            list(Thematique.objects.sous_thematiques().values_list("slug", flat=True)),
+            ["ric", "votes-blancs", "isf"],
+        )
+
+        with self.assertNumQueries(2):
+            themes = list(Thematique.objects.avec_sous_thematiques())
+            enfants_democratie = [st.slug for st in themes[0].sous_thematiques.all()]
+        self.assertEqual(enfants_democratie, ["ric", "votes-blancs"])
+
+
+class ChargerThematiquesTests(TestCase):
+    """Vérifie le chargement CSV, l'idempotence et les garde-fous de `charger_thematiques`."""
+
+    def _ecrire_csv(self, dossier: str, contenu: str, nom: str = "thematiques.csv") -> Path:
+        fichier = Path(dossier) / nom
+        fichier.write_text(contenu, encoding="utf-8")
+        return fichier
+
+    def test_chargement_mock_complet_et_idempotence(self):
+        sortie = StringIO()
+        call_command("charger_thematiques", stdout=sortie)
+
+        self.assertEqual(Thematique.objects.themes().count(), 6)
+        self.assertEqual(Thematique.objects.sous_thematiques().count(), 45)
+        self.assertEqual(Thematique.objects.count(), 51)
+        self.assertIn("51 créées, 0 mises à jour", sortie.getvalue())
+
+        # Vérification d'un lien parent/enfant concret.
+        ric = Thematique.objects.get(slug="ric")
+        self.assertEqual(ric.parent.slug, "democratie")
+
+        # Relance idempotente.
+        sortie_2 = StringIO()
+        call_command("charger_thematiques", stdout=sortie_2)
+        self.assertEqual(Thematique.objects.count(), 51)
+        self.assertIn("0 créées, 51 mises à jour", sortie_2.getvalue())
+
+    def test_preservation_et_ecrasement_descriptions(self):
+        call_command("charger_thematiques", stdout=StringIO())
+
+        # Un éditeur modifie une description dans Wagtail et en vide une autre.
+        ric = Thematique.objects.get(slug="ric")
+        ric.description = "Description enrichie dans Wagtail."
+        ric.save()
+        isf = Thematique.objects.get(slug="isf")
+        isf.description = ""
+        isf.save()
+
+        # Rechargement par défaut : préserve la description non vide, remplit celle qui est vide.
+        sortie = StringIO()
+        call_command("charger_thematiques", stdout=sortie)
+        ric.refresh_from_db()
+        isf.refresh_from_db()
+        self.assertEqual(ric.description, "Description enrichie dans Wagtail.")
+        self.assertTrue(isf.description)
+        self.assertIn("1 descriptions existantes préservées", sortie.getvalue())
+
+        # Rechargement avec --ecraser-descriptions : remplace par le CSV.
+        call_command("charger_thematiques", "--ecraser-descriptions", stdout=StringIO())
+        ric.refresh_from_db()
+        self.assertNotEqual(ric.description, "Description enrichie dans Wagtail.")
+
+    def test_echange_ordre_et_conservation_absentes_du_csv(self):
+        csv_v1 = (
+            "theme,sous_theme,slug,ordre,description\n"
+            "Alpha,,alpha,1,\n"
+            "Beta,,beta,2,\n"
+            "Gamma,,gamma,3,\n"
+        )
+        csv_v2 = (
+            "theme,sous_theme,slug,ordre,description\n"
+            "Beta,,beta,1,\n"
+            "Alpha,,alpha,2,\n"
+        )
+        with tempfile.TemporaryDirectory() as dossier:
+            f1 = self._ecrire_csv(dossier, csv_v1, "v1.csv")
+            f2 = self._ecrire_csv(dossier, csv_v2, "v2.csv")
+            chargement.charger_thematiques(f1)
+            resultat = chargement.charger_thematiques(f2)
+
+        self.assertEqual(resultat.absentes_du_fichier, 1)
+        self.assertTrue(Thematique.objects.filter(slug="gamma").exists())
+        self.assertEqual(Thematique.objects.get(slug="beta").ordre, 1)
+        self.assertEqual(Thematique.objects.get(slug="alpha").ordre, 2)
+
+    @override_settings(ENV="PROD")
+    def test_garde_fou_prod_exige_fichier_explicite(self):
+        with self.assertRaises(CommandError):
+            call_command("charger_thematiques", stdout=StringIO())
+
+        # Avec --fichier explicite, le chargement est autorisé en PROD.
+        csv_prod = "theme,sous_theme,slug,ordre,description\nDémocratie,,democratie,1,\n"
+        with tempfile.TemporaryDirectory() as dossier:
+            fichier = self._ecrire_csv(dossier, csv_prod)
+            call_command("charger_thematiques", "--fichier", fichier, stdout=StringIO())
+        self.assertEqual(Thematique.objects.count(), 1)
+
+    def test_erreurs_validation_csv(self):
+        cas_invalides = [
+            "mauvaise_colonne,slug\nx,y\n",
+            "theme,sous_theme,slug,ordre,description\nDémocratie,,BAD SLUG,1,\n",
+            "theme,sous_theme,slug,ordre,description\nA,,dup,1,\nB,,dup,2,\n",
+            "theme,sous_theme,slug,ordre,description\nInconnu,Sous,sous,1,\n",
+            "theme,sous_theme,slug,ordre,description\nA,,a,0,\n",
+            "theme,sous_theme,slug,ordre,description\nA,,a,1,\nB,,b,1,\n",
+        ]
+        with tempfile.TemporaryDirectory() as dossier:
+            for idx, contenu in enumerate(cas_invalides):
+                fichier = self._ecrire_csv(dossier, contenu, f"invalide_{idx}.csv")
+                with self.assertRaises(chargement.ErreurChargement):
+                    chargement.charger_thematiques(fichier)
+
+
+class ApercuThematiquesTests(TestCase):
+    """Vérifie l'aperçu provisoire `/thematiques/` (LOCAL/STAGING uniquement)."""
+
+    def test_apercu_affiche_themes_et_sous_themes(self):
+        theme = Thematique.objects.create(
+            nom="Démocratie", slug="democratie", ordre=1, description="Présentation."
+        )
+        Thematique.objects.create(
+            nom="RIC",
+            slug="ric",
+            parent=theme,
+            ordre=1,
+            description="Référendum d'initiative citoyenne.",
+        )
+
+        reponse = self.client.get("/thematiques/")
+        self.assertEqual(reponse.status_code, 200)
+        self.assertContains(reponse, "Démocratie")
+        self.assertContains(reponse, "RIC")
+        self.assertContains(reponse, "democratie")
+        self.assertContains(reponse, "Référendum d&#x27;initiative citoyenne.")
+
+    @override_settings(ENV="PROD")
+    def test_apercu_indisponible_en_prod(self):
+        reponse = self.client.get("/thematiques/")
+        self.assertEqual(reponse.status_code, 404)

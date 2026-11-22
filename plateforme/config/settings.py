@@ -240,6 +240,13 @@ LOGGING = {
     "disable_existing_loggers": False,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": "INFO"},
+    "loggers": {
+        # Évite le bruit INFO (RUNNING/SUCCESSFUL) des tâches synchrones
+        # d'indexation Wagtail (`django_tasks` et `django.tasks`) tout en
+        # conservant les erreurs (FAILED).
+        "django_tasks": {"level": "WARNING"},
+        "django.tasks": {"level": "WARNING"},
+    },
 }
 
 MEDIA_URL = "/media/"

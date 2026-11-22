@@ -43,6 +43,7 @@ cp .env.example .env
 uv sync # Installe les dépendances Python sur votre machine.
 uv run python manage.py migrate # Met à jour la base de données (avec l'ORM Django).
 uv run python manage.py charger_chabin_extraits # Charge les extraits des contributions Chabin.
+uv run python manage.py charger_thematiques # Charge le jeu d'essai des thématiques (LOCAL/STAGING).
 uv run python manage.py createsuperuser # Crée un superutilisateur.
 uv run python manage.py runserver
 ```
@@ -94,6 +95,18 @@ sur [Mattermost 15: Cahiers D&A Dev](https://mattermost.services.dataforgood.fr/
   ou courriels, dont `python -m decoupage.chabin` retrouve le début dans l'OCR du scan,
   avec leur texte anonymisé par l'édition. Les manuscrits, sans position, ne
   sont pas chargés.
+  Les thématiques (taxonomie à deux niveaux : thèmes principaux et sous-thèmes,
+  voir [`docs/thematiques.md`](../docs/thematiques.md)) sont chargées de façon
+  idempotente par `uv run python manage.py charger_thematiques` (qui s'appuie
+  sur `cahiers/chargement.py`). En `LOCAL` et `STAGING`, la commande charge par
+  défaut le jeu d'essai `cahiers/data/thematiques_mock.csv` ; en `PROD`,
+  `--fichier` est obligatoire. Par défaut, les descriptions déjà renseignées en
+  base sont préservées (utiliser `--ecraser-descriptions` pour les remplacer).
+  Dans Wagtail (`/admin/`), les thématiques sont exposées en Snippet
+  (« Thématiques ») : les éditeurs disposant des permissions `view_thematique`
+  et `change_thematique` peuvent y modifier la `description` publique sans
+  altérer la structure figée (`nom`, `parent`, `slug`, `ordre`). En `LOCAL` et
+  `STAGING`, un aperçu provisoire est consultable sur `/thematiques/`.
 
 ## La charte graphique
 
@@ -119,6 +132,7 @@ les étapes lisent ces tables, pas les PDF. PostgreSQL fait référence.
 | `Run`           | couche produite                        | genre, auteur, modèle et paramètres ; un seul actif par genre                                                           |
 | `Transcription` | page et run de transcription           | texte, qualité entre 0 et 1, chemin des sorties lourdes (ALTO, images) hors base                                        |
 | `Contribution`  | contribution et run de délimitation    | de (page, x, y) à (page, x, y), en points PDF ; publiable ou non ; texte s'il a été lu                                  |
+| `Thematique`    | thème principal ou sous-thème          | taxonomie à 2 niveaux stricts (`parent` nullable), `slug` stable unique, `ordre` relatif au parent, `description` publique |
 
 Le fichier PDF (`CC_01000_190304_01053_MD_15462.pdf`) et le numéro de page,
 à partir de 1, désignent une page partout, dans `analyse/` comme ici.

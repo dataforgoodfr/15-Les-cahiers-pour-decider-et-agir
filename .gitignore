@@ -173,6 +173,11 @@ data/
 *.parquet
 *.sqlite
 *.db
+# Exceptions versionnées (sans données personnelles, voir .pre-commit-config.yaml)
+!plateforme/cahiers/data/
+plateforme/cahiers/data/*
+!plateforme/cahiers/data/cahiers_chabin_extraits.json
+!plateforme/cahiers/data/thematiques_mock.csv
 
 # Fichiers générés par PyCharm
 .idea/

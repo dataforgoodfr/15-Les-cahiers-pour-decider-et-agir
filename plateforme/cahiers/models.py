@@ -10,8 +10,9 @@ d'annotation : c'est ce qui vaut aussi pour les pages manuscrites, que rien
 n'a encore lues.
 """
 
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import F, Prefetch, Q
 
 from territoires.models import Commune
 
@@ -267,3 +268,155 @@ class Contribution(models.Model):
         return self.document.pages.filter(
             numero__gte=self.page_debut, numero__lte=self.page_fin
         )
+
+
+class ThematiqueQuerySet(models.QuerySet):
+    """Requêtes métier courantes sur la taxonomie à deux niveaux."""
+
+    def themes(self):
+        """Les thèmes principaux (sans parent), dans leur ordre d'affichage."""
+        return self.filter(parent__isnull=True).order_by("ordre", "nom")
+
+    def sous_thematiques(self):
+        """Les sous-thèmes, triés par ordre du thème parent puis ordre propre."""
+        return (
+            self.filter(parent__isnull=False)
+            .select_related("parent")
+            .order_by("parent__ordre", "ordre", "nom")
+        )
+
+    def avec_sous_thematiques(self):
+        """Les thèmes principaux avec leurs sous-thèmes préchargés dans l'ordre."""
+        return self.themes().prefetch_related(
+            Prefetch(
+                "sous_thematiques",
+                queryset=Thematique.objects.order_by("ordre", "nom"),
+            )
+        )
+
+
+class Thematique(models.Model):
+    """Un thème principal ou un sous-thème de la taxonomie de la plateforme.
+
+    La taxonomie est un arbre strict à deux niveaux porté par une table unique :
+    - `parent = None` désigne un thème principal ;
+    - `parent = <thème>` désigne un sous-thème.
+
+    Ce choix évite toute incohérence entre thème et sous-thème sur les objets
+    rattachés (futures `Idee`, `Contribution`, pages Wagtail) tout en permettant
+    de classer exceptionnellement un contenu au niveau d'un thème seul.
+
+    Le `slug` est un identifiant métier court, unique et stable (filtres,
+    imports idempotents), indépendant des URLs des pages Wagtail qui s'y
+    rattacheront par clé relationnelle. L'`ordre` est relatif au parent (de 1
+    à N pour les thèmes principaux, et de 1 à M au sein de chaque thème).
+    """
+
+    nom = models.CharField(
+        max_length=200,
+        verbose_name="nom",
+        help_text="Intitulé public du thème ou du sous-thème.",
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        verbose_name="slug",
+        help_text=(
+            "Identifiant court et stable (minuscules sans accent, tirets), "
+            "utilisé dans les filtres et les imports."
+        ),
+    )
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="sous_thematiques",
+        verbose_name="thème parent",
+        help_text=(
+            "Laisser vide pour un thème principal ; choisir un thème principal "
+            "pour un sous-thème (2 niveaux maximum)."
+        ),
+    )
+    ordre = models.PositiveIntegerField(
+        verbose_name="ordre",
+        help_text="Ordre d'affichage au sein du même niveau (à partir de 1).",
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="description",
+        help_text="Présentation publique de la thématique, affichée sur le site.",
+    )
+
+    objects = ThematiqueQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "thématique"
+        verbose_name_plural = "thématiques"
+        ordering = ["ordre", "nom"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(ordre__gte=1),
+                name="thematique_ordre_positif",
+            ),
+            models.CheckConstraint(
+                condition=~Q(parent=F("id")),
+                name="thematique_pas_son_propre_parent",
+            ),
+            # `nulls_distinct=False` impose aussi l'unicité de `ordre` parmi
+            # les thèmes principaux (où `parent IS NULL`). `DEFERRED` permet
+            # d'échanger deux ordres au sein d'une même transaction.
+            models.UniqueConstraint(
+                fields=["parent", "ordre"],
+                nulls_distinct=False,
+                deferrable=models.Deferrable.DEFERRED,
+                name="thematique_ordre_unique_par_parent",
+            ),
+        ]
+
+    def __str__(self):
+        if self.parent_id is not None:
+            return f"{self.parent.nom} — {self.nom}"
+        return self.nom
+
+    @property
+    def est_theme(self) -> bool:
+        """Indique si la thématique est un thème principal (niveau 1)."""
+        return self.parent_id is None
+
+    @property
+    def est_sous_theme(self) -> bool:
+        """Indique si la thématique est un sous-thème (niveau 2)."""
+        return self.parent_id is not None
+
+    @property
+    def theme_racine(self) -> Thematique:
+        """Retourne le thème principal correspondant (soi-même pour un niveau 1)."""
+        return self.parent if self.parent_id is not None else self
+
+    def clean(self):
+        super().clean()
+        if self.parent_id is None:
+            return
+        if self.pk is not None and self.parent_id == self.pk:
+            raise ValidationError(
+                {"parent": "Une thématique ne peut pas être son propre parent."}
+            )
+        if self.parent.parent_id is not None:
+            raise ValidationError(
+                {
+                    "parent": (
+                        "La taxonomie est limitée à 2 niveaux : "
+                        "un sous-thème ne peut pas être thème parent."
+                    )
+                }
+            )
+        if self.pk is not None and self.sous_thematiques.exists():
+            raise ValidationError(
+                {
+                    "parent": (
+                        "Un thème qui possède déjà des sous-thèmes ne peut pas "
+                        "devenir lui-même un sous-thème."
+                    )
+                }
+            )
