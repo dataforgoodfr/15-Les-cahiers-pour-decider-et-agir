@@ -11,18 +11,12 @@ admin.site.site_title = "Cahiers"
 
 urlpatterns = [
     path("django-admin/", admin.site.urls),
-]
-
-# Aperçu provisoire des thématiques (retiré lors de l'arrivée des pages Wagtail).
-if settings.ENV != "PROD":
-    urlpatterns.append(
-        path(
-            "thematiques/",
-            cahiers_views.apercu_thematiques,
-            name="apercu_thematiques",
-        )
-    )
-
-urlpatterns += [
+    # Aperçu provisoire des thématiques (la vue renvoie 404 en PROD ; route à
+    # retirer lors de l'arrivée des pages Wagtail dédiées).
+    path(
+        "thematiques/",
+        cahiers_views.apercu_thematiques,
+        name="apercu_thematiques",
+    ),
     path("", include(cms_urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

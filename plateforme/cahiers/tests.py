@@ -673,24 +673,29 @@ class ChargerThematiquesTests(TestCase):
         return fichier
 
     def test_chargement_mock_complet_et_idempotence(self):
-        sortie = StringIO()
-        call_command("charger_thematiques", stdout=sortie)
+        for env in ("LOCAL", "STAGING"):
+            with self.subTest(env=env), override_settings(ENV=env):
+                Thematique.objects.sous_thematiques().delete()
+                Thematique.objects.themes().delete()
+                sortie = StringIO()
+                call_command("charger_thematiques", stdout=sortie)
 
-        self.assertEqual(Thematique.objects.themes().count(), 6)
-        self.assertEqual(Thematique.objects.sous_thematiques().count(), 45)
-        self.assertEqual(Thematique.objects.count(), 51)
-        self.assertIn("51 créées, 0 mises à jour", sortie.getvalue())
+                self.assertEqual(Thematique.objects.themes().count(), 6)
+                self.assertEqual(Thematique.objects.sous_thematiques().count(), 45)
+                self.assertEqual(Thematique.objects.count(), 51)
+                self.assertIn("51 créées, 0 mises à jour", sortie.getvalue())
 
-        # Vérification d'un lien parent/enfant concret.
-        ric = Thematique.objects.get(slug="ric")
-        self.assertEqual(ric.parent.slug, "democratie")
+                # Vérification d'un lien parent/enfant concret.
+                ric = Thematique.objects.get(slug="ric")
+                self.assertEqual(ric.parent.slug, "democratie")
 
-        # Relance idempotente.
-        sortie_2 = StringIO()
-        call_command("charger_thematiques", stdout=sortie_2)
-        self.assertEqual(Thematique.objects.count(), 51)
-        self.assertIn("0 créées, 51 mises à jour", sortie_2.getvalue())
+                # Relance idempotente.
+                sortie_2 = StringIO()
+                call_command("charger_thematiques", stdout=sortie_2)
+                self.assertEqual(Thematique.objects.count(), 51)
+                self.assertIn("0 créées, 51 mises à jour", sortie_2.getvalue())
 
+    @override_settings(ENV="STAGING")
     def test_preservation_et_ecrasement_descriptions(self):
         call_command("charger_thematiques", stdout=StringIO())
 
@@ -770,6 +775,7 @@ class ChargerThematiquesTests(TestCase):
 class ApercuThematiquesTests(TestCase):
     """Vérifie l'aperçu provisoire `/thematiques/` (LOCAL/STAGING uniquement)."""
 
+    @override_settings(ENV="LOCAL")
     def test_apercu_affiche_themes_et_sous_themes(self):
         theme = Thematique.objects.create(
             nom="Démocratie", slug="democratie", ordre=1, description="Présentation."
@@ -788,6 +794,9 @@ class ApercuThematiquesTests(TestCase):
         self.assertContains(reponse, "RIC")
         self.assertContains(reponse, "democratie")
         self.assertContains(reponse, "Référendum d&#x27;initiative citoyenne.")
+
+        with override_settings(ENV="STAGING"):
+            self.assertEqual(self.client.get("/thematiques/").status_code, 200)
 
     @override_settings(ENV="PROD")
     def test_apercu_indisponible_en_prod(self):
