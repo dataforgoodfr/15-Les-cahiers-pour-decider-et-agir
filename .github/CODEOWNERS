@@ -1,0 +1,4 @@
+# Propriétaires du code (règle de protection de branche `main` : revue requise).
+# Chaque PR touchant un fichier du dépôt demande la revue d'au moins un des
+# propriétaires ci-dessous.
+* @jpmjpmjpm @njouanin @HugoFara
