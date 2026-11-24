@@ -41,5 +41,6 @@ repos:
           (?x)^(
             extraction/chabin/references/liste_pdfs_raw_17\.txt |
             docs/images/logo-[a-z-]+\.png |
-            plateforme/cahiers/data/cahiers_chabin_extraits.json
+            plateforme/cahiers/data/cahiers_chabin_extraits\.json |
+            plateforme/cahiers/data/thematiques_mock\.csv
           )$

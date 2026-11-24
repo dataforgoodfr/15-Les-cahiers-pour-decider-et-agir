@@ -5,11 +5,12 @@ Le public ne voit que l'extrait d'une contribution, caviardé et relu
 n'est pas anonymisé et n'a aucune adresse publique.
 """
 
-from django.http import FileResponse
+from django.conf import settings
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
-from .models import Contribution
+from .models import Contribution, Thematique
 
 
 def accueil(request):
@@ -40,4 +41,21 @@ def extrait(request, pk: int):
         contribution.extrait.open("rb"),
         content_type="application/pdf",
         filename=f"contribution-{contribution.pk}.pdf",
+    )
+
+
+def apercu_thematiques(request):
+    """Aperçu temporaire de la taxonomie des thématiques (LOCAL et STAGING).
+
+    Permet à l'équipe projet de consulter facilement les thèmes, sous-thèmes,
+    slugs et descriptions avant l'arrivée des pages Wagtail dédiées.
+    Refuse l'accès en production.
+    """
+    if settings.ENV == "PROD":
+        raise Http404("Cette page d'aperçu n'est pas disponible en production.")
+    themes = Thematique.objects.avec_sous_thematiques()
+    return render(
+        request,
+        "cahiers/thematiques_apercu.html",
+        {"themes": themes},
     )
