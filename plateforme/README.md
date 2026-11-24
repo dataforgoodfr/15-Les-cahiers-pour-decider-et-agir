@@ -158,31 +158,50 @@ Les tests : `uv run python manage.py test`.
 
 ## Déploiement sur Clever Cloud (`STAGING` et `PROD`)
 
-Voir aussi [`docs/deploiement.md`](../docs/deploiement.md#plan-de-deploiement-plateforme) pour le plan complet de déploiement sur Clever Cloud.
+Le plan complet est dans [`docs/deploiement.md`](../docs/deploiement.md).
 
-Une application Python, avec les add-ons PostgreSQL et Cellar. Le `uv.lock`
-active le déploiement uv natif : pas de Nginx, l'application sert elle-même
-ses fichiers statiques (WhiteNoise). Clever Cloud ne lance alors ni `migrate`
-ni `collectstatic` : les hooks s'en chargent.
+### Déploiement manuel — `deploy_env.sh`
 
-Variables d'environnement à définir :
+`plateforme/deploy_env.sh` provisionne un environnement de bout en bout :
+liaison de l'app et des add-ons, Force HTTPS, variables d'environnement,
+domaine, `clever deploy`, puis seed (communes, extraits Chabin, admin).
+Idempotent et relançable. Pré-requis : `clever login`, et une clé SSH pour le
+seed (`clever ssh`).
 
-| Variable                   | Valeur                                                     |
-|----------------------------|------------------------------------------------------------|
-| `DJANGO_ENV`               | `STAGING` (pré-production) ou `PROD` (production)          |
-| `APP_FOLDER`               | `plateforme`                                               |
-| `CC_PYTHON_UV_RUN_COMMAND` | `uv run gunicorn config.wsgi` (gunicorn écoute sur `PORT`) |
-| `CC_POST_BUILD_HOOK`       | `uv run python manage.py collectstatic --noinput`          |
-| `CC_PRE_RUN_HOOK`          | `uv run python manage.py migrate --noinput`                |
-| `DJANGO_SECRET_KEY`        | une longue chaîne aléatoire                                |
-| `DJANGO_ALLOWED_HOSTS`     | les domaines, séparés par des virgules                     |
-| `CELLAR_BUCKET`            | le nom du bucket des PDF, privé                            |
+Depuis `plateforme/` :
 
-`POSTGRESQL_ADDON_URI` et `CELLAR_ADDON_*` sont fournies par les add-ons.
-Après le premier déploiement, charger les communes une fois avec
-`clever ssh`, puis `uv run python manage.py charger_communes`.
-Sans Cellar, les fichiers déposés restent sur le disque de l'instance, qui
-n'est pas conservé entre deux déploiements.
+```sh
+export CLEVER_APP_ID="app_…"        # id de l'application Clever Cloud
+export DJANGO_SECRET_KEY="$(uv run python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')" # secret key générée par Django ; possible de la récupérer depuis les env vars Github également
+export DJANGO_SUPERUSER_PASSWORD="…"
+./deploy_env.sh staging              # ou prod
+```
 
-Dans la console, activer « Force HTTPS » sur le domaine : l'application ne
-redirige pas elle-même vers HTTPS.
+Le `case` du script porte les valeurs propres à chaque environnement (domaine,
+bucket, add-ons) ; les secrets restent des variables d'environnement, jamais
+dans git.
+
+### Déploiement continu — `.github/workflows/deploy.yaml`
+
+Le workflow `deploy` déploie le STAGING à chaque push sur `main` qui touche
+`plateforme/` (ou le workflow lui-même), et permet un déploiement manuel
+(`workflow_dispatch`) vers `staging` ou `production`. Il exécute `clever link`
+puis `clever deploy --same-commit-policy rebuild`, suivi d'un smoke test HTTP.
+
+### Variables et secrets dans GitHub
+
+À définir dans **Settings → Environments → `staging`** (et `production`) :
+
+- **Secrets** : `CLEVER_TOKEN`, `CLEVER_SECRET` (identifiants Clever Cloud ; ils
+  expirent — voir `clever profile`).
+- **Variables** : `CLEVER_APP_ID`, `CLEVER_STAGING_URL` (nom d'hôte, sans
+  `https://`).
+
+Les variables Django ne sont **pas** utilisées par le workflow : elles vivent
+sur Clever Cloud (posées par `deploy_env.sh`). Elles seront tout de même disponibles dans
+l'environnement GitHub pour pouvoir relancer `deploy_env.sh` avec les valeurs
+existantes : `DJANGO_ALLOWED_HOSTS`, `CELLAR_BUCKET` en variables, et
+`DJANGO_SECRET_KEY`, `DJANGO_SUPERUSER_PASSWORD` en secrets.
+
+`POSTGRESQL_ADDON_URI` et `CELLAR_ADDON_*` sont injectées par les add-ons Clever
+Cloud, jamais stockées dans GitHub.
