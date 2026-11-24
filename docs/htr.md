@@ -2,7 +2,7 @@
 
 La moitié des pages écrites du corpus sont manuscrites (142 000 sur 276 000)
 et ne sont pas encore lues (#6). Ce document réunit les mesures faites
-jusqu'ici pour choisir comment les lire. État au 19 octobre 2026.
+jusqu'ici pour choisir comment les lire. État au 19 novembre 2026.
 
 ## L'étalon
 
@@ -186,16 +186,118 @@ le fait déraper (20 à 22 % sur `p51`, où les deux lectures humaines
 s'accordent à 2,3 %), comme `01193` en Charente-Maritime. Les modèles
 hébergés n'y ont pas été passés : les scans ne sont pas anonymisés.
 
+### Modèles servis en Europe : Scaleway et OVHcloud
+
+Scaleway (France) et OVHcloud AI Endpoints (France) servent des modèles de
+vision à poids ouverts, facturés au jeton, sur des machines en Europe : les
+scans ne quittent pas l'UE, et on mesure un coût réel par page au lieu
+d'heures de carte louée. Passés le 19 novembre 2026 sur les deux étalons,
+page entière, même consigne et même retirage que pour Ollama et Fireworks
+(`transcrire_ue.py`, hors du dépôt), par OpenCode avec un agent sans outils.
+`#none` : raisonnement coupé.
+
+Charente-Maritime (19 pages, référence : Hugo ; mots inventés contre sa
+lecture en orthographe corrigée, comme plus haut) :
+
+| Modèle | Où il tourne | CER | WER | inventés | charabia | omis | € par page |
+|---|---|---:|---:|---:|---:|---:|---:|
+| *Gemma 4 31b (rappel)* | *Verda* | *6,4 %* | *17,3 %* | *6,6 %* | *1,1 %* | *0,8 %* | |
+| Qwen 3.5 397b, `#none` | Scaleway | 5,4 % | 15,0 % | 5,6 % | 0,5 % | 0,7 % | 0,0015 |
+| Qwen 3.5 397b, *reasoning* | Scaleway | 5,7 % | 15,0 % | 5,7 % | 0,6 % | 0,5 % | 0,0031 |
+| Gemma 4 26b, `#none` | Scaleway | 7,9 % | 18,3 % | 6,3 % | 0,8 % | 2,6 % | 0,0003 |
+| DeepSeek V4.1 Flash, *reasoning* | Scaleway | 9,6 % | 21,8 % | 10,7 % | 1,0 % | 1,0 % | 0,0119 |
+| Nemotron 3 Nano Omni 30b, `#none` | OVHcloud (int4) | 10,3 % | 24,3 % | 8,8 % | 2,2 % | 1,3 % | 0,0003 |
+| Mistral Medium 3.5, `#none` | Scaleway | 10,6 % | 23,7 % | 11,1 % | 0,8 % | 1,2 % | 0,0034 |
+| Qwen3-VL 30b | OVHcloud (int4) | 11,1 % | 23,4 % | 11,2 % | 1,3 % | 1,5 % | 0,0002 |
+| DeepSeek V4.1 Flash, `#none` | Scaleway | 11,9 % | 24,7 % | 12,7 % | 1,3 % | 1,4 % | 0,0008 |
+| Qwen 3.8 27b, `#none` | OVHcloud (fp8) | 12,5 % | 27,1 % | 14,3 % | 1,6 % | 1,0 % | 0,0012 |
+| DeepSeek V4.1 Flash | OVHcloud (fp4) | 19,0 % | 31,4 % | 20,3 % | 1,6 % | 1,1 % | 0,0005 |
+| LightOnOCR-3 0,8b | Scaleway | 27,1 % | 38,0 % | 15,4 % | 1,7 % | 12,1 % | 0,0022 |
+
+Dole (31 pages, référence : Bendinelli ; mots inventés contre son
+orthographe régularisée) :
+
+| Modèle | Où il tourne | CER | WER | inventés | charabia | omis | € par page |
+|---|---|---:|---:|---:|---:|---:|---:|
+| *Gemma 4 31b (rappel)* | *Verda* | *8,3 %* | *16,9 %* | *8,0 %* | *1,8 %* | *1,1 %* | |
+| Qwen 3.5 397b, *reasoning* | Scaleway | 6,2 % | 12,8 % | 6,3 % | 1,0 % | 1,1 % | 0,0046 |
+| Qwen 3.5 397b, `#none` | Scaleway | 9,0 % | 15,7 % | 6,3 % | 1,0 % | 4,3 % | 0,0028 |
+| DeepSeek V4.1 Flash | OVHcloud (fp4) | 10,9 % | 21,4 % | 12,2 % | 1,6 % | 1,7 % | 0,0009 |
+| Qwen3-VL 30b | OVHcloud (int4) | 11,6 % | 23,1 % | 12,6 % | 1,3 % | 2,1 % | 0,0004 |
+| DeepSeek V4.1 Flash, `#none` | Scaleway | 12,0 % | 22,2 % | 13,2 % | 1,2 % | 1,9 % | 0,0013 |
+| Nemotron 3 Nano Omni 30b, `#none` | OVHcloud (int4) | 12,3 % | 26,4 % | 13,3 % | 3,0 % | 1,6 % | 0,0006 |
+| DeepSeek V4.1 Flash, *reasoning* | Scaleway | 12,7 % | 22,3 % | 12,3 % | 1,1 % | 3,8 % | 0,0052 |
+| Mistral Medium 3.5, `#none` | Scaleway | 14,3 % | 26,7 % | 15,9 % | 1,5 % | 2,3 % | 0,0063 |
+| Gemma 4 26b, `#none` | Scaleway | 16,0 % | 27,9 % | 15,7 % | 2,2 % | 3,2 % | 0,0004 |
+| LightOnOCR-3 0,8b | Scaleway | 17,7 % | 28,1 % | 14,5 % | 2,0 % | 5,2 % | 0,0022 |
+| Qwen 3.8 27b, `#none` | OVHcloud (fp8) | 27,9 % | 41,0 % | 26,2 % | 2,4 % | 5,1 % | 0,0029 |
+
+Entre parenthèses, la quantification annoncée par OVHcloud ; Scaleway ne la
+donne pas.
+
+- **Qwen 3.5 397b est le seul modèle servi en Europe qui fasse mieux que
+  Gemma 4 31b**, sur les deux étalons : un mot inventé sur seize à dix-huit,
+  au niveau de Muse Spark, sans atteindre Kimi K3 ni Opus.
+- **Le *reasoning* ne lui fait pas mieux lire, il l'empêche d'omettre.**
+  Sans, il saute une partie du texte de quelques pages entières de Dole
+  (4,3 % de mots omis) ; avec, les omissions retombent à 1,1 %, les mots
+  inventés ne bougent pas. En Charente-Maritime, sur des pages recadrées,
+  il n'apporte rien. Il double le coût et prend 37 s par page.
+- **DeepSeek V4.1 Flash perd 2 à 3 points par rapport à Fireworks**, chez
+  les deux hébergeurs. Chez OVHcloud, en fp4, il lit aussi bien que chez
+  Scaleway pour deux fois moins cher, mais boucle sur une page de la main
+  difficile (`01193_p18`, 1,8 fois trop de texte). Le *reasoning* lui fait
+  gagner un à deux points en Charente-Maritime, pour quatre à quinze fois le
+  coût.
+- **Les petits modèles bon marché plafonnent à 10-12 %** (Qwen3-VL,
+  Nemotron, 0,0002 à 0,0006 € la page). Gemma 4 26b est bon sur les pages
+  recadrées de Charente-Maritime (7,9 %) mais décroche sur les pages
+  entières de Dole (16 %).
+- **Qwen 3.8 27b sans *reasoning* est instable** : à Dole, une page rendue
+  presque vide (`p39`) et une boucle (`p61`, 4,5 fois trop de texte).
+- **Mistral Medium 3.5 ne vaut pas son prix**, et **LightOnOCR-3, modèle
+  d'OCR pour l'imprimé, ne lit pas le manuscrit** : pages rendues vides,
+  texte qui n'existe pas. Il reste à mesurer sur l'imprimé, contre
+  LightOnOCR-2 ([`ocr.md`](ocr.md)).
+
+Les coûts sont ceux des grilles des deux hébergeurs, en euros, appliqués
+aux jetons comptés par OpenCode. Ces comptes sont parfois incohérents
+(jetons d'entrée de 200 à 35 000 pour des images de même taille, à cause du
+cache et des retirages) : à recouper avec les factures. LightOnOCR est
+facturé à la page. Chez Scaleway, la réflexion de Qwen 3.5 revient comptée
+comme jetons de sortie.
+
+Mise en œuvre :
+
+- **Scaleway accepte LightOnOCR-3 seulement en PDF**, sans plafond de
+  sortie : il refuse `max_tokens` comme `max_completion_tokens`, qu'OpenCode
+  envoie toujours. Il est appelé directement, chaque JPEG enveloppé tel quel
+  dans un PDF d'une page.
+- **OVHcloud répond bien plus vite** : environ 5 s par page, contre 40 à
+  50 s chez Scaleway pour les mêmes modèles.
+- **Un appel coupé, par la mise en veille de l'ordinateur par exemple,
+  reste pendu** : il faut une limite de temps qui tue tout le groupe de
+  processus, et reprendre les pages sautées.
+
 ## Ce que ça dit pour la suite
 
 Aucun modèle qui tienne sur une carte ne lit aujourd'hui les manuscrits
 assez bien pour publier : le meilleur, Gemma 4 31b, invente encore un mot
 sur quinze, et bien plus sur les mains difficiles. Les modèles à poids
 ouverts plus gros font un peu mieux (Muse Spark, 4,9 % ; Kimi K3, 3,4 %),
-mais à un coût et une consommation hors de proportion avec le gain. Il lirait les 142 000
-pages manuscrites en huit à vingt jours sur une A100 louée en Europe, selon
-la taille des pages (5 à 13 s chacune). Deux pistes, à mesurer sur ces
-étalons :
+mais à un coût et une consommation hors de proportion avec le gain s'il
+faut louer les machines. Gemma 4 31b lirait les 142 000 pages manuscrites
+en huit à vingt jours sur une A100 louée en Europe, selon la taille des
+pages (5 à 13 s chacune).
+
+Servi au jeton en Europe, un gros modèle devient abordable : **Qwen 3.5
+397b lirait les 142 000 pages pour environ 300 € sans *reasoning*, 550 €
+avec**, mieux que Gemma 4 31b. OVHcloud le sert aussi (fp8), avec une API
+Batch d'ordinaire moitié moins chère : à mesurer sur les étalons avant d'y
+lancer le corpus. Il invente encore un mot sur seize : une relecture reste
+nécessaire pour publier.
+
+Deux pistes sans gros modèle, à mesurer sur ces étalons :
 
 1. **Affiner Manicule 2026 sur nos écritures.** Les transcriptions de
    Chabin, alignées sur les lignes des scans, donnent des données
@@ -232,9 +334,16 @@ alignement approximatif de son texte.
 | DeepSeek V4.1 Flash, 763 G | MIT | [huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash) |
 | GLM 5.3 Flash (Z.ai), 321 G | MIT | [huggingface.co/zai-org/GLM-5.3-Flash](https://huggingface.co/zai-org/GLM-5.3-Flash) |
 | Ember 1, Qwen 3.8 Max | pas de poids publiés | servis par Fireworks seulement |
+| Qwen 3.5 397b-a17b, 397 G | Apache 2.0 | [huggingface.co/Qwen/Qwen3.5-397B-A17B](https://huggingface.co/Qwen/Qwen3.5-397B-A17B) |
+| Qwen3-VL 30b-a3b | Apache 2.0 | [huggingface.co/Qwen/Qwen3-VL-30B-A3B-Instruct](https://huggingface.co/Qwen/Qwen3-VL-30B-A3B-Instruct) |
+| Nemotron 3 Nano Omni 30b-a3b (NVIDIA) | NVIDIA Open Model Agreement | [huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16](https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16) |
+| Gemma 4 26b-a4b (Google), 25 G | Apache 2.0 | [huggingface.co/google/gemma-4-26B-A4B-it](https://huggingface.co/google/gemma-4-26B-A4B-it) |
+| Mistral Medium 3.5, 128 G | MIT modifiée (exceptions pour les entreprises à gros chiffre d'affaires) | [huggingface.co/mistralai/Mistral-Medium-3.5-128B](https://huggingface.co/mistralai/Mistral-Medium-3.5-128B) |
+| LightOnOCR-3 (LightOn), 0,9 G | Apache 2.0 | [huggingface.co/lightonai/LightOnOCR-3-0.8B](https://huggingface.co/lightonai/LightOnOCR-3-0.8B) |
 
-Licences et tailles relevées sur Hugging Face le 19 octobre 2026 ; les
-versions servies par Fireworks peuvent être quantifiées autrement.
+Licences et tailles relevées sur Hugging Face le 19 octobre 2026, et le
+19 novembre 2026 pour les modèles servis en Europe ; les versions servies
+par Fireworks, Scaleway et OVHcloud peuvent être quantifiées autrement.
 
 Kraken 7.1.1 et PyLaia 1.1.2, sur CPU. Kraken 7.1.1 perd des lignes sous
 numpy 2 (« Extracting line failed ») : il faut `numpy<2`.
