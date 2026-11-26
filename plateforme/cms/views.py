@@ -14,11 +14,20 @@ from django.utils.http import urlsafe_base64_encode
 def peut_generer_lien(demandeur, cible):
     """Dit si `demandeur` peut générer le lien de réinitialisation de `cible`.
 
-    Seul un superutilisateur le peut. Un administrateur Wagtail (sans
-    `is_staff`) ne vise pas un compte `is_staff` : il prendrait sinon la main
-    sur un compte développeur, et donc sur l'admin Django.
+    Seul un superutilisateur le peut, et jamais pour son propre compte (on
+    change son mot de passe depuis « Mon compte »).
+
+    - Un développeur (`is_staff`) vise tout autre compte.
+    - Un administrateur Wagtail (superutilisateur sans `is_staff`) ne vise que
+      les éditeurs et modérateurs. Un compte `is_staff` lui donnerait l'admin
+      Django ; un autre administrateur Wagtail, la main sur un pair. Les
+      administrateurs Wagtail relèvent donc des développeurs.
     """
-    return demandeur.is_superuser and (demandeur.is_staff or not cible.is_staff)
+    if not demandeur.is_superuser or demandeur.pk == cible.pk:
+        return False
+    if demandeur.is_staff:
+        return True
+    return not (cible.is_staff or cible.is_superuser)
 
 
 def lien_reinitialisation(request, pk):

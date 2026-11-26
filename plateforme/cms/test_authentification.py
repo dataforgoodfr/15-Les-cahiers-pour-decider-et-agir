@@ -267,9 +267,41 @@ class LienReinitialisationTests(TestCase):
         """Un administrateur Wagtail ne peut pas viser un compte `is_staff`."""
         self._assert_refuse(self.admin_wagtail, self.developpeur)
 
+    def test_admin_wagtail_ne_vise_pas_un_autre_admin_wagtail(self):
+        """Un administrateur Wagtail ne vise ni un pair ni lui-même.
+
+        Il gère les éditeurs et modérateurs ; les administrateurs Wagtail
+        relèvent des développeurs.
+        """
+        autre_admin_wagtail = User.objects.create_user(
+            username="admin-wagtail-2", is_superuser=True
+        )
+        self._assert_refuse(self.admin_wagtail, autre_admin_wagtail)
+        self._assert_refuse(self.admin_wagtail, self.admin_wagtail)
+        self.assertEqual(
+            bouton_lien_reinitialisation(
+                user=self.admin_wagtail, request_user=self.admin_wagtail
+            ),
+            [],
+        )
+
     def test_developpeur_vise_un_developpeur(self):
         """Un développeur peut générer le lien d'un autre développeur."""
         self._lien(self.developpeur, self.autre_developpeur)
+
+    def test_developpeur_vise_un_admin_wagtail(self):
+        """Un développeur peut générer le lien d'un administrateur Wagtail."""
+        self._lien(self.developpeur, self.admin_wagtail)
+
+    def test_personne_ne_vise_son_propre_compte(self):
+        """On change son propre mot de passe depuis « Mon compte »."""
+        self._assert_refuse(self.developpeur, self.developpeur)
+        self.assertEqual(
+            bouton_lien_reinitialisation(
+                user=self.developpeur, request_user=self.developpeur
+            ),
+            [],
+        )
 
     def test_utilisateur_inconnu(self):
         """Un identifiant inexistant renvoie une 404."""
