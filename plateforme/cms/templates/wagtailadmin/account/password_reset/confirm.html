@@ -1,0 +1,36 @@
+{% extends "wagtailadmin/account/password_reset/confirm.html" %}
+{% comment %}
+    Surcharge du gabarit Wagtail du même nom (Django sait étendre un gabarit
+    homonyme). Seul le cas « lien invalide » change : sans serveur SMTP, le
+    bouton « Demander une nouvelle réinitialisation » de Wagtail mènerait à un
+    formulaire par courriel qui n'envoie rien. On oriente vers un
+    administrateur, seul à pouvoir générer un nouveau lien.
+{% endcomment %}
+
+{% block furniture %}
+    {% if validlink %}
+        {{ block.super }}
+    {% else %}
+        <main class="content-wrapper" id="main">
+            <h1>Lien expiré ou déjà utilisé</h1>
+
+            <div class="messages" role="status">
+                <ul>
+                    <li class="error">
+                        Ce lien de réinitialisation n'est plus valide : il a expiré
+                        ou a déjà servi.
+                    </li>
+                </ul>
+            </div>
+
+            <p>
+                Demandez un nouveau lien à un administrateur de la plateforme.
+                Si vous avez déjà choisi votre mot de passe, connectez-vous.
+            </p>
+
+            <div class="form-actions">
+                <a href="{% url 'wagtailadmin_login' %}" class="button">Se connecter</a>
+            </div>
+        </main>
+    {% endif %}
+{% endblock %}
