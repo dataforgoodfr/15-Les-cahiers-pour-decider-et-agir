@@ -26,9 +26,9 @@ class ThematiqueViewSet(SnippetViewSet):
     et seule `description` est éditable (y compris côté serveur : les panneaux
     `read_only=True` sont exclus du formulaire généré par Wagtail).
 
-    Pour accorder cet accès à un groupe d'éditeurs dans Wagtail, cocher
-    uniquement les permissions « Peut voir thématique » et « Peut modifier
-    thématique » (sans « Ajouter » ni « Supprimer »).
+    Les groupes `Editors` et `Moderators` reçoivent « voir » et « modifier »,
+    sans « ajouter » ni « supprimer », par la migration
+    `cms/migrations/0004_droits_thematiques.py`.
     """
 
     model = Thematique

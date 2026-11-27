@@ -146,3 +146,10 @@ Cette section ne concerne que le compte développeur. Les rôles de l'administra
 
   Ce compte ne voit aucun utilisateur et n'entre pas dans l'administration Wagtail.
 - **Les administrateurs Wagtail sont créés par un développeur**, connecté avec le compte développeur, une seule fois par environnement. Aucun administrateur Wagtail n'est provisionné au déploiement.
+
+#### Droits des éditeurs et modérateurs sur un nouveau snippet
+
+- **Pages :** les droits des groupes `Editors` et `Moderators` sont posés sur la racine de l'arbre. Tout nouveau type de page est couvert sans rien faire.
+- **Snippets :** chaque snippet est un modèle Django. Django crée ses permissions (voir, ajouter, modifier, supprimer), mais ne les donne à aucun groupe. Sans action, seuls les développeurs et les administrateurs Wagtail le voient.
+- **Pour chaque nouveau snippet,** écrire une nouvelle migration de données (`makemigrations --empty cms`), sans modifier les précédentes. Elle accorde aux groupes les seules actions voulues, sur le modèle de `cms/migrations/0004_droits_thematiques.py`. Pour donner « supprimer », il faut l'écrire explicitement.
+- **Le test `cms/test_droits_thematiques.py` échoue si un snippet n'a pas sa migration.** Un snippet réservé aux administrateurs Wagtail s'ajoute à `SNIPPETS_RESERVES_AUX_ADMINISTRATEURS`.

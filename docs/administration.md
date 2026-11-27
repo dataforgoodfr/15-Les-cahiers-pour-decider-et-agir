@@ -19,6 +19,8 @@ Aucun serveur mail n'est configuré, donc aucun mail ne part. Un administrateur 
 | Modérateur | créer, modifier et publier les pages | aucun accès | groupe `Moderators` dans l'administration Wagtail |
 | Éditeur | créer et modifier les pages, puis les soumettre à modération | aucun accès | groupe `Editors` dans l'administration Wagtail |
 
+Éditeurs et modérateurs peuvent aussi consulter les **Thématiques** et en modifier la description. Ils ne peuvent ni en ajouter ni en supprimer : la liste des thèmes est chargée par les développeurs.
+
 Malgré son nom, la case « Administrateur » de Wagtail n'ouvre pas l'administration Django. Aucun réglage de l'administration Wagtail ne permet d'y donner accès. Pour savoir qui détient le compte développeur, voir [`deploiement.md`](deploiement.md#5-comptes-dadministration).
 
 ## Accueillir une personne
