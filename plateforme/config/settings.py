@@ -91,6 +91,9 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "territoires",
     "cahiers",
+    # Avant `wagtail.admin` : ses gabarits `wagtailadmin/…` surchargent ceux de
+    # Wagtail (méthode documentée par Wagtail, « Customizing admin templates »).
+    "cms",
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
     "wagtail.embeds",
@@ -104,7 +107,6 @@ INSTALLED_APPS = [
     "wagtail",
     "modelcluster",
     "taggit",
-    "cms",
 ]
 
 MIDDLEWARE = [
@@ -253,6 +255,10 @@ MEDIA_URL = "/media/"
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
 WAGTAIL_SITE_NAME = "Les cahiers pour décider et agir"
 WAGTAILADMIN_BASE_URL = os.environ.get("WAGTAILADMIN_BASE_URL", "http://localhost:8000")
+# Personne ne saisit de mot de passe pour autrui dans Paramètres → Utilisateurs :
+# le compte est créé sans mot de passe (aucune connexion possible) et la
+# personne choisit le sien via un lien de réinitialisation.
+WAGTAILUSERS_PASSWORD_ENABLED = False
 WAGTAILSEARCH_BACKENDS = {
     "default": {"backend": "wagtail.search.backends.database"},
 }

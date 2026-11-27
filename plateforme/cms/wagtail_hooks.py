@@ -5,11 +5,16 @@ Wagtail : leur exposition dans le backoffice éditorial est centralisée ici.
 """
 
 from django.db.models import F
+from django.urls import path, reverse
+from wagtail import hooks
 from wagtail.admin.panels import FieldPanel
+from wagtail.admin.widgets.button import Button
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
 
 from cahiers.models import Thematique
+
+from .views import lien_reinitialisation, peut_generer_lien
 
 
 class ThematiqueViewSet(SnippetViewSet):
@@ -21,9 +26,9 @@ class ThematiqueViewSet(SnippetViewSet):
     et seule `description` est éditable (y compris côté serveur : les panneaux
     `read_only=True` sont exclus du formulaire généré par Wagtail).
 
-    Pour accorder cet accès à un groupe d'éditeurs dans Wagtail, cocher
-    uniquement les permissions « Peut voir thématique » et « Peut modifier
-    thématique » (sans « Ajouter » ni « Supprimer »).
+    Les groupes `Editors` et `Moderators` reçoivent « voir » et « modifier »,
+    sans « ajouter » ni « supprimer », par la migration
+    `cms/migrations/0004_droits_thematiques.py`.
     """
 
     model = Thematique
@@ -52,3 +57,33 @@ class ThematiqueViewSet(SnippetViewSet):
 
 
 register_snippet(ThematiqueViewSet)
+
+
+@hooks.register("register_admin_urls")
+def urls_lien_reinitialisation():
+    """Ajoute à l'admin Wagtail la page du lien de réinitialisation."""
+    return [
+        path(
+            "utilisateurs/<int:pk>/lien-reinitialisation/",
+            lien_reinitialisation,
+            name="cms_lien_reinitialisation",
+        ),
+    ]
+
+
+@hooks.register("register_user_listing_buttons")
+def bouton_lien_reinitialisation(user, request_user):
+    """Ajoute « Lien de réinitialisation » au menu de chaque compte.
+
+    Sans serveur SMTP, c'est ainsi qu'une personne choisit son mot de passe :
+    l'administrateur Wagtail génère le lien et le lui transmet.
+    """
+    if not peut_generer_lien(request_user, user):
+        return []
+    return [
+        Button(
+            "Lien de réinitialisation",
+            reverse("cms_lien_reinitialisation", args=[user.pk]),
+            icon_name="key",
+        )
+    ]

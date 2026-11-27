@@ -131,3 +131,25 @@ clever env set AWS_RESPONSE_CHECKSUM_VALIDATION "when_required" --alias staging
    - **Variables** : `CLEVER_APP_ID` (identifiant `app_...` de `staging_app`).
 4. Activer *Require review from Code Owners* dans les règles de protection de la branche `main` (s'appuie sur `.github/CODEOWNERS` avec `@jpmjpmjpm`, `@njouanin` et `@HugoFara`).
 5. Le workflow `.github/workflows/deploy.yaml` déploie automatiquement sur `staging_app` dès que le workflow `tests` réussit sur `main`, et permet un déploiement manuel (`workflow_dispatch`) vers `staging` ou `production`.
+
+### 5. Comptes d'administration
+
+Cette section ne concerne que le compte développeur. Les rôles de l'administration Wagtail et la procédure d'accueil d'une personne sont décrits dans [`administration.md`](administration.md).
+
+- **Le compte développeur (identifiant `admin`) est recréé au démarrage s'il manque**, par `initialiser_admin`, à partir de `DJANGO_SUPERUSER_*`. Il a tous les droits, sur tous les comptes, dans l'administration Wagtail (`/admin/`) comme dans l'administration Django (`/django-admin/`).
+- **Seules les personnes qui ont déjà accès à la console Clever Cloud détiennent ce compte.** La frontière de sécurité est l'accès à Clever Cloud et aux secrets GitHub, pas une règle Django :
+  - la console donne l'URL de la base, ce qui permet de modifier n'importe quel compte ;
+  - elle donne aussi la `SECRET_KEY`, ce qui permet de fabriquer un lien de réinitialisation valide.
+- **Un autre développeur qui a besoin de l'administration Django** reçoit un compte personnel aux droits limités. Le détenteur du compte développeur le crée dans l'administration Django :
+  - il coche « Statut équipe », mais pas « Statut superutilisateur » ;
+  - il ne lui accorde que les permissions sur les modèles métier (`cahiers`, `territoires`).
+
+  Ce compte ne voit aucun utilisateur et n'entre pas dans l'administration Wagtail.
+- **Les administrateurs Wagtail sont créés par un développeur**, connecté avec le compte développeur, une seule fois par environnement. Aucun administrateur Wagtail n'est provisionné au déploiement.
+
+#### Droits des éditeurs et modérateurs sur un nouveau snippet
+
+- **Pages :** les droits des groupes `Editors` et `Moderators` sont posés sur la racine de l'arbre. Tout nouveau type de page est couvert sans rien faire.
+- **Snippets :** chaque snippet est un modèle Django. Django crée ses permissions (voir, ajouter, modifier, supprimer), mais ne les donne à aucun groupe. Sans action, seuls les développeurs et les administrateurs Wagtail le voient.
+- **Pour chaque nouveau snippet,** écrire une nouvelle migration de données (`makemigrations --empty cms`), sans modifier les précédentes. Elle accorde aux groupes les seules actions voulues, sur le modèle de `cms/migrations/0004_droits_thematiques.py`. Pour donner « supprimer », il faut l'écrire explicitement.
+- **Le test `cms/test_droits_thematiques.py` échoue si un snippet n'a pas sa migration.** Un snippet réservé aux administrateurs Wagtail s'ajoute à `SNIPPETS_RESERVES_AUX_ADMINISTRATEURS`.

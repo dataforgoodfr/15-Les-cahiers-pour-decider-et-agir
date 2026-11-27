@@ -1,0 +1,25 @@
+{% extends "wagtailadmin/account/password_reset/form.html" %}
+{% comment %}
+    Surcharge du gabarit Wagtail du même nom (Django sait étendre un gabarit
+    homonyme). Les courriels partent dans la console (réglage MAILERS) : le
+    formulaire de Wagtail annoncerait un envoi que personne ne recevrait. On
+    oriente vers un administrateur, qui génère le lien depuis Paramètres →
+    Utilisateurs. À supprimer le jour où un serveur SMTP sera configuré.
+{% endcomment %}
+
+{% block titletag %}Mot de passe oublié{% endblock %}
+
+{% block furniture %}
+    <main class="content-wrapper" id="main">
+        <h1>Mot de passe oublié</h1>
+
+        <p>
+            Demandez un lien de réinitialisation à un administrateur de la
+            plateforme. Ce lien vous permettra de choisir un nouveau mot de passe.
+        </p>
+
+        <div class="form-actions">
+            <a href="{% url 'wagtailadmin_login' %}" class="button">Retour</a>
+        </div>
+    </main>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "wagtailadmin/generic/base.html" %}
+{% load wagtailadmin_tags %}
+
+{% comment %}
+    Mise en page reprise de wagtailusers/api_tokens/created.html : un secret à
+    copier, avec le bouton « Copier » des contrôleurs Stimulus de Wagtail.
+{% endcomment %}
+
+{% block main_content %}
+    {% panel id="lien-reinitialisation" heading="Compte « "|add:cible.get_username|add:" »" %}
+        <p>
+            Transmettez ce lien à la personne concernée, et à elle seule : il
+            permet de choisir le mot de passe de ce compte, donc d'y accéder.
+        </p>
+        <p>
+            Il expire dans {{ validite_jours }} jour{{ validite_jours|pluralize }}
+            et ne fonctionne qu'une fois. Une fois le mot de passe choisi, la
+            personne se connecte sur la page de connexion de l'administration.
+        </p>
+        <div data-controller="w-clipboard w-clone" data-w-clone-auto-clear-value="5_000" data-action="w-clipboard:copy->w-clone#clear w-clipboard:copied->w-clone#add w-clipboard:error->w-clone#add">
+            <label class="w-sr-only" for="lien-valeur">Lien de réinitialisation</label>
+            <input
+                type="text"
+                readonly
+                class="w-w-full"
+                id="lien-valeur"
+                value="{{ lien }}"
+                data-controller="w-action"
+                data-action="focus->w-action#select"
+                data-w-clipboard-target="value"
+            />
+            <div class="w-flex w-flex-wrap w-items-center w-gap-3 w-mt-6">
+                <button type="button" class="button button-secondary" data-action="w-clipboard#copy" aria-describedby="clipboard-tooltip">
+                    Copier le lien
+                </button>
+                <a href="{% url 'wagtailusers_users:index' %}" class="button">
+                    Retour aux utilisateurs
+                </a>
+            </div>
+            <div class="clipboard-tooltip w-mt-3" data-w-clone-target="container" id="clipboard-tooltip" aria-atomic="true" aria-live="polite"></div>
+            <template data-w-clone-target="template" data-type="success">
+                <span class="w-inline-block w-text-grey-50 w-bg-positive-100 w-px-2 w-py-1 w-rounded-sm">Lien copié</span>
+            </template>
+            <template data-w-clone-target="template" data-type="error">
+                <span class="w-inline-block w-text-grey-50 w-bg-critical-100 w-px-2 w-py-1 w-rounded-sm">La copie a échoué : sélectionnez le lien et copiez-le à la main.</span>
+            </template>
+        </div>
+    {% endpanel %}
+{% endblock %}
